@@ -14,6 +14,30 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Debug project structure
+      run: |
+        echo "=== Current Directory Structure ==="
+        pwd
+        ls -la
+        
+        echo "=== Meter Info Folder Contents ==="
+        if [ -d "Meter Info" ]; then
+          ls -la "Meter Info/"
+          echo "=== Checking for gradlew ==="
+          if [ -f "Meter Info/gradlew" ]; then
+            echo "✅ gradlew file exists"
+            ls -la "Meter Info/gradlew"
+          else
+            echo "❌ gradlew file NOT found in Meter Info/"
+            echo "Looking for gradlew in subdirectories:"
+            find "Meter Info" -name "gradlew" -type f 2>/dev/null || echo "No gradlew found anywhere"
+          fi
+        else
+          echo "❌ 'Meter Info' folder not found!"
+          echo "Available folders:"
+          find . -maxdepth 2 -type d | sort
+        fi
+
     - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
@@ -23,34 +47,22 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
-    - name: Make gradlew executable
-      run: chmod +x "./Meter Info/gradlew"
-
-    - name: Build Debug APK
+    - name: Build APK (if gradlew exists)
       working-directory: "./Meter Info"
       run: |
-        ./gradlew assembleDebug
-        ls -la app/build/outputs/apk/debug/
+        if [ -f "./gradlew" ]; then
+          chmod +x ./gradlew
+          ./gradlew assembleDebug
+          ls -la app/build/outputs/apk/debug/
+        else
+          echo "❌ gradlew not found. Cannot build."
+          exit 1
+        fi
 
     - name: Upload APK artifact
+      if: success()
       uses: actions/upload-artifact@v4
       with:
         name: app-debug
         path: "Meter Info/app/build/outputs/apk/debug/*.apk"
         retention-days: 7
-
-    - name: Build Release APK
-      working-directory: "./Meter Info"
-      run: |
-        ./gradlew assembleRelease
-        ls -la app/build/outputs/apk/release/
-
-    - name: Upload Release APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: app-release
-        path: "Meter Info/app/build/outputs/apk/release/*.apk"
-        retention-days: 7
-
-    - name: List APK files for debugging
-      run: find . -name "*.apk" -type f
