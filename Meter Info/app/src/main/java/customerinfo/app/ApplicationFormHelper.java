@@ -412,5 +412,6 @@ public class ApplicationHelper {
                !trimmed.equals("{}") &&
                !trimmed.equals("undefined") &&
                !trimmed.equals("0");
+
     }
 }
