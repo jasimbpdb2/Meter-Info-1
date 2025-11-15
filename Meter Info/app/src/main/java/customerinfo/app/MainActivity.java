@@ -36,8 +36,6 @@ import android.os.Environment;
 import android.content.Intent;
 import android.net.Uri;
 import android.provider.Settings;
-import android.webkit.JavascriptInterface;
-
 public class MainActivity extends AppCompatActivity {
 
     private EditText meterInput;
@@ -110,6 +108,7 @@ public class MainActivity extends AppCompatActivity {
         prepaidBtn = findViewById(R.id.prepaidBtn);
         postpaidBtn = findViewById(R.id.postpaidBtn);
         submitBtn = findViewById(R.id.submitBtn);
+findViewById=(R.id.backBtn);
         resultView = findViewById(R.id.resultView);
         //excelBtn = findViewById(R.id.excelBtn);
 
@@ -2236,39 +2235,6 @@ public class MainActivity extends AppCompatActivity {
             Log.e(TAG, "Error auto-saving to Excel: " + e.getMessage());
         }
     }
-    
-    /**
- * Method for application form to fetch data
- * Returns data in EXACT format expected by HTML
- */
-@JavascriptInterface
-public String fetchDataForApplication(String inputNumber, String type) {
-    try {
-        System.out.println("📱 fetchDataForApplication called: " + inputNumber + ", " + type);
-        
-        ApplicationFormHelper applicationFormHelper = new ApplicationFormHelper();
-        Map<String, Object> result = applicationFormHelper.fetchDataForApplicationForm(inputNumber, type);
-        
-        // Convert to JSON string for HTML
-        JSONObject jsonResult = new JSONObject(result);
-        String jsonString = jsonResult.toString();
-        
-        System.out.println("📱 Returning data to HTML: " + jsonString);
-        return jsonString;
-        
-    } catch (Exception e) {
-        System.out.println("❌ Error in fetchDataForApplication: " + e.getMessage());
-        
-        // Return error as JSON
-        try {
-            JSONObject errorResult = new JSONObject();
-            errorResult.put("error", "Data fetch failed: " + e.getMessage());
-            return errorResult.toString();
-        } catch (Exception ex) {
-            return "{\"error\":\"Unknown error occurred\"}";
-        }
-    }
-}
 
     // Save and share method - ADD THIS METHOD
     public void saveAndShareExcel() {
