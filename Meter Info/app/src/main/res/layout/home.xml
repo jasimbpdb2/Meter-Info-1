@@ -13,7 +13,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="50dp"
-        android:text="বিদ্যুৎ বিল তথ্য"/>
+        android:text="বিদ্যুৎ বিল তথ্য" />
 
     <Button
         android:textSize="16sp"
@@ -23,15 +23,15 @@
         android:layout_marginBottom="20dp"
         android:background="#3498db"
         android:textColor="#ffffff"
-        android:text="🔍 তথ্য খুঁজুন"/>
+        android:text="🔍 তথ্য খুঁজুন" />
 
     <Button
         android:textSize="16sp"
-        android:id="@+id/applicationBtn"  <!-- MUST MATCH Java code -->
+        android:id="@+id/applicationBtn"
         android:layout_width="200dp"
         android:layout_height="60dp"
         android:background="#27ae60"
         android:textColor="#ffffff"
-        android:text="📝 আবেদনপত্র"/>
+        android:text="📝 আবেদনপত্র" />
 
 </LinearLayout>
