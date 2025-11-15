@@ -2,6 +2,7 @@ package customerinfo.app;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.json.JSONException;
 import java.util.*;
 
 public class ApplicationFormHelper {
@@ -165,8 +166,8 @@ public class ApplicationFormHelper {
                 }
             }
             
-            // Supplement missing fields from SERVER2 customerInfo
-            if (server2Data.has("customerInfo") && server2Data.getJSONArray("customerInfo").length() > 0) {
+            // Supplement missing fields from SERVER2 customerInfo - FIXED with try-catch
+            if (server2Data.has("customerInfo")) {
                 try {
                     JSONArray customerInfoArray = server2Data.getJSONArray("customerInfo");
                     if (customerInfoArray.length() > 0 && customerInfoArray.getJSONArray(0).length() > 0) {
@@ -185,8 +186,10 @@ public class ApplicationFormHelper {
                             customerInfo.put("consumer_no", customer.optString("CUSTOMER_NUMBER", ""));
                         }
                     }
+                } catch (JSONException e) {
+                    System.out.println("❌ JSON Error extracting customerInfo: " + e.getMessage());
                 } catch (Exception e) {
-                    // Ignore customer info extraction errors
+                    System.out.println("❌ Error extracting customerInfo: " + e.getMessage());
                 }
             }
         }
@@ -228,8 +231,10 @@ public class ApplicationFormHelper {
                         arrearAmount = String.format("%.0f", totalBalance);
                     }
                 }
+            } catch (JSONException e) {
+                System.out.println("❌ JSON Error parsing balanceInfo: " + e.getMessage());
             } catch (Exception e) {
-                // Ignore balance info errors
+                System.out.println("❌ Error parsing balanceInfo: " + e.getMessage());
             }
         }
         
