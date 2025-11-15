@@ -3,8 +3,6 @@ name: Android CI
 on:
   push:
     branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
 
 jobs:
   build:
@@ -23,38 +21,45 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
-    - name: Fix gradlew permissions and verify
+    - name: Fix gradlew shebang line
       working-directory: "./Meter Info"
       run: |
-        echo "=== Current gradlew permissions ==="
-        ls -la gradlew
+        echo "=== Current gradlew first line ==="
+        head -1 gradlew
+        
+        echo "=== Fixing Termux shebang to standard Linux shebang ==="
+        # Create a backup
+        cp gradlew gradlew.backup
+        
+        # Replace the Termux shebang with standard Linux shebang
+        sed -i '1s|.*|#!/usr/bin/env sh|' gradlew
+        
+        echo "=== New gradlew first line ==="
+        head -1 gradlew
         
         echo "=== Making gradlew executable ==="
         chmod +x gradlew
         
-        echo "=== New gradlew permissions ==="
-        ls -la gradlew
-        
-        echo "=== Verify gradlew can run ==="
-        ./gradlew --version || echo "Gradlew verification failed"
+        echo "=== Testing gradlew ==="
+        ./gradlew --version
 
     - name: Build Debug APK
       working-directory: "./Meter Info"
       run: |
         echo "=== Building Debug APK ==="
-        ./gradlew assembleDebug
+        ./gradlew assembleDebug --stacktrace
         
         echo "=== APK Files Created ==="
-        ls -la app/build/outputs/apk/debug/ || echo "No APK files found"
+        ls -la app/build/outputs/apk/debug/
 
     - name: Build Release APK
       working-directory: "./Meter Info"
       run: |
         echo "=== Building Release APK ==="
-        ./gradlew assembleRelease
+        ./gradlew assembleRelease --stacktrace
         
         echo "=== Release APK Files ==="
-        ls -la app/build/outputs/apk/release/ || echo "No release APK files found"
+        ls -la app/build/outputs/apk/release/
 
     - name: Upload Debug APK
       uses: actions/upload-artifact@v4
@@ -70,9 +75,8 @@ jobs:
         path: "Meter Info/app/build/outputs/apk/release/*.apk"
         retention-days: 7
 
-    - name: Final verification
+    - name: Show build summary
       run: |
-        echo "=== All APK files in repository ==="
-        find . -name "*.apk" -type f | while read file; do
-          echo "📱 Found: $file ($(du -h "$file" | cut -f1))"
-        done || echo "No APK files found"
+        echo "🎉 Build completed successfully!"
+        echo "📱 APK files available in the Artifacts section above"
+        echo "⬇️ Download the APK to install on your Android device"
