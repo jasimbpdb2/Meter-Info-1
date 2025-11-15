@@ -110,10 +110,10 @@ public class MainActivity extends AppCompatActivity {
 
         // THEN setup click listeners
         setupClickListeners();
-        
+
         // Show startup screen
         showStartupScreen();
-        
+
         // Show Excel save status in result
         showResult("🔍 Enter meter/consumer number and search\n💾 Data auto-saves to Excel after each search");
     }
@@ -122,7 +122,7 @@ public class MainActivity extends AppCompatActivity {
         startupLayout = findViewById(R.id.startupLayout);
         mainLayout = findViewById(R.id.mainLayout);
         backBtn = findViewById(R.id.backBtn);
-        
+
         meterInput = findViewById(R.id.meterInput);
         prepaidBtn = findViewById(R.id.prepaidBtn);
         postpaidBtn = findViewById(R.id.postpaidBtn);
@@ -155,16 +155,16 @@ public class MainActivity extends AppCompatActivity {
     private void showStartupScreen() {
         startupLayout.setVisibility(View.VISIBLE);
         mainLayout.setVisibility(View.GONE);
-        
+
         Button lookupBtn = findViewById(R.id.lookupBtn);
         Button applicationBtn = findViewById(R.id.applicationBtn);
-        
+
         lookupBtn.setOnClickListener(v -> {
             selectedMode = "lookup";
             showMainInterface();
             showResult("🔍 Lookup mode selected\nEnter meter/consumer number to search");
         });
-        
+
         applicationBtn.setOnClickListener(v -> {
             selectedMode = "application";
             openApplicationForm();
@@ -177,7 +177,7 @@ public class MainActivity extends AppCompatActivity {
         updateButtonStates();
         updatePostpaidSubOptions();
         updateInputHint();
-        
+
         // Show keyboard automatically
         new Handler().postDelayed(() -> {
             showKeyboard();
@@ -343,8 +343,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
-
     // API METHODS
     public static Map<String, Object> getCustomerNumbersByMeter(String meterNumber) {
         Map<String, Object> result = new HashMap<>();
@@ -355,7 +353,7 @@ public class MainActivity extends AppCompatActivity {
             conn.setRequestProperty("Accept", "application/json");
             conn.setConnectTimeout(10000);
             conn.setReadTimeout(15000);
-            
+
             if (conn.getResponseCode() == 200) {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
                 StringBuilder response = new StringBuilder();
@@ -363,7 +361,7 @@ public class MainActivity extends AppCompatActivity {
                 while ((line = reader.readLine()) != null) {
                     response.append(line);
                 }
-                
+
                 JSONObject meterData = new JSONObject(response.toString());
                 if (meterData.getInt("status") == 1 && meterData.has("content")) {
                     JSONArray customers = meterData.getJSONArray("content");
@@ -396,22 +394,22 @@ public class MainActivity extends AppCompatActivity {
     private Map<String, Object> fetchMeterLookupData(String meterNumber) {
         Map<String, Object> result = new HashMap<>();
         result.put("meter_number", meterNumber);
-        
+
         Map<String, Object> meterResult = getCustomerNumbersByMeter(meterNumber);
         if (meterResult.containsKey("error")) {
             result.put("error", meterResult.get("error"));
             return result;
         }
-        
+
         if (!meterResult.containsKey("customer_numbers")) {
             result.put("error", "No customer numbers found for this meter");
             return result;
         }
-        
+
         List<String> customerNumbers = (List<String>) meterResult.get("customer_numbers");
         result.put("customer_numbers", customerNumbers);
         result.put("meter_api_data", meterResult.get("meter_api_data"));
-        
+
         List<Map<String, Object>> customerResults = new ArrayList<>();
         for (String custNum : customerNumbers) {
             customerResults.add(fetchPostpaidData(custNum));
@@ -432,11 +430,11 @@ public class MainActivity extends AppCompatActivity {
             conn.setRequestProperty("Origin", "http://web.bpdbprepaid.gov.bd");
             conn.setRequestProperty("Referer", "http://web.bpdbprepaid.gov.bd/bn/token-check");
             conn.setRequestProperty("User-Agent", "Mozilla/5.0");
-            
+
             OutputStream os = conn.getOutputStream();
             os.write(("[{\"meterNo\":\"" + meterNumber + "\"}]").getBytes("UTF-8"));
             os.flush();
-            
+
             int responseCode = conn.getResponseCode();
             if (responseCode == 200) {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
@@ -478,7 +476,7 @@ public class MainActivity extends AppCompatActivity {
             conn.setRequestProperty("Accept", "application/json");
             conn.setConnectTimeout(10000);
             conn.setReadTimeout(15000);
-            
+
             if (conn.getResponseCode() == 200) {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
                 StringBuilder response = new StringBuilder();
@@ -486,7 +484,7 @@ public class MainActivity extends AppCompatActivity {
                 while ((line = reader.readLine()) != null) {
                     response.append(line);
                 }
-                
+
                 JSONObject SERVER2Data = new JSONObject(response.toString());
                 if (isValidSERVER2Data(SERVER2Data)) {
                     result.put("SERVER2_data", SERVER2Data);
@@ -515,7 +513,7 @@ public class MainActivity extends AppCompatActivity {
 
     public static Map<String, Object> SERVER3Lookup(String customerNumber) {
         Map<String, Object> result = new HashMap<>();
-        
+
         // First get SERVER2 data
         Map<String, Object> SERVER2Result = SERVER2Lookup(customerNumber);
         if (SERVER2Result != null && !SERVER2Result.containsKey("error")) {
@@ -530,7 +528,7 @@ public class MainActivity extends AppCompatActivity {
             conn.setRequestProperty("Accept", "application/json");
             conn.setConnectTimeout(10000);
             conn.setReadTimeout(15000);
-            
+
             if (conn.getResponseCode() == 200) {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
                 StringBuilder response = new StringBuilder();
@@ -538,7 +536,7 @@ public class MainActivity extends AppCompatActivity {
                 while ((line = reader.readLine()) != null) {
                     response.append(line);
                 }
-                
+
                 JSONObject SERVER3Data = new JSONObject(response.toString());
                 if (isValidSERVER3Data(SERVER3Data)) {
                     result.put("SERVER3_data", SERVER3Data);
@@ -552,7 +550,7 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             result.put("source", "SERVER2_only");
         }
-        
+
         if (!result.containsKey("SERVER2_data") && !result.containsKey("SERVER3_data")) {
             result.put("error", "Both SERVER 3 and SERVER 2 failed to return valid data");
         }
@@ -576,7 +574,7 @@ public class MainActivity extends AppCompatActivity {
         result.put("meter_number", meterNumber);
         result.put("SERVER1_data", SERVER1Result.get("SERVER1_data"));
         result.put("consumer_number", SERVER1Result.get("consumer_number"));
-        
+
         String consumerNumber = (String) SERVER1Result.get("consumer_number");
         if (consumerNumber != null && !SERVER1Result.containsKey("error")) {
             Map<String, Object> SERVER3Result = SERVER3Lookup(consumerNumber);
@@ -599,7 +597,7 @@ public class MainActivity extends AppCompatActivity {
     private Map<String, Object> fetchPostpaidData(String customerNumber) {
         Map<String, Object> result = new HashMap<>();
         result.put("customer_number", customerNumber);
-        
+
         Map<String, Object> SERVER3Result = SERVER3Lookup(customerNumber);
         if (SERVER3Result != null && !SERVER3Result.containsKey("error")) {
             String source = (String) SERVER3Result.getOrDefault("source", "unknown");
@@ -653,24 +651,24 @@ public class MainActivity extends AppCompatActivity {
         if (result == null) {
             return "❌ No result data available";
         }
-        
+
         StringBuilder output = new StringBuilder();
         output.append("\n══════════════════════════════════════════════════\n");
         output.append("📊 ").append(billType.toUpperCase()).append(" METER INFO\n");
         output.append("══════════════════════════════════════════════════\n");
-        
+
         if (result.containsKey("error")) {
             output.append("❌ Error: ").append(result.get("error")).append("\n");
             return output.toString();
         }
-        
+
         output.append("🔢 Meter Number: ").append(result.getOrDefault("meter_number", "N/A")).append("\n");
-        
+
         if ("prepaid".equals(billType)) {
             if (result.get("consumer_number") != null) {
                 output.append("👤 Consumer Number: ").append(result.get("consumer_number")).append("\n");
             }
-            
+
             // Process prepaid data
             Map<String, Object> mergedData = mergeSERVERData(result);
             if (mergedData != null && !mergedData.isEmpty()) {
@@ -681,12 +679,12 @@ public class MainActivity extends AppCompatActivity {
                 List<String> customerNumbers = (List<String>) result.get("customer_numbers");
                 List<Map<String, Object>> customerResults = (List<Map<String, Object>>) result.get("customer_results");
                 output.append("\n📊 Found ").append(customerNumbers.size()).append(" customer(s) for this meter\n\n");
-                
+
                 for (int i = 0; i < customerResults.size(); i++) {
                     output.append("=".repeat(40)).append("\n");
                     output.append("👤 CUSTOMER ").append(i + 1).append("/").append(customerNumbers.size()).append(": ").append(customerNumbers.get(i)).append("\n");
                     output.append("=".repeat(40)).append("\n");
-                    
+
                     Map<String, Object> mergedData = mergeSERVERData(customerResults.get(i));
                     if (mergedData != null && !mergedData.isEmpty()) {
                         output.append(formatMergedDisplayWithoutTable(mergedData)).append("\n");
@@ -705,7 +703,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }
-        
+
         return output.toString();
     }
 
@@ -715,7 +713,7 @@ public class MainActivity extends AppCompatActivity {
         try {
             Map<String, String> customerInfo = new HashMap<>();
             Map<String, String> balanceInfo = new HashMap<>();
-            
+
             // Copy basic info
             if (source.containsKey("meter_number")) {
                 result.put("meter_number", source.get("meter_number"));
@@ -726,7 +724,7 @@ public class MainActivity extends AppCompatActivity {
             if (source.containsKey("customer_number")) {
                 result.put("customer_number", source.get("customer_number"));
             }
-            
+
             // Process SERVER1 data
             if (source.containsKey("SERVER1_data")) {
                 Map<String, Object> cleanedServer1 = cleanSERVER1Data(source.get("SERVER1_data"));
@@ -734,7 +732,7 @@ public class MainActivity extends AppCompatActivity {
                     customerInfo.putAll((Map<String, String>) cleanedServer1.get("customer_info"));
                 }
             }
-            
+
             // Process SERVER2 data
             if (source.containsKey("SERVER2_data") && source.get("SERVER2_data") instanceof JSONObject) {
                 Map<String, Object> cleanedServer2 = cleanSERVER2Data((JSONObject) source.get("SERVER2_data"));
@@ -745,7 +743,7 @@ public class MainActivity extends AppCompatActivity {
                     balanceInfo.putAll((Map<String, String>) cleanedServer2.get("balance_info"));
                 }
             }
-            
+
             // Process SERVER3 data
             if (source.containsKey("SERVER3_data") && source.get("SERVER3_data") instanceof JSONObject) {
                 Map<String, Object> cleanedServer3 = cleanSERVER3Data((JSONObject) source.get("SERVER3_data"));
@@ -756,14 +754,14 @@ public class MainActivity extends AppCompatActivity {
                     balanceInfo.putAll((Map<String, String>) cleanedServer3.get("balance_info"));
                 }
             }
-            
+
             if (!customerInfo.isEmpty()) {
                 result.put("customer_info", customerInfo);
             }
             if (!balanceInfo.isEmpty()) {
                 result.put("balance_info", balanceInfo);
             }
-            
+
         } catch (Exception e) {
             Log.e(TAG, "Error in mergeSERVERData: " + e.getMessage());
         }
@@ -783,12 +781,12 @@ public class MainActivity extends AppCompatActivity {
             if (SERVER1DataObj instanceof String) {
                 String response = (String) SERVER1DataObj;
                 Map<String, String> customerInfo = new HashMap<>();
-                
+
                 String consumerNumber = extractConsumerNumber(response);
                 if (consumerNumber != null) {
                     customerInfo.put("Consumer Number", consumerNumber);
                 }
-                
+
                 if (!customerInfo.isEmpty()) {
                     result.put("customer_info", customerInfo);
                 }
@@ -804,7 +802,7 @@ public class MainActivity extends AppCompatActivity {
         try {
             Map<String, String> customerInfo = new HashMap<>();
             Map<String, String> balanceInfo = new HashMap<>();
-            
+
             // Extract customer info
             if (SERVER2Data.has("customerInfo")) {
                 JSONArray customerInfoArray = SERVER2Data.getJSONArray("customerInfo");
@@ -816,7 +814,7 @@ public class MainActivity extends AppCompatActivity {
                     customerInfo.put("Meter Number", firstCustomer.optString("METER_NUM"));
                 }
             }
-            
+
             // Extract balance info
             if (SERVER2Data.has("finalBalanceInfo")) {
                 String balanceString = SERVER2Data.optString("finalBalanceInfo");
@@ -825,14 +823,14 @@ public class MainActivity extends AppCompatActivity {
                     balanceInfo.put("Arrear Amount", balanceString);
                 }
             }
-            
+
             if (!customerInfo.isEmpty()) {
                 result.put("customer_info", customerInfo);
             }
             if (!balanceInfo.isEmpty()) {
                 result.put("balance_info", balanceInfo);
             }
-            
+
         } catch (Exception e) {
             Log.e(TAG, "Error cleaning SERVER2 data: " + e.getMessage());
         }
@@ -844,26 +842,26 @@ public class MainActivity extends AppCompatActivity {
         try {
             Map<String, String> customerInfo = new HashMap<>();
             Map<String, String> balanceInfo = new HashMap<>();
-            
+
             customerInfo.put("Customer Number", SERVER3Data.optString("customerNumber"));
             customerInfo.put("Customer Name", SERVER3Data.optString("customerName"));
             customerInfo.put("Customer Address", SERVER3Data.optString("customerAddr"));
             customerInfo.put("Meter Number", SERVER3Data.optString("meterNum"));
             customerInfo.put("Tariff Description", SERVER3Data.optString("tariffDesc"));
-            
+
             String arrearAmount = SERVER3Data.optString("arrearAmount");
             if (!arrearAmount.isEmpty() && !arrearAmount.equals("null")) {
                 balanceInfo.put("Total Balance", arrearAmount);
                 balanceInfo.put("Arrear Amount", arrearAmount);
             }
-            
+
             if (!customerInfo.isEmpty()) {
                 result.put("customer_info", customerInfo);
             }
             if (!balanceInfo.isEmpty()) {
                 result.put("balance_info", balanceInfo);
             }
-            
+
         } catch (Exception e) {
             Log.e(TAG, "Error cleaning SERVER3 data: " + e.getMessage());
         }
@@ -872,11 +870,11 @@ public class MainActivity extends AppCompatActivity {
 
     private String formatMergedDisplayWithoutTable(Map<String, Object> data) {
         StringBuilder output = new StringBuilder();
-        
+
         if (data.containsKey("customer_info")) {
             output.append("👤 CUSTOMER INFORMATION\n");
             output.append("══════════════════════════════════════════════════\n");
-            
+
             Map<String, String> customerInfo = (Map<String, String>) data.get("customer_info");
             for (Map.Entry<String, String> entry : customerInfo.entrySet()) {
                 if (isValidValue(entry.getValue())) {
@@ -884,11 +882,11 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }
-        
+
         if (data.containsKey("balance_info")) {
             output.append("\n💰 BALANCE INFORMATION\n");
             output.append("══════════════════════════════════════════════════\n");
-            
+
             Map<String, String> balanceInfo = (Map<String, String>) data.get("balance_info");
             for (Map.Entry<String, String> entry : balanceInfo.entrySet()) {
                 if (isValidValue(entry.getValue())) {
@@ -896,7 +894,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }
-        
+
         return output.toString();
     }
 
@@ -946,7 +944,7 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 excelData.put("Customer Number", getSafeString(result.get("customer_number")));
             }
-            
+
             Map<String, Object> mergedData = mergeSERVERData(result);
             if (mergedData != null) {
                 if (mergedData.containsKey("customer_info")) {
@@ -986,92 +984,99 @@ public class MainActivity extends AppCompatActivity {
         Toast.makeText(this, "Excel file saved: " + filePath, Toast.LENGTH_LONG).show();
     }
 
-   private void openApplicationForm() {
-    try {
-        Log.d("ApplicationForm", "Opening application form...");
+    // APPLICATION FORM METHODS - FIXED VERSION
+    private void openApplicationForm() {
+        try {
+            Log.d("ApplicationForm", "Opening application form...");
 
-        // Create helper instance
-        applicationFormHelper = new ApplicationFormHelper(this);
+            // Create WebView FIRST
+            WebView applicationWebView = new WebView(this);
+            
+            // Configure WebView settings
+            WebSettings webSettings = applicationWebView.getSettings();
+            webSettings.setJavaScriptEnabled(true);
+            webSettings.setDomStorageEnabled(true);
+            webSettings.setLoadWithOverviewMode(true);
+            webSettings.setUseWideViewPort(true);
+            webSettings.setAllowFileAccess(true);
+            webSettings.setBuiltInZoomControls(true);
+            webSettings.setDisplayZoomControls(false);
 
-        // Create WebView
-        WebView applicationWebView = new WebView(this);
-        applicationWebView.getSettings().setJavaScriptEnabled(true);
-        applicationWebView.getSettings().setDomStorageEnabled(true);
-        applicationWebView.getSettings().setLoadWithOverviewMode(true);
-        applicationWebView.getSettings().setUseWideViewPort(true);
-        applicationWebView.setVerticalScrollBarEnabled(true);
-        applicationWebView.setHorizontalScrollBarEnabled(true);
+            // THEN create helper instance with BOTH parameters
+            applicationFormHelper = new ApplicationFormHelper(this, applicationWebView);
 
-        // WebView client
-        applicationWebView.setWebViewClient(new WebViewClient() {
+            // Add JavaScript interface
+            applicationWebView.addJavascriptInterface(applicationFormHelper, "AndroidInterface");
 
-            @Override
-            public void onPageFinished(WebView view, String url) {
-                super.onPageFinished(view, url);
-                Log.d("ApplicationForm", "Page loaded: " + url);
+            // WebView client
+            applicationWebView.setWebViewClient(new WebViewClient() {
+                @Override
+                public void onPageFinished(WebView view, String url) {
+                    super.onPageFinished(view, url);
+                    Log.d("ApplicationForm", "Page loaded: " + url);
+                    showKeyboardForWebView(applicationWebView);
+                }
+
+                @Override
+                public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
+                    super.onReceivedError(view, errorCode, description, failingUrl);
+                    Log.e("ApplicationForm", "WebView error: " + description);
+
+                    if (applicationFormHelper != null) {
+                        applicationFormHelper.hideLoading();
+                    }
+                }
+            });
+
+            // Create Dialog
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("আবেদনপত্র");
+            builder.setView(applicationWebView);
+
+            builder.setPositiveButton("প্রিন্ট", (dialog, which) -> {
+                try {
+                    applicationWebView.evaluateJavascript("window.print();", null);
+                } catch (Exception e) {
+                    Log.e("ApplicationForm", "Print error: " + e.getMessage());
+                }
+            });
+
+            builder.setNegativeButton("বন্ধ", (dialog, which) -> {
+                dialog.dismiss();
+                showStartupScreen();
+            });
+
+            AlertDialog dialog = builder.create();
+
+            dialog.setOnShowListener(dlg -> {
+                Log.d("ApplicationForm", "Dialog shown");
                 showKeyboardForWebView(applicationWebView);
-            }
+            });
 
-            @Override
-            public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
-                super.onReceivedError(view, errorCode, description, failingUrl);
-                Log.e("ApplicationForm", "WebView error: " + description);
+            dialog.setOnCancelListener(d -> {
+                Log.d("ApplicationForm", "Dialog cancelled");
+                showStartupScreen();
+            });
 
+            dialog.show();
+
+            // Load HTML
+            try {
+                Log.d("ApplicationForm", "Loading HTML from assets...");
+                applicationWebView.loadUrl("file:///android_asset/application_form.html");
+            } catch (Exception e) {
+                Log.e("ApplicationForm", "Error loading HTML: " + e.getMessage());
                 if (applicationFormHelper != null) {
-                    applicationFormHelper.hideLoading();
+                    applicationFormHelper.showError("Failed to load application form: " + e.getMessage());
                 }
             }
-        });
 
-        // Create Dialog
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("আবেদনপত্র");
-        builder.setView(applicationWebView);
-
-        builder.setPositiveButton("প্রিন্ট", (dialog, which) -> {
-            try {
-                applicationWebView.evaluateJavascript("window.print();", null);
-            } catch (Exception e) {
-                Log.e("ApplicationForm", "Print error: " + e.getMessage());
-            }
-        });
-
-        builder.setNegativeButton("বন্ধ", (dialog, which) -> {
-            dialog.dismiss();
-            showStartupScreen();
-        });
-
-        AlertDialog dialog = builder.create();
-
-        dialog.setOnShowListener(dlg -> {
-            Log.d("ApplicationForm", "Dialog shown");
-            showKeyboardForWebView(applicationWebView);
-        });
-
-        dialog.setOnCancelListener(d -> {
-            Log.d("ApplicationForm", "Dialog cancelled");
-            showStartupScreen();
-        });
-
-        dialog.show();
-
-        // Load HTML
-        try {
-            Log.d("ApplicationForm", "Loading HTML from assets...");
-            applicationWebView.loadUrl("file:///android_asset/application_form.html");
         } catch (Exception e) {
-            Log.e("ApplicationForm", "Error loading HTML: " + e.getMessage());
-            if (applicationFormHelper != null) {
-                applicationFormHelper.showError("Failed to load application form: " + e.getMessage());
-            }
+            Log.e("ApplicationForm", "openApplicationForm error: " + e.getMessage());
+            Toast.makeText(this, "Error opening application form", Toast.LENGTH_SHORT).show();
+            showStartupScreen();
         }
-
-    } catch (Exception e) {
-        Log.e("ApplicationForm", "openApplicationForm error: " + e.getMessage());
-        Toast.makeText(this, "Error opening application form", Toast.LENGTH_SHORT).show();
-        showStartupScreen();
     }
-}
 
     private void showKeyboardForWebView(final WebView webView) {
         if (webView != null) {
@@ -1079,7 +1084,7 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     webView.evaluateJavascript("javascript:document.getElementById('searchInput').focus();", null);
                     webView.requestFocus();
-                    
+
                     InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
                     if (imm != null) {
                         imm.showSoftInput(webView, InputMethodManager.SHOW_IMPLICIT);
@@ -1096,7 +1101,7 @@ public class MainActivity extends AppCompatActivity {
         if (applicationFormHelper != null) {
             applicationFormHelper.showLoading();
         }
-        
+
         new Thread(() -> {
             try {
                 Map<String, Object> result = fetchDataBasedOnType(inputNumber);
