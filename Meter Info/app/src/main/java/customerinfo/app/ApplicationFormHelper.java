@@ -4,11 +4,11 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import java.util.*;
 
-public class ApplicationHelper {
+public class ApplicationFormHelper {
     
     private MainActivity mainActivity;
     
-    public ApplicationHelper(MainActivity mainActivity) {
+    public ApplicationFormHelper(MainActivity mainActivity) {
         this.mainActivity = mainActivity;
     }
     
@@ -20,7 +20,7 @@ public class ApplicationHelper {
         Map<String, Object> result = new HashMap<>();
         
         try {
-            System.out.println("🔍 APPLICATION HELPER: Fetching " + type + " data for: " + inputNumber);
+            System.out.println("🔍 APPLICATION FORM HELPER: Fetching " + type + " data for: " + inputNumber);
             
             if ("prepaid".equals(type)) {
                 result = fetchPrepaidDataForApplication(inputNumber);
@@ -29,7 +29,7 @@ public class ApplicationHelper {
             }
             
         } catch (Exception e) {
-            System.out.println("❌ APPLICATION HELPER ERROR: " + e.getMessage());
+            System.out.println("❌ APPLICATION FORM HELPER ERROR: " + e.getMessage());
             result.put("error", "Data fetch failed: " + e.getMessage());
         }
         
@@ -412,6 +412,5 @@ public class ApplicationHelper {
                !trimmed.equals("{}") &&
                !trimmed.equals("undefined") &&
                !trimmed.equals("0");
-
     }
 }
