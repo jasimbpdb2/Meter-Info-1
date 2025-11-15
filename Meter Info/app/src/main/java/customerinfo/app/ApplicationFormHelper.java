@@ -7,19 +7,15 @@ import java.util.*;
 
 public class ApplicationFormHelper {
     
-    private String currentType; // ADD THIS to track current type
+    private String currentType;
     
     public ApplicationFormHelper() {
         // Empty constructor
     }
      
-    /**
-     * Main method to fetch data for application form
-     * Returns data in EXACT format expected by HTML
-     */
     public Map<String, Object> fetchDataForApplicationForm(String inputNumber, String type) {
         Map<String, Object> result = new HashMap<>();
-        this.currentType = type; // SET current type
+        this.currentType = type;
         
         try {
             System.out.println("🔍 APPLICATION FORM HELPER: Fetching " + type + " data for: " + inputNumber);
@@ -38,14 +34,10 @@ public class ApplicationFormHelper {
         return result;
     }
     
-    /**
-     * Fetch prepaid data in exact HTML format
-     */
     private Map<String, Object> fetchPrepaidDataForApplication(String meterNumber) {
         Map<String, Object> result = new HashMap<>();
         
         try {
-            // Step 1: Get consumer number from SERVER1
             Map<String, Object> server1Result = MainActivity.SERVER1Lookup(meterNumber);
             String consumerNumber = (String) server1Result.get("consumer_number");
             
@@ -54,7 +46,6 @@ public class ApplicationFormHelper {
                 return result;
             }
             
-            // Step 2: Get customer data from SERVER3 (includes SERVER2)
             Map<String, Object> server3Result = MainActivity.SERVER3Lookup(consumerNumber);
             
             if (server3Result.containsKey("error")) {
@@ -62,7 +53,6 @@ public class ApplicationFormHelper {
                 return result;
             }
             
-            // Step 3: Extract data in exact HTML format
             extractFormData(server3Result, server1Result, result, meterNumber, "prepaid");
             
         } catch (Exception e) {
@@ -72,14 +62,10 @@ public class ApplicationFormHelper {
         return result;
     }
     
-    /**
-     * Fetch postpaid data in exact HTML format
-     */
     private Map<String, Object> fetchPostpaidDataForApplication(String customerNumber) {
         Map<String, Object> result = new HashMap<>();
         
         try {
-            // Get customer data from SERVER3 (includes SERVER2)
             Map<String, Object> server3Result = MainActivity.SERVER3Lookup(customerNumber);
             
             if (server3Result.containsKey("error")) {
@@ -87,7 +73,6 @@ public class ApplicationFormHelper {
                 return result;
             }
             
-            // Extract data in exact HTML format
             extractFormData(server3Result, null, result, customerNumber, "postpaid");
             
         } catch (Exception e) {
@@ -97,9 +82,6 @@ public class ApplicationFormHelper {
         return result;
     }
     
-    /**
-     * Extract data in EXACT format expected by HTML form
-     */
     private void extractFormData(Map<String, Object> server3Result, 
                                 Map<String, Object> server1Result, 
                                 Map<String, Object> result, 
@@ -114,17 +96,12 @@ public class ApplicationFormHelper {
                 server2Data = (JSONObject) server2DataObj;
             }
             
-            // Extract customer information in EXACT HTML field names
             extractCustomerInfo(server3Data, server2Data, server1Result, result, inputNumber, type);
-            
-            // Extract balance/arrear information
             extractBalanceInfo(server3Data, server2Data, result);
             
-            // Extract recharge history for prepaid
             if ("prepaid".equals(type) && server1Result != null) {
                 extractRechargeHistory(server1Result, result);
             } else {
-                // For postpaid or if no recharge data, create empty recharge array
                 result.put("recharges", new ArrayList<>());
             }
             
@@ -134,23 +111,17 @@ public class ApplicationFormHelper {
         }
     }
     
-    /**
-     * Extract customer info in EXACT HTML field names
-     */
     private void extractCustomerInfo(JSONObject server3Data, JSONObject server2Data, 
                                    Map<String, Object> server1Result, 
                                    Map<String, Object> result, 
                                    String inputNumber, String type) {
-        // These field names MUST match your HTML element IDs
         Map<String, String> customerInfo = new HashMap<>();
         
-        // From SERVER3 (primary source)
         if (server3Data != null) {
             customerInfo.put("customer_name", server3Data.optString("customerName", ""));
             customerInfo.put("father_name", server3Data.optString("fatherName", ""));
             customerInfo.put("address", server3Data.optString("customerAddr", ""));
             
-            // FIXED: Conditional meter number logic
             if ("prepaid".equals(type)) {
                 customerInfo.put("meter_no", inputNumber);
             } else {
@@ -160,7 +131,6 @@ public class ApplicationFormHelper {
             customerInfo.put("consumer_no", server3Data.optString("customerNumber", ""));
         }
         
-        // FIXED: Extract mobile number from SERVER1 for prepaid
         if ("prepaid".equals(type) && server1Result != null) {
             try {
                 Object server1DataObj = server1Result.get("SERVER1_data");
@@ -176,9 +146,7 @@ public class ApplicationFormHelper {
             }
         }
         
-        // Supplement with SERVER2 data for mobile number (postpaid)
         if (server2Data != null && !server2Data.has("error")) {
-            // Extract mobile number from SERVER2 balanceInfo for postpaid
             if ("postpaid".equals(type) && server2Data.has("balanceInfo")) {
                 try {
                     JSONObject balanceInfo = server2Data.getJSONObject("balanceInfo");
@@ -194,7 +162,6 @@ public class ApplicationFormHelper {
                 }
             }
             
-            // Supplement missing fields from SERVER2 customerInfo
             if (server2Data.has("customerInfo")) {
                 try {
                     JSONArray customerInfoArray = server2Data.getJSONArray("customerInfo");
@@ -220,7 +187,6 @@ public class ApplicationFormHelper {
             }
         }
         
-        // Clean and validate all fields
         for (Map.Entry<String, String> entry : customerInfo.entrySet()) {
             String value = entry.getValue();
             if (value == null || value.equals("null") || value.isEmpty()) {
@@ -228,16 +194,11 @@ public class ApplicationFormHelper {
             }
         }
         
-        // Put all customer info into result (EXACT field names for HTML)
         result.putAll(customerInfo);
     }
     
-    /**
-     * Extract mobile number from SERVER1 response for prepaid
-     */
     private String extractMobileFromSERVER1(String responseBody) {
         try {
-            // Look for customerPhone pattern in SERVER1 response
             int phoneIndex = responseBody.indexOf("\"customerPhone\":{\"_text\":\"");
             if (phoneIndex != -1) {
                 int valueStart = phoneIndex + "\"customerPhone\":{\"_text\":\"".length();
@@ -255,29 +216,9 @@ public class ApplicationFormHelper {
         return "";
     }
     
-    // ... REST OF YOUR METHODS STAY THE SAME (extractBalanceInfo, extractRechargeHistory, etc.)
-    // Just copy the remaining methods from your original code
-}
-        
-        // Clean and validate all fields
-        for (Map.Entry<String, String> entry : customerInfo.entrySet()) {
-            String value = entry.getValue();
-            if (value == null || value.equals("null") || value.isEmpty()) {
-                customerInfo.put(entry.getKey(), "");
-            }
-        }
-        
-        // Put all customer info into result (EXACT field names for HTML)
-        result.putAll(customerInfo);
-    }
-    
-    /**
-     * Extract balance/arrear information
-     */
     private void extractBalanceInfo(JSONObject server3Data, JSONObject server2Data, Map<String, Object> result) {
         String arrearAmount = "";
         
-        // Try SERVER2 finalBalanceInfo first
         if (server2Data != null && server2Data.has("finalBalanceInfo")) {
             String balanceString = server2Data.optString("finalBalanceInfo");
             if (isValidValue(balanceString)) {
@@ -285,7 +226,6 @@ public class ApplicationFormHelper {
             }
         }
         
-        // Try SERVER2 balanceInfo object
         if (arrearAmount.isEmpty() && server2Data != null && server2Data.has("balanceInfo")) {
             try {
                 JSONObject balanceInfo = server2Data.getJSONObject("balanceInfo");
@@ -296,14 +236,11 @@ public class ApplicationFormHelper {
                         arrearAmount = String.format("%.0f", totalBalance);
                     }
                 }
-            } catch (JSONException e) {
-                System.out.println("❌ JSON Error parsing balanceInfo: " + e.getMessage());
             } catch (Exception e) {
                 System.out.println("❌ Error parsing balanceInfo: " + e.getMessage());
             }
         }
         
-        // Fallback to SERVER3 arrearAmount
         if (arrearAmount.isEmpty() && server3Data != null && server3Data.has("arrearAmount")) {
             String server3Arrear = server3Data.optString("arrearAmount");
             if (isValidValue(server3Arrear) && !server3Arrear.equals("0") && !server3Arrear.equals("0.00")) {
@@ -311,7 +248,6 @@ public class ApplicationFormHelper {
             }
         }
         
-        // Clean arrear amount
         if (arrearAmount.equals("0") || arrearAmount.equals("0.00") || arrearAmount.isEmpty()) {
             arrearAmount = "";
         }
@@ -319,9 +255,6 @@ public class ApplicationFormHelper {
         result.put("arrear", arrearAmount);
     }
     
-    /**
-     * Extract recharge history for prepaid
-     */
     private void extractRechargeHistory(Map<String, Object> server1Result, Map<String, Object> result) {
         List<Map<String, String>> recharges = new ArrayList<>();
         
@@ -335,14 +268,10 @@ public class ApplicationFormHelper {
             System.out.println("❌ Error extracting recharge history: " + e.getMessage());
         }
         
-        // Limit to last 4 recharges as per HTML table
         int maxRecharges = Math.min(recharges.size(), 4);
         result.put("recharges", recharges.subList(0, maxRecharges));
     }
     
-    /**
-     * Extract recharge transactions from SERVER1 response
-     */
     private List<Map<String, String>> extractRechargeTransactions(String responseBody) {
         List<Map<String, String>> transactions = new ArrayList<>();
         
@@ -350,17 +279,14 @@ public class ApplicationFormHelper {
             int index = 0;
             int count = 0;
             
-            while (index != -1 && count < 10) { // Limit to 10 for safety
-                // Look for token pattern
+            while (index != -1 && count < 10) {
                 index = responseBody.indexOf("\"tokens\":{\"_text\":\"", index);
                 if (index == -1) break;
                 
-                // Extract token
                 int tokenStart = index + "\"tokens\":{\"_text\":\"".length();
                 int tokenEnd = responseBody.indexOf("\"", tokenStart);
                 
                 if (tokenEnd != -1) {
-                    // Extract transaction fields around this token
                     Map<String, String> transaction = extractTransactionFields(responseBody, index);
                     transactions.add(transaction);
                     count++;
@@ -376,9 +302,6 @@ public class ApplicationFormHelper {
         return transactions;
     }
     
-    /**
-     * Extract transaction fields (Date and Amount only - as per HTML table)
-     */
     private Map<String, String> extractTransactionFields(String response, int tokenPosition) {
         Map<String, String> transaction = new HashMap<>();
         
@@ -387,11 +310,9 @@ public class ApplicationFormHelper {
             int searchEnd = Math.min(response.length(), tokenPosition + 200);
             String searchArea = response.substring(searchStart, searchEnd);
             
-            // Extract only Date and Amount (as per your HTML table columns)
             String date = extractExactValue(searchArea, "date");
             String amount = extractExactValue(searchArea, "grossAmount");
             
-            // Format for HTML display
             transaction.put("Date", formatDateForDisplay(date));
             transaction.put("Amount", formatAmountForDisplay(amount));
             
@@ -402,20 +323,13 @@ public class ApplicationFormHelper {
         return transaction;
     }
     
-    /**
-     * Format date for display
-     */
     private String formatDateForDisplay(String date) {
         if (date == null || date.equals("N/A") || date.isEmpty()) {
             return "";
         }
-        // Simple date formatting - you can enhance this
-        return date.replace("T", " ").split(" ")[0]; // Get only date part
+        return date.replace("T", " ").split(" ")[0];
     }
     
-    /**
-     * Format amount for display
-     */
     private String formatAmountForDisplay(String amount) {
         if (amount == null || amount.equals("N/A") || amount.isEmpty()) {
             return "";
@@ -423,21 +337,16 @@ public class ApplicationFormHelper {
         return "৳" + amount;
     }
     
-    /**
-     * Extract amount from balance string
-     */
     private String extractAmountFromBalance(String balanceString) {
         if (balanceString == null || balanceString.isEmpty() || balanceString.equals("null")) {
             return "";
         }
         
         try {
-            // If it's just a number, return it
             if (!balanceString.contains(",") && !balanceString.contains(":")) {
                 return balanceString.trim();
             }
             
-            // If it has breakdown, take the first part (total balance)
             String[] parts = balanceString.split(",");
             if (parts.length > 0) {
                 return parts[0].trim();
@@ -449,9 +358,6 @@ public class ApplicationFormHelper {
         return balanceString;
     }
     
-    /**
-     * Helper to extract exact value from JSON pattern
-     */
     private String extractExactValue(String text, String fieldName) {
         try {
             String pattern = "\"" + fieldName + "\":{\"_text\":\"";
@@ -469,9 +375,6 @@ public class ApplicationFormHelper {
         return "";
     }
     
-    /**
-     * Check if value is valid
-     */
     private boolean isValidValue(String value) {
         if (value == null) return false;
         
