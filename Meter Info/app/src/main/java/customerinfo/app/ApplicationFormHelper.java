@@ -7,7 +7,8 @@ import java.util.*;
 
 public class ApplicationFormHelper {
     
-    // FIXED: Added empty constructor with curly braces
+    private String currentType; // ADD THIS to track current type
+    
     public ApplicationFormHelper() {
         // Empty constructor
     }
@@ -18,6 +19,7 @@ public class ApplicationFormHelper {
      */
     public Map<String, Object> fetchDataForApplicationForm(String inputNumber, String type) {
         Map<String, Object> result = new HashMap<>();
+        this.currentType = type; // SET current type
         
         try {
             System.out.println("🔍 APPLICATION FORM HELPER: Fetching " + type + " data for: " + inputNumber);
@@ -61,7 +63,7 @@ public class ApplicationFormHelper {
             }
             
             // Step 3: Extract data in exact HTML format
-            extractFormData(server3Result, server1Result, result, "prepaid");
+            extractFormData(server3Result, server1Result, result, meterNumber, "prepaid");
             
         } catch (Exception e) {
             result.put("error", "ডেটা প্রসেসিং ব্যর্থ: " + e.getMessage());
@@ -86,7 +88,7 @@ public class ApplicationFormHelper {
             }
             
             // Extract data in exact HTML format
-            extractFormData(server3Result, null, result, "postpaid");
+            extractFormData(server3Result, null, result, customerNumber, "postpaid");
             
         } catch (Exception e) {
             result.put("error", "ডেটা প্রসেসিং ব্যর্থ: " + e.getMessage());
@@ -101,6 +103,7 @@ public class ApplicationFormHelper {
     private void extractFormData(Map<String, Object> server3Result, 
                                 Map<String, Object> server1Result, 
                                 Map<String, Object> result, 
+                                String inputNumber,
                                 String type) {
         try {
             JSONObject server3Data = (JSONObject) server3Result.get("SERVER3_data");
@@ -112,7 +115,7 @@ public class ApplicationFormHelper {
             }
             
             // Extract customer information in EXACT HTML field names
-            extractCustomerInfo(server3Data, server2Data, result);
+            extractCustomerInfo(server3Data, server2Data, server1Result, result, inputNumber, type);
             
             // Extract balance/arrear information
             extractBalanceInfo(server3Data, server2Data, result);
@@ -134,7 +137,10 @@ public class ApplicationFormHelper {
     /**
      * Extract customer info in EXACT HTML field names
      */
-    private void extractCustomerInfo(JSONObject server3Data, JSONObject server2Data, Map<String, Object> result) {
+    private void extractCustomerInfo(JSONObject server3Data, JSONObject server2Data, 
+                                   Map<String, Object> server1Result, 
+                                   Map<String, Object> result, 
+                                   String inputNumber, String type) {
         // These field names MUST match your HTML element IDs
         Map<String, String> customerInfo = new HashMap<>();
         
@@ -143,14 +149,37 @@ public class ApplicationFormHelper {
             customerInfo.put("customer_name", server3Data.optString("customerName", ""));
             customerInfo.put("father_name", server3Data.optString("fatherName", ""));
             customerInfo.put("address", server3Data.optString("customerAddr", ""));
-            customerInfo.put("meter_no", server3Data.optString("meterNum", ""));
+            
+            // FIXED: Conditional meter number logic
+            if ("prepaid".equals(type)) {
+                customerInfo.put("meter_no", inputNumber);
+            } else {
+                customerInfo.put("meter_no", server3Data.optString("meterNum", ""));
+            }
+            
             customerInfo.put("consumer_no", server3Data.optString("customerNumber", ""));
         }
         
-        // Supplement with SERVER2 data
+        // FIXED: Extract mobile number from SERVER1 for prepaid
+        if ("prepaid".equals(type) && server1Result != null) {
+            try {
+                Object server1DataObj = server1Result.get("SERVER1_data");
+                if (server1DataObj instanceof String) {
+                    String responseBody = (String) server1DataObj;
+                    String mobileNo = extractMobileFromSERVER1(responseBody);
+                    if (!mobileNo.isEmpty()) {
+                        customerInfo.put("mobile_no", mobileNo);
+                    }
+                }
+            } catch (Exception e) {
+                System.out.println("❌ Error extracting mobile from SERVER1: " + e.getMessage());
+            }
+        }
+        
+        // Supplement with SERVER2 data for mobile number (postpaid)
         if (server2Data != null && !server2Data.has("error")) {
-            // Extract mobile number from SERVER2 balanceInfo
-            if (server2Data.has("balanceInfo")) {
+            // Extract mobile number from SERVER2 balanceInfo for postpaid
+            if ("postpaid".equals(type) && server2Data.has("balanceInfo")) {
                 try {
                     JSONObject balanceInfo = server2Data.getJSONObject("balanceInfo");
                     if (balanceInfo.has("Result") && balanceInfo.getJSONArray("Result").length() > 0) {
@@ -161,11 +190,11 @@ public class ApplicationFormHelper {
                         }
                     }
                 } catch (Exception e) {
-                    // Ignore mobile number extraction errors
+                    System.out.println("❌ Error extracting mobile from SERVER2: " + e.getMessage());
                 }
             }
             
-            // Supplement missing fields from SERVER2 customerInfo - FIXED with try-catch
+            // Supplement missing fields from SERVER2 customerInfo
             if (server2Data.has("customerInfo")) {
                 try {
                     JSONArray customerInfoArray = server2Data.getJSONArray("customerInfo");
@@ -185,13 +214,50 @@ public class ApplicationFormHelper {
                             customerInfo.put("consumer_no", customer.optString("CUSTOMER_NUMBER", ""));
                         }
                     }
-                } catch (JSONException e) {
-                    System.out.println("❌ JSON Error extracting customerInfo: " + e.getMessage());
                 } catch (Exception e) {
                     System.out.println("❌ Error extracting customerInfo: " + e.getMessage());
                 }
             }
         }
+        
+        // Clean and validate all fields
+        for (Map.Entry<String, String> entry : customerInfo.entrySet()) {
+            String value = entry.getValue();
+            if (value == null || value.equals("null") || value.isEmpty()) {
+                customerInfo.put(entry.getKey(), "");
+            }
+        }
+        
+        // Put all customer info into result (EXACT field names for HTML)
+        result.putAll(customerInfo);
+    }
+    
+    /**
+     * Extract mobile number from SERVER1 response for prepaid
+     */
+    private String extractMobileFromSERVER1(String responseBody) {
+        try {
+            // Look for customerPhone pattern in SERVER1 response
+            int phoneIndex = responseBody.indexOf("\"customerPhone\":{\"_text\":\"");
+            if (phoneIndex != -1) {
+                int valueStart = phoneIndex + "\"customerPhone\":{\"_text\":\"".length();
+                int valueEnd = responseBody.indexOf("\"", valueStart);
+                if (valueEnd != -1) {
+                    String mobileNo = responseBody.substring(valueStart, valueEnd);
+                    if (!mobileNo.isEmpty() && !mobileNo.equals("null")) {
+                        return mobileNo;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("❌ Error extracting mobile from SERVER1: " + e.getMessage());
+        }
+        return "";
+    }
+    
+    // ... REST OF YOUR METHODS STAY THE SAME (extractBalanceInfo, extractRechargeHistory, etc.)
+    // Just copy the remaining methods from your original code
+}
         
         // Clean and validate all fields
         for (Map.Entry<String, String> entry : customerInfo.entrySet()) {
