@@ -54,6 +54,8 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+import android.view.inputmethod.InputMethodManager;
+import android.content.Context;
 
 import org.apache.commons.math3.linear.ConjugateGradient;
 import org.apache.logging.log4j.message.ParameterizedMessage;
