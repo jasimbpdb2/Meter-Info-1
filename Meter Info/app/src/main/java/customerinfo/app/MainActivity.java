@@ -36,7 +36,11 @@ import android.os.Environment;
 import android.content.Intent;
 import android.net.Uri;
 import android.provider.Settings;
-
+// Add these imports at the top with your other imports
+import android.webkit.WebView;
+import android.webkit.WebSettings;
+import android.webkit.WebViewClient;
+import androidx.appcompat.app.AlertDialog;
 public class MainActivity extends AppCompatActivity {
 
     private EditText meterInput;
