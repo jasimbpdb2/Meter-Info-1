@@ -11,13 +11,13 @@ public class Home extends AppCompatActivity {
         setContentView(R.layout.home);
         
         Button lookupBtn = findViewById(R.id.lookupBtn);
-        Button htmlBtn = findViewById(R.id.htmlBtn);
+        Button applicationBtn = findViewById(R.id.applicationBtn); // CHANGED FROM htmlBtn
         
         lookupBtn.setOnClickListener(v -> {
             startActivity(new Intent(Home.this, MainActivity.class));
         });
         
-        htmlBtn.setOnClickListener(v -> {
+        applicationBtn.setOnClickListener(v -> {
             startActivity(new Intent(Home.this, HtmlActivity.class));
         });
     }
