@@ -1,4 +1,4 @@
-name: Android CI
+name: Android Build
 
 on:
   push:
@@ -21,61 +21,19 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
-    - name: Fix gradlew shebang line
+    - name: Fix and build
       working-directory: "./Meter Info"
       run: |
-        echo "=== Fixing Termux shebang to standard Linux shebang ==="
-        # Replace the Termux shebang with standard Linux shebang
-        sed -i '1s|.*|#!/usr/bin/env sh|' gradlew
-        
-        echo "=== Making gradlew executable ==="
+        # Fix gradlew
+        sed -i '1s|.*|#!/usr/bin/env bash|' gradlew
         chmod +x gradlew
         
-        echo "=== Testing gradlew with correct command ==="
-        ./gradlew --version || echo "Gradle version check completed"
+        # Build directly without clean
+        ./gradlew :app:assembleDebug
 
-    - name: Clean project
-      working-directory: "./Meter Info"
-      run: |
-        echo "=== Cleaning project ==="
-        ./gradlew clean --no-daemon
-
-    - name: Build Debug APK
-      working-directory: "./Meter Info"
-      run: |
-        echo "=== Building Debug APK ==="
-        ./gradlew assembleDebug --no-daemon --stacktrace
-        
-        echo "=== APK Files Created ==="
-        ls -la app/build/outputs/apk/debug/ || echo "No debug APK files found"
-
-    - name: Build Release APK
-      working-directory: "./Meter Info"
-      run: |
-        echo "=== Building Release APK ==="
-        ./gradlew assembleRelease --no-daemon --stacktrace
-        
-        echo "=== Release APK Files ==="
-        ls -la app/build/outputs/apk/release/ || echo "No release APK files found"
-
-    - name: Upload Debug APK
-      if: success()
+    - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: app-debug
         path: "Meter Info/app/build/outputs/apk/debug/*.apk"
         retention-days: 7
-
-    - name: Upload Release APK
-      if: success()
-      uses: actions/upload-artifact@v4
-      with:
-        name: app-release
-        path: "Meter Info/app/build/outputs/apk/release/*.apk"
-        retention-days: 7
-
-    - name: Show build summary
-      run: |
-        echo "🎉 Build completed successfully!"
-        echo "📱 APK files available in the Artifacts section above"
-        echo "⬇️ Download the APK to install on your Android device"
