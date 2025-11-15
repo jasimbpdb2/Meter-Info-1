@@ -14,14 +14,6 @@
             margin-bottom: 20px;
             border: 1px solid #dee2e6;
         }
-        <input type="text"
-       id="searchInput"
-       class="search-input"
-       placeholder="মিটার নং বা গ্রাহক নং লিখুন"
-       autofocus
-       autocapitalize="none"
-       autocorrect="off"
-       inputmode="numeric">
 
         .type-selector {
             display: flex;
@@ -96,6 +88,16 @@
         .form-section {
             display: none;
         }
+
+        .debug-info {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #6c757d;
+        }
     </style>
 </head>
 <body>
@@ -104,13 +106,18 @@
     <div class="search-section" id="searchSection">
         <h2>গ্রাহক তথ্য খুঁজুন</h2>
 
+        <div class="debug-info" id="debugInfo">
+            <strong>ডিবাগ তথ্য:</strong>
+            <div id="debugLog"></div>
+        </div>
+
         <div class="type-selector">
             <div class="type-btn active" id="prepaidBtn" onclick="selectType('prepaid')">প্রিপেইড</div>
             <div class="type-btn" id="postpaidBtn" onclick="selectType('postpaid')">পোস্টপেইড</div>
         </div>
 
         <div class="search-row">
-            <input type="text" id="searchInput" class="search-input" placeholder="মিটার নং বা গ্রাহক নং লিখুন">
+            <input type="text" id="searchInput" class="search-input" placeholder="মিটার নং বা গ্রাহক নং লিখুন" autofocus autocapitalize="none" autocorrect="off" inputmode="numeric">
             <button onclick="fetchData()" id="searchBtn" class="search-btn">খুঁজুন</button>
         </div>
 
@@ -125,7 +132,7 @@
             <p>
                 নির্বাহী প্রকৌশলী<br>
                 বিক্রয় ও বিতরণ বিভাগ<br>
-                বিদ্যুৎ উন্নয়ন বোর্ড, সুনামগঞ্জ।
+                বিদ্যুৎ উন্নয়ন বোড, সুনামগঞ্জ।
             </p>
         </div>
 
@@ -142,6 +149,54 @@
 <script>
     let selectedType = 'prepaid';
 
+    // Debug logging function
+    function debugLog(message) {
+        console.log('🔍 DEBUG:', message);
+        const debugLog = document.getElementById('debugLog');
+        if (debugLog) {
+            const timestamp = new Date().toLocaleTimeString();
+            debugLog.innerHTML += `[${timestamp}] ${message}<br>`;
+            debugLog.scrollTop = debugLog.scrollHeight;
+        }
+    }
+
+    // Debug function to test Android interface
+    function testAndroidInterface() {
+        debugLog('Testing Android interface...');
+        
+        if (window.AndroidInterface) {
+            debugLog('✅ AndroidInterface is available');
+            
+            // Test the fetchData method
+            const testInput = "123456789012"; // test meter number
+            const testType = "prepaid";
+            
+            debugLog('Testing with: ' + testInput + ', ' + testType);
+            
+            try {
+                const result = AndroidInterface.fetchDataForApplication(testInput, testType);
+                debugLog('✅ fetchDataForApplication returned: ' + result);
+                
+                if (result) {
+                    const data = JSON.parse(result);
+                    debugLog('✅ Parsed data: ' + JSON.stringify(data));
+                    
+                    if (data.error) {
+                        debugLog('❌ Error: ' + data.error);
+                    } else {
+                        debugLog('✅ Success! Data received');
+                        // Auto-fill form if data is good
+                        fillFormWithData(data);
+                    }
+                }
+            } catch (e) {
+                debugLog('❌ Error calling AndroidInterface: ' + e);
+            }
+        } else {
+            debugLog('❌ AndroidInterface NOT available');
+        }
+    }
+
     function selectType(type) {
         selectedType = type;
         document.getElementById('prepaidBtn').classList.toggle('active', type === 'prepaid');
@@ -153,6 +208,8 @@
         } else {
             input.placeholder = 'গ্রাহক নং বা মিটার নং লিখুন';
         }
+        
+        debugLog('Type selected: ' + type);
     }
 
     function fetchData() {
@@ -164,36 +221,54 @@
 
         showLoading();
         hideError();
+        debugLog('Fetching data for: ' + input + ', type: ' + selectedType);
 
         if (window.AndroidInterface) {
-            console.log('Calling AndroidInterface with:', input, selectedType);
-            window.AndroidInterface.fetchDataForApplication(input, selectedType);
+            debugLog('Calling AndroidInterface...');
+            try {
+                const result = window.AndroidInterface.fetchDataForApplication(input, selectedType);
+                debugLog('Raw result received: ' + result);
+                
+                // Process the result
+                if (result) {
+                    try {
+                        const data = JSON.parse(result);
+                        debugLog('Parsed data successfully');
+                        fillFormWithData(data);
+                    } catch (parseError) {
+                        debugLog('Error parsing JSON: ' + parseError);
+                        showError('Data format error: ' + parseError);
+                    }
+                } else {
+                    debugLog('No result returned from Android');
+                    showError('No data received from app');
+                }
+            } catch (callError) {
+                debugLog('Error calling AndroidInterface: ' + callError);
+                showError('App communication error: ' + callError);
+            }
         } else {
-            console.log('AndroidInterface not available');
-            // Simulate timeout after 10 seconds
-            setTimeout(() => {
-                hideLoading();
-                showError('Connection failed: Android interface not available');
-            }, 10000);
+            debugLog('❌ AndroidInterface not available');
+            showError('Connection failed: Android interface not available');
         }
     }
 
     function showLoading() {
-        console.log('Showing loading...');
+        debugLog('Showing loading...');
         document.getElementById('loading').style.display = 'block';
         document.getElementById('searchBtn').disabled = true;
         document.getElementById('searchBtn').textContent = 'খুঁজছি...';
     }
 
     function hideLoading() {
-        console.log('Hiding loading...');
+        debugLog('Hiding loading...');
         document.getElementById('loading').style.display = 'none';
         document.getElementById('searchBtn').disabled = false;
         document.getElementById('searchBtn').textContent = 'খুঁজুন';
     }
 
     function showError(message) {
-        console.log('Showing error:', message);
+        debugLog('Showing error: ' + message);
         document.getElementById('error').textContent = message;
         document.getElementById('error').style.display = 'block';
         hideLoading();
@@ -208,9 +283,11 @@
         document.getElementById('formSection').style.display = 'none';
         clearForm();
         hideError();
+        debugLog('Returned to search section');
     }
 
     function closeForm() {
+        debugLog('Closing application...');
         if (window.AndroidInterface) {
             AndroidInterface.closeApplication();
         }
@@ -236,7 +313,7 @@
 
     // Function to be called from Android to fill form
     function fillFormWithData(data) {
-        console.log('Filling form with data:', data);
+        debugLog('Filling form with data: ' + JSON.stringify(data));
 
         // Always hide loading when data arrives
         hideLoading();
@@ -287,15 +364,22 @@
         // Show the form section
         document.getElementById('searchSection').style.display = 'none';
         document.getElementById('formSection').style.display = 'block';
+        debugLog('Form filled and displayed successfully');
     }
 
-    // Auto-focus on input
+    // Auto-focus on input and test Android interface
     document.addEventListener('DOMContentLoaded', function() {
+        debugLog('HTML page loaded');
+        
         setTimeout(function() {
             var input = document.getElementById('searchInput');
             if (input) {
                 input.focus();
+                debugLog('Input field focused');
             }
+            
+            // Test Android interface after page loads
+            setTimeout(testAndroidInterface, 500);
         }, 500);
     });
 
@@ -304,6 +388,11 @@
         if (e.key === 'Enter') {
             fetchData();
         }
+    });
+
+    // Add global error handler
+    window.addEventListener('error', function(e) {
+        debugLog('Global error: ' + e.message);
     });
 </script>
 </body>
