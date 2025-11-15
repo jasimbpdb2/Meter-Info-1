@@ -15,7 +15,7 @@
             font-family: 'Noto Sans Bengali', 'Arial', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 20px;
+            padding: 10px;
         }
 
         .container {
@@ -30,126 +30,119 @@
         .header {
             background: linear-gradient(135deg, #2c3e50, #34495e);
             color: white;
-            padding: 25px;
+            padding: 20px;
             text-align: center;
         }
 
         .header h1 {
-            font-size: 28px;
-            margin-bottom: 10px;
+            font-size: 24px;
+            margin-bottom: 8px;
             font-weight: 700;
         }
 
         .header p {
-            font-size: 16px;
+            font-size: 14px;
             opacity: 0.9;
         }
 
         .search-section {
-            padding: 25px;
+            padding: 20px;
             background: #f8f9fa;
             border-bottom: 1px solid #dee2e6;
         }
 
         .type-selector {
             display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
+            gap: 8px;
+            margin-bottom: 15px;
             background: white;
-            padding: 8px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 6px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
         .type-btn {
             flex: 1;
-            padding: 12px;
+            padding: 10px;
             border: none;
-            border-radius: 8px;
+            border-radius: 6px;
             background: white;
             cursor: pointer;
             text-align: center;
             font-family: inherit;
             font-weight: 600;
-            font-size: 14px;
+            font-size: 13px;
             transition: all 0.3s ease;
         }
 
         .type-btn.active {
             background: #007bff;
             color: white;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0,123,255,0.3);
+            box-shadow: 0 2px 8px rgba(0,123,255,0.3);
         }
 
         .search-row {
             display: flex;
-            gap: 12px;
+            gap: 10px;
             align-items: stretch;
         }
 
         .search-input {
             flex: 1;
-            padding: 15px;
+            padding: 12px;
             border: 2px solid #e9ecef;
-            border-radius: 10px;
+            border-radius: 8px;
             font-family: inherit;
             font-size: 16px;
             transition: all 0.3s ease;
             background: white;
+            font-size: 16px; /* Prevents zoom on iOS */
         }
 
         .search-input:focus {
             outline: none;
             border-color: #007bff;
             box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
-            transform: translateY(-1px);
         }
 
         .search-btn {
             background: linear-gradient(135deg, #28a745, #20c997);
             color: white;
             border: none;
-            padding: 15px 25px;
-            border-radius: 10px;
+            padding: 12px 20px;
+            border-radius: 8px;
             cursor: pointer;
             font-family: inherit;
             font-weight: 600;
-            font-size: 16px;
+            font-size: 15px;
             transition: all 0.3s ease;
-            min-width: 120px;
-        }
-
-        .search-btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(40,167,69,0.3);
+            min-width: 100px;
         }
 
         .search-btn:disabled {
             background: #6c757d;
             cursor: not-allowed;
-            transform: none;
         }
 
         .loading {
             display: none;
             text-align: center;
-            padding: 20px;
+            padding: 15px;
             background: #e3f2fd;
-            border-radius: 10px;
-            margin-top: 15px;
+            border-radius: 8px;
+            margin-top: 12px;
             color: #1976d2;
             font-weight: 600;
         }
 
         .loading-spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #1976d2;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #1976d2;
             border-radius: 50%;
-            width: 30px;
-            height: 30px;
+            width: 20px;
+            height: 20px;
             animation: spin 1s linear infinite;
-            margin: 0 auto 10px;
+            margin: 0 auto 8px;
         }
 
         @keyframes spin {
@@ -162,68 +155,67 @@
             color: #dc3545;
             background: #f8d7da;
             border: 1px solid #f5c6cb;
-            border-radius: 10px;
-            padding: 15px;
-            margin-top: 15px;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 12px;
             text-align: center;
             font-weight: 600;
+            font-size: 14px;
         }
 
         .data-section {
             display: none;
-            padding: 25px;
+            padding: 20px;
         }
 
         .info-card {
             background: white;
-            border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 20px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-            border-left: 5px solid #007bff;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.1);
+            border-left: 4px solid #007bff;
         }
 
         .info-title {
             color: #2c3e50;
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 700;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             display: flex;
             align-items: center;
-            gap: 10px;
-        }
-
-        .info-title::before {
-            content: "📋";
-            font-size: 24px;
+            gap: 8px;
         }
 
         .info-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
         }
 
         .info-item {
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 4px;
         }
 
         .info-label {
             font-weight: 600;
             color: #6c757d;
-            font-size: 14px;
+            font-size: 13px;
         }
 
         .info-value {
             font-weight: 600;
             color: #2c3e50;
-            font-size: 16px;
-            padding: 8px 12px;
+            font-size: 14px;
+            padding: 6px 10px;
             background: #f8f9fa;
-            border-radius: 6px;
+            border-radius: 5px;
             border: 1px solid #e9ecef;
+            min-height: 36px;
+            display: flex;
+            align-items: center;
         }
 
         .balance-card {
@@ -244,27 +236,27 @@
 
         .action-buttons {
             display: flex;
-            gap: 12px;
-            margin-top: 25px;
+            gap: 10px;
+            margin-top: 20px;
             flex-wrap: wrap;
         }
 
         .btn {
             flex: 1;
-            min-width: 120px;
-            padding: 15px;
+            min-width: 100px;
+            padding: 12px;
             border: none;
-            border-radius: 10px;
+            border-radius: 8px;
             cursor: pointer;
             font-family: inherit;
             font-weight: 600;
-            font-size: 16px;
+            font-size: 14px;
             transition: all 0.3s ease;
             text-align: center;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         .btn-print {
@@ -282,17 +274,6 @@
             color: white;
         }
 
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-            color: #6c757d;
-        }
-
         @media (max-width: 600px) {
             .search-row {
                 flex-direction: column;
@@ -305,33 +286,36 @@
             .info-grid {
                 grid-template-columns: 1fr;
             }
+            
+            body {
+                padding: 5px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
         <div class="header">
             <h1>বিদ্যুৎ গ্রাহক তথ্য</h1>
             <p>বাংলাদেশ বিদ্যুৎ উন্নয়ন বোর্ড</p>
         </div>
 
-        <!-- Search Section -->
         <div class="search-section" id="searchSection">
             <div class="type-selector">
-                <button class="type-btn active" id="prepaidBtn" onclick="selectType('prepaid')">প্রিপেইড মিটার</button>
-                <button class="type-btn" id="postpaidBtn" onclick="selectType('postpaid')">পোস্টপেইড মিটার</button>
+                <button class="type-btn active" id="prepaidBtn" onclick="selectType('prepaid')">প্রিপেইড</button>
+                <button class="type-btn" id="postpaidBtn" onclick="selectType('postpaid')">পোস্টপেইড</button>
             </div>
 
             <div class="search-row">
-                <input type="text" 
+                <input type="tel" 
                        id="searchInput" 
                        class="search-input" 
                        placeholder="১২ ডিজিটের মিটার নং লিখুন"
                        autofocus
-                       autocapitalize="none"
+                       autocapitalize="off"
                        autocorrect="off"
-                       inputmode="numeric">
+                       inputmode="numeric"
+                       pattern="[0-9]*">
                 <button onclick="fetchData()" id="searchBtn" class="search-btn">খুঁজুন</button>
             </div>
 
@@ -342,35 +326,21 @@
             <div class="error" id="error"></div>
         </div>
 
-        <!-- Data Display Section -->
         <div class="data-section" id="dataSection">
-            <!-- Customer Information -->
             <div class="info-card" id="customerInfoCard">
                 <div class="info-title">গ্রাহক তথ্য</div>
-                <div class="info-grid" id="customerInfoGrid">
-                    <!-- Customer info will be populated from Android -->
-                </div>
+                <div class="info-grid" id="customerInfoGrid"></div>
             </div>
 
-            <!-- Balance Information -->
             <div class="info-card balance-card" id="balanceInfoCard">
                 <div class="info-title">বিল ও ব্যালেন্স</div>
-                <div class="info-grid" id="balanceInfoGrid">
-                    <!-- Balance info will be populated from Android -->
-                </div>
+                <div class="info-grid" id="balanceInfoGrid"></div>
             </div>
 
-            <!-- Action Buttons -->
             <div class="action-buttons">
-                <button class="btn btn-print" onclick="printData()">
-                    <span>🖨️</span> প্রিন্ট করুন
-                </button>
-                <button class="btn btn-back" onclick="showSearchSection()">
-                    <span>←</span> নতুন খোঁজ
-                </button>
-                <button class="btn btn-close" onclick="closeApp()">
-                    <span>✕</span> বন্ধ করুন
-                </button>
+                <button class="btn btn-print" onclick="printData()">🖨️ প্রিন্ট</button>
+                <button class="btn btn-back" onclick="showSearchSection()">← নতুন খোঁজ</button>
+                <button class="btn btn-close" onclick="closeApp()">✕ বন্ধ</button>
             </div>
         </div>
     </div>
@@ -379,46 +349,52 @@
         let selectedType = 'prepaid';
         let currentData = null;
 
-        // Enhanced keyboard focus function
+        // Enhanced keyboard focus with multiple fallbacks
         function forceKeyboardFocus() {
             const input = document.getElementById('searchInput');
-            if (input) {
-                // Multiple focus attempts
+            if (!input) return;
+
+            console.log('Forcing keyboard focus...');
+            
+            // Method 1: Direct focus
+            input.focus();
+            input.select();
+            
+            // Method 2: Use click to trigger focus
+            input.click();
+            
+            // Method 3: Use setTimeout for delayed focus
+            setTimeout(() => {
                 input.focus();
                 input.select();
-                
-                // Create and dispatch focus events
+                input.click();
+            }, 100);
+            
+            // Method 4: Additional delayed attempts
+            setTimeout(() => {
+                input.focus();
+                input.select();
+                // Request Android keyboard
+                if (window.AndroidInterface) {
+                    AndroidInterface.showKeyboard();
+                }
+                if (window.KeyboardInterface) {
+                    KeyboardInterface.showKeyboard();
+                }
+            }, 300);
+            
+            // Method 5: Create and dispatch focus events
+            setTimeout(() => {
                 const focusEvent = new Event('focus', { bubbles: true });
                 input.dispatchEvent(focusEvent);
                 
-                // Touch event simulation for mobile
-                const touchEvent = new TouchEvent('touchstart', { 
-                    bubbles: true,
-                    cancelable: true,
-                    touches: [new Touch({ identifier: 1, target: input })]
-                });
-                input.dispatchEvent(touchEvent);
-                
-                // Additional methods
-                setTimeout(() => {
-                    input.focus();
-                    input.select();
-                    // Request Android to show keyboard
-                    if (window.AndroidInterface) {
-                        AndroidInterface.showKeyboard();
-                    }
-                }, 100);
-                
-                setTimeout(() => {
-                    input.focus();
-                    input.select();
-                }, 500);
-            }
+                const clickEvent = new Event('click', { bubbles: true });
+                input.dispatchEvent(clickEvent);
+            }, 500);
         }
 
-        // Function to be called from Android when page is ready
         function pageReady() {
-            console.log('Page ready - forcing keyboard focus');
+            console.log('Page ready - initializing keyboard');
             forceKeyboardFocus();
         }
 
@@ -428,57 +404,57 @@
             document.getElementById('postpaidBtn').classList.toggle('active', type === 'postpaid');
 
             const input = document.getElementById('searchInput');
-            if (type === 'prepaid') {
-                input.placeholder = '১২ ডিজিটের মিটার নং লিখুন';
-                input.setAttribute('inputmode', 'numeric');
-                input.setAttribute('pattern', '[0-9]*');
-            } else {
-                input.placeholder = 'গ্রাহক নং বা মিটার নং লিখুন';
-                input.setAttribute('inputmode', 'numeric');
-                input.setAttribute('pattern', '[0-9]*');
-            }
-            
-            // Clear input and refocus
+            const placeholder = type === 'prepaid' ? '১২ ডিজিটের মিটার নং লিখুন' : 'গ্রাহক নং বা মিটার নং লিখুন';
+            input.placeholder = placeholder;
             input.value = '';
+            
             forceKeyboardFocus();
         }
 
         function fetchData() {
-            const input = document.getElementById('searchInput').value.trim();
-            if (!input) {
+            const input = document.getElementById('searchInput');
+            const inputValue = input.value.trim();
+            
+            if (!inputValue) {
                 showError('দয়া করে মিটার নং বা গ্রাহক নং লিখুন!');
                 forceKeyboardFocus();
                 return;
             }
 
-            if (selectedType === 'prepaid' && input.length !== 12) {
+            if (selectedType === 'prepaid' && inputValue.length !== 12) {
                 showError('প্রিপেইড মিটার নং ১২ ডিজিটের হতে হবে!');
                 forceKeyboardFocus();
                 return;
             }
 
-            // Validate numeric input
-            if (!/^\d+$/.test(input)) {
+            if (!/^\d+$/.test(inputValue)) {
                 showError('দয়া করে শুধুমাত্র সংখ্যা লিখুন!');
                 forceKeyboardFocus();
                 return;
             }
 
+            console.log('Fetching data for:', inputValue, 'Type:', selectedType);
             showLoading();
             hideError();
 
-            // Call Android interface - this will call your Java method
+            // Call Android interface
             if (window.AndroidInterface) {
-                console.log('Calling AndroidInterface with:', input, selectedType);
-                window.AndroidInterface.fetchDataForApplication(input, selectedType);
+                try {
+                    window.AndroidInterface.fetchDataForApplication(inputValue, selectedType);
+                } catch (e) {
+                    console.error('Error calling AndroidInterface:', e);
+                    hideLoading();
+                    showError('Android interface error: ' + e.message);
+                }
             } else {
-                // No simulation - just show error
+                console.error('AndroidInterface not found');
                 hideLoading();
                 showError('Android interface not available');
             }
         }
 
         function fillDataDisplay(data) {
+            console.log('Received data for display:', data);
             currentData = data;
             
             // Populate customer information
@@ -487,8 +463,10 @@
             
             if (data.customer_info && Object.keys(data.customer_info).length > 0) {
                 for (const [key, value] of Object.entries(data.customer_info)) {
-                    const item = createInfoItem(key, value);
-                    customerGrid.appendChild(item);
+                    if (value && value !== 'N/A' && value !== 'null') {
+                        const item = createInfoItem(key, value);
+                        customerGrid.appendChild(item);
+                    }
                 }
                 document.getElementById('customerInfoCard').style.display = 'block';
             } else {
@@ -501,8 +479,10 @@
             
             if (data.balance_info && Object.keys(data.balance_info).length > 0) {
                 for (const [key, value] of Object.entries(data.balance_info)) {
-                    const item = createInfoItem(key, value);
-                    balanceGrid.appendChild(item);
+                    if (value && value !== 'N/A' && value !== 'null') {
+                        const item = createInfoItem(key, value);
+                        balanceGrid.appendChild(item);
+                    }
                 }
                 document.getElementById('balanceInfoCard').style.display = 'block';
             } else {
@@ -517,12 +497,10 @@
         function createInfoItem(label, value) {
             const itemDiv = document.createElement('div');
             itemDiv.className = 'info-item';
-            
             itemDiv.innerHTML = `
                 <div class="info-label">${label}</div>
-                <div class="info-value">${value || 'N/A'}</div>
+                <div class="info-value">${value}</div>
             `;
-            
             return itemDiv;
         }
 
@@ -531,8 +509,7 @@
             document.getElementById('dataSection').style.display = 'none';
             document.getElementById('searchInput').value = '';
             hideError();
-            // Force focus when returning to search
-            setTimeout(forceKeyboardFocus, 300);
+            setTimeout(forceKeyboardFocus, 100);
         }
 
         function printData() {
@@ -542,8 +519,6 @@
         function closeApp() {
             if (window.AndroidInterface) {
                 AndroidInterface.closeApplication();
-            } else {
-                alert('অ্যাপ বন্ধ করা হবে');
             }
         }
 
@@ -563,7 +538,6 @@
             document.getElementById('error').textContent = message;
             document.getElementById('error').style.display = 'block';
             hideLoading();
-            // Refocus on error
             setTimeout(forceKeyboardFocus, 100);
         }
 
@@ -571,70 +545,60 @@
             document.getElementById('error').style.display = 'none';
         }
 
-        // Function to be called from Android to fill data
+        // Function called from Android to fill data
         function fillFormWithData(data) {
-            console.log('Filling form with data:', data);
+            console.log('fillFormWithData called with:', data);
             hideLoading();
 
-            if (data.error) {
+            if (data && data.error) {
                 showError('ত্রুটি: ' + data.error);
+                return;
+            }
+
+            if (!data) {
+                showError('কোন ডেটা পাওয়া যায়নি');
                 return;
             }
 
             fillDataDisplay(data);
         }
 
-        // Enhanced event listeners
+        // Event listeners
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM loaded - initializing focus');
-            // Initial focus with delay
+            console.log('DOM loaded');
+            
+            // Multiple focus attempts on load
             setTimeout(forceKeyboardFocus, 100);
             setTimeout(forceKeyboardFocus, 500);
             setTimeout(forceKeyboardFocus, 1000);
             
-            // Allow Enter key to search
+            // Enter key support
             document.getElementById('searchInput').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     fetchData();
                 }
             });
 
-            // Refocus on input when touching anywhere on search section
-            document.getElementById('searchSection').addEventListener('click', function(e) {
-                if (e.target.id !== 'searchInput') {
-                    forceKeyboardFocus();
-                }
+            // Focus on any click in search section
+            document.getElementById('searchSection').addEventListener('click', function() {
+                forceKeyboardFocus();
             });
 
-            // Prevent form submission
-            document.addEventListener('submit', function(e) {
-                e.preventDefault();
+            // Handle paste events
+            document.getElementById('searchInput').addEventListener('paste', function(e) {
+                setTimeout(() => {
+                    const value = e.target.value.trim();
+                    if (value && /^\d+$/.test(value)) {
+                        // Auto-submit if valid number is pasted
+                        if ((selectedType === 'prepaid' && value.length === 12) || selectedType === 'postpaid') {
+                            setTimeout(() => fetchData(), 100);
+                        }
+                    }
+                }, 100);
             });
         });
 
-        // Additional focus triggers
-        window.addEventListener('load', function() {
-            console.log('Window loaded - forcing keyboard');
-            setTimeout(forceKeyboardFocus, 200);
-        });
-
-        window.addEventListener('focus', function() {
-            console.log('Window focused - forcing keyboard');
-            forceKeyboardFocus();
-        });
-
-        // Periodic focus to ensure keyboard stays up (less frequent to avoid annoyance)
-        setInterval(function() {
-            if (document.getElementById('searchSection').style.display !== 'none') {
-                const input = document.getElementById('searchInput');
-                if (input && document.activeElement !== input) {
-                    console.log('Periodic refocus');
-                    forceKeyboardFocus();
-                }
-            }
-        }, 3000);
-
-        // Call page ready immediately
+        // Call page ready
         pageReady();
     </script>
 </body>
