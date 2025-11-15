@@ -1,4 +1,4 @@
-name: Android Build
+name: Android Build (System Gradle)
 
 on:
   push:
@@ -21,15 +21,17 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
-    - name: Fix and build
+    - name: Install Gradle
+      run: |
+        wget https://services.gradle.org/distributions/gradle-8.2-bin.zip
+        sudo unzip -d /opt/gradle gradle-8.2-bin.zip
+        echo "GRADLE_HOME=/opt/gradle/gradle-8.2" >> $GITHUB_ENV
+        echo "/opt/gradle/gradle-8.2/bin" >> $GITHUB_PATH
+
+    - name: Build with system Gradle
       working-directory: "./Meter Info"
       run: |
-        # Fix gradlew
-        sed -i '1s|.*|#!/usr/bin/env bash|' gradlew
-        chmod +x gradlew
-        
-        # Build directly without clean
-        ./gradlew :app:assembleDebug
+        gradle :app:assembleDebug
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
