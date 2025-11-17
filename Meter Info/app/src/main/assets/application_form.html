@@ -6,87 +6,57 @@
     <title>আবেদনপত্র</title>
 
     <style>
-/* ===========================
-   Optimized for One-Page PDF
-   No change to screen display
-   =========================== */
-
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
-html, body {
-    height: 100%;
-    background: #f2f2f2;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: #222;
-}
-
-/* SCREEN VIEW — unchanged */
-.application-container {
-    width: 794px;
-    max-width: calc(100% - 40px);
-    margin: 36px auto;
-    background: #ffffff;
-    border: 1px solid rgba(0,0,0,0.08);
-    border-radius: 3px;
-    box-shadow: 0 12px 30px rgba(0,0,0,0.12);
-    padding: 40px 56px;
-    line-height: 1.55;
-    font-size: 16px;
-}
-
-/* Everything below here is ONLY for PDF/Print */
-@page {
-    size: A4;
-    margin: 8mm !important;        /* 🔥 smaller margin to fit one page */
-}
-
-@media print {
-
-    html, body {
-        background: #ffffff !important;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
+ body {
+        font-family: sans-serif;
+        margin: 10mm 12mm;
+        font-size: 14px;
+        line-height: 1.25;
     }
 
-    /* 🔥 Container compressed ONLY during print */
-    .application-container {
-        margin: 0 !important;
-        padding: 6mm 8mm !important;  /* 🔥 smaller internal padding */
-        width: auto !important;
-        box-shadow: none !important;
-        border: none !important;
-        line-height: 1.25 !important;  /* 🔥 tighter spacing */
-        font-size: 14px !important;    /* 🔥 reduce size slightly for PDF */
+    h1 {
+        text-align: center;
+        font-size: 22px;
+        margin-bottom: 3px;
     }
 
-    /* 🔥 Compress table spacing for print only */
-    .form-table td {
-        padding: 4px 6px !important;
+    .subtext {
+        text-align: center;
+        font-size: 14px;
+        margin-bottom: 10px;
+        margin-top: 0;
     }
 
-    .recharge-table th,
-    .recharge-table td {
-        padding: 4px 6px !important;
-        font-size: 12px !important;
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 4px;
     }
 
-    .notes li {
-        margin: 2px 0 !important;
-        line-height: 1.2 !important;
-        font-size: 13px !important;
+    td, th {
+        padding: 3px 2px;
+        vertical-align: top;
     }
 
-    .signature {
-        margin-top: 8px !important;
+    .label {
+        width: 42%;
+        font-weight: bold;
     }
 
-    /* Remove UI parts */
-    .search-section,
-    .action-buttons,
-    .debug-info {
-        display: none !important;
+    .section-title {
+        font-size: 16px;
+        font-weight: bold;
+        margin: 6px 0 4px 0;
     }
-}
+
+    .recharge-table th, .recharge-table td {
+        border: 1px solid #000;
+        padding: 4px;
+        text-align: center;
+    }
+
+    .checklist div {
+        margin-bottom: 3px;
+    }
     </style>
 </head>
 
@@ -118,35 +88,45 @@ html, body {
 
     <div class="form-section" id="formSection" style="display:none;">
 
-        <div class="header">
-            <h1>আবেদনপত্র</h1>
-            <p>নির্বাহী প্রকৌশলী<br>বিক্রয় ও বিতরণ বিভাগ<br>বিদ্যুৎ উন্নয়ন বোর্ড, সুনামগঞ্জ।</p>
-        </div>
+        <h1>আবেদনপত্র</h1>
+<div class="subtext">
+    নির্বাহী প্রকৌশলী<br>
+    বিক্রয় ও বিতরণ বিভাগ<br>
+    বিদ্যুৎ উন্নয়ন বোর্ড, সুনামগঞ্জ।
+</div>
 
-        <table class="form-table" role="presentation">
-            <tr><td>গ্রাহকের নামঃ</td><td id="customerName">-</td></tr>
-            <tr><td>পিতার নামঃ</td><td id="fatherName">-</td></tr>
-            <tr><td>ঠিকানাঃ</td><td id="address">-</td></tr>
-            <tr><td>মোবাইল নংঃ</td><td id="mobileNo">-</td></tr>
-            <tr><td>মিটার নংঃ</td><td id="meterNo">-</td></tr>
-            <tr><td>গ্রাহক নংঃ</td><td id="consumerNo">-</td></tr>
-            <tr><td>বকেয়া বিলের টাকাঃ</td><td id="arrear">কোনও বকেয়া নেই</td></tr>
-        </table>
+        <table>
+    <tr><td class="label">গ্রাহকের নামঃ</td><td id="customerName">-</td></tr>
+    <tr><td class="label">পিতার নামঃ</td><td id="fatherName">-</td></tr>
+    <tr><td class="label">ঠিকানাঃ</td><td id="address">-</td></tr>
+    <tr><td class="label">মোবাইল নংঃ</td><td id="mobileNo">-</td></tr>
+    <tr><td class="label">মিটার নংঃ</td><td id="meterNo">-</td></tr>
+    <tr><td class="label">গ্রাহক নং / হিসাব নংঃ</td><td id="consumerNo">-</td></tr>
+</table>
 
-        <div class="recharge-section">
-            <h3 style="font-size:16px;margin-bottom:8px;">সর্বশেষ রিচার্জের তথ্য (প্রিপেইড)</h3>
-            <table class="recharge-table" id="rechargeTable" aria-describedby="Recharge Table">
-                <thead>
-                <tr><th>তারিখ</th><th>টাকার পরিমাণ</th></tr>
-                </thead>
-                <tbody>
-                <tr><td>-</td><td>-</td></tr>
-                <tr><td>-</td><td>-</td></tr>
-                <tr><td>-</td><td>-</td></tr>
-                <tr><td>-</td><td>-</td></tr>
-                </tbody>
-            </table>
-        </div>
+<table>
+    <tr>
+        <td class="label">উক্ত হিসাবের বিপরীতে কোনো বকেয়া আছে কিনা</td>
+        <td id="arrear">কোনও বকেয়া নেই</td>
+    </tr>
+</table>
+
+<div class="section-title">সর্বশেষ রিচার্জের তথ্য (প্রিপেইড)</div>
+
+<table class="recharge-table" id="rechargeTable">
+    <thead>
+        <tr><th>তারিখ</th><th>টাকার পরিমাণ</th></tr>
+    </thead>
+    <tbody>
+        <tr><td>-</td><td>-</td></tr>
+        <tr><td>-</td><td>-</td></tr>
+        <tr><td>-</td><td>-</td></tr>
+    </tbody>
+</table>
+
+<br>
+
+<div class="section-title">সম্ভাব্য অভিযোগ (যে সমস্যার জন্য আবেদন করা হচ্ছে তা চেক করুন):</div>
 
         <section class="notes">
             <strong>সম্ভাব্য অভিযোগ (যে সমস্যার জন্য আবেদন করা হচ্ছে তা চেক করুন):</strong>
