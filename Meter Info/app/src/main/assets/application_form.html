@@ -273,6 +273,7 @@
 </div>
 
 <script>
+<script>
 // Add PDF save function (keeps original logic)
 function saveAsPDF() {
     if (window.AndroidInterface && AndroidInterface.saveAsPDF) {
@@ -284,7 +285,7 @@ function saveAsPDF() {
     }
 }
 
-/* ------- EXISTING JS LOGIC (kept identical) ------- */
+/* ------- UPDATED JS LOGIC TO MATCH JAVA DATA STRUCTURE ------- */
 let selectedType = 'prepaid';
 
 function debugLog(msg){
@@ -309,7 +310,10 @@ function fetchData(){
             const result=AndroidInterface.fetchDataForApplication(input,selectedType);
             const data=JSON.parse(result);
             fillFormWithData(data);
-        }catch(err){ showError("App error: "+err); }
+        }catch(err){ 
+            console.error("App error:", err);
+            showError("App error: " + err.message); 
+        }
     } else {
         showError("AndroidInterface not available");
     }
@@ -319,31 +323,44 @@ function fillFormWithData(data){
     hideLoading();
     if(data.error){ showError(data.error); return; }
 
-    document.getElementById("customerName").textContent=data.customer_name||"-";
-    document.getElementById("fatherName").textContent=data.father_name||"-";
-    document.getElementById("address").textContent=data.address||"-";
-    document.getElementById("mobileNo").textContent=data.mobile_no||"-";
-    document.getElementById("meterNo").textContent=data.meter_no||"-";
-    document.getElementById("consumerNo").textContent=data.consumer_no||"-";
+    // Safe element setting with null checks - using your Java field names
+    setElementContent("customerName", data.customer_name);
+    setElementContent("fatherName", data.father_name);
+    setElementContent("address", data.address);
+    setElementContent("mobileNo", data.mobile_no);
+    setElementContent("meterNo", data.meter_no);
+    
+    // Handle arrear
+    const arrearElement = document.getElementById("arrear");
+    if(arrearElement) {
+        arrearElement.textContent = (data.arrear && data.arrear!=="0" && data.arrear!=="") ? data.arrear : "কোনও বকেয়া নেই";
+    }
 
-    document.getElementById("arrear").textContent =
-        (data.arrear && data.arrear!=="0") ? data.arrear : "কোনও বকেয়া নেই";
-
-    // Fill recharge table
+    // Fill recharge table safely - using your Java field names
     const rechargeData = data.recharges || [];
     for (let i = 0; i < 3; i++) {
         const recharge = rechargeData[i];
         if (recharge) {
-            document.getElementById(`rechargeDate${i+1}`).textContent = recharge.Date || "-";
-            document.getElementById(`rechargeAmount${i+1}`).textContent = recharge.Amount || "-";
+            setElementContent(`rechargeDate${i+1}`, recharge.Date);
+            setElementContent(`rechargeAmount${i+1}`, recharge.Amount);
         } else {
-            document.getElementById(`rechargeDate${i+1}`).innerHTML = "&nbsp;";
-            document.getElementById(`rechargeAmount${i+1}`).innerHTML = "&nbsp;";
+            setElementContent(`rechargeDate${i+1}`, " ");
+            setElementContent(`rechargeAmount${i+1}`, " ");
         }
     }
 
     document.getElementById("searchSection").style.display="none";
     document.getElementById("formSection").style.display="block";
+}
+
+// Safe function to set element content
+function setElementContent(elementId, content) {
+    const element = document.getElementById(elementId);
+    if(element) {
+        element.textContent = content || "-";
+    } else {
+        console.warn("Element not found: " + elementId);
+    }
 }
 
 function showLoading(){
@@ -364,20 +381,28 @@ function showError(m){
     hideLoading();
 }
 
-function hideError(){ const e=document.getElementById("error"); if(e) e.style.display="none"; }
+function hideError(){ 
+    const e=document.getElementById("error"); 
+    if(e) e.style.display="none"; 
+}
 
 function showSearchSection(){
     document.getElementById("formSection").style.display="none";
     document.getElementById("searchSection").style.display="block";
+    // Clear search input
+    document.getElementById("searchInput").value = "";
+    hideError();
 }
 
 function closeForm(){
-    if(window.AndroidInterface){ AndroidInterface.closeApplication(); }
+    if(window.AndroidInterface){ 
+        AndroidInterface.closeApplication(); 
+    } else {
+        showSearchSection();
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     selectType(selectedType);
 });
 </script>
-</body>
-</html>
