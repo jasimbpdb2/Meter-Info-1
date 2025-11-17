@@ -6,63 +6,171 @@
     <title>আবেদনপত্র</title>
 
     <style>
- body {
-        font-family: sans-serif;
-        margin: 10mm 12mm;
-        font-size: 14px;
-        line-height: 1.25;
-    }
+        body {
+            font-family: "Shonar Bangla", serif;
+            margin: 0;
+            padding: 25px 40px;
+            font-size: 16px;
+            line-height: 1.6;
+        }
 
-    h1 {
-        text-align: center;
-        font-size: 22px;
-        margin-bottom: 3px;
-    }
+        /* Left-aligned office header */
+        .header {
+            text-align: left;
+            font-weight: bold;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
 
-    .subtext {
-        text-align: center;
-        font-size: 14px;
-        margin-bottom: 10px;
-        margin-top: 0;
-    }
+        /* Applicant info */
+        .info-line {
+            font-size: 17px;
+            margin-bottom: 5px;
+        }
+        .info-label {
+            font-weight: normal;
+        }
+        .info-value {
+            font-weight: bold;
+        }
 
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-bottom: 4px;
-    }
+        /* Title */
+        .title {
+            text-align: center;
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
 
-    td, th {
-        padding: 3px 2px;
-        vertical-align: top;
-    }
+        /* Complaint title box */
+        .complain-box {
+            border: 1px solid #000;
+            padding: 6px;
+            width: 50%;
+            margin: 10px auto 20px auto;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+        }
 
-    .label {
-        width: 42%;
-        font-weight: bold;
-    }
+        /* Two-column area: complaints left, recharge table right */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 65% 35%;
+            grid-gap: 10px;
+        }
 
-    .section-title {
-        font-size: 16px;
-        font-weight: bold;
-        margin: 6px 0 4px 0;
-    }
+        /* Complaints list */
+        .complaints p {
+            margin: 3px 0;
+            font-size: 17px;
+            font-weight: bold;
+        }
 
-    .recharge-table th, .recharge-table td {
-        border: 1px solid #000;
-        padding: 4px;
-        text-align: center;
-    }
+        /* Recharge section title */
+        .recharge-title {
+            text-align: center;
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
 
-    .checklist div {
-        margin-bottom: 3px;
-    }
+        /* Recharge Table */
+        .recharge-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 17px;
+        }
+        .recharge-table th, .recharge-table td {
+            border: 1px solid #000;
+            padding: 5px 8px;
+            text-align: center;
+            height: 26px;
+        }
+
+        /* Signature */
+        .signature {
+            text-align: right;
+            margin-top: 40px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        /* Search Section Styles */
+        .search-section {
+            margin-bottom: 20px;
+        }
+
+        .type-selector {
+            display: flex;
+            margin-bottom: 10px;
+        }
+
+        .type-btn {
+            padding: 8px 16px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+
+        .type-btn.active {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .search-row {
+            display: flex;
+            margin-bottom: 10px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 8px;
+            font-size: 16px;
+        }
+
+        .search-btn {
+            padding: 8px 16px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .loading {
+            display: none;
+            color: #007bff;
+        }
+
+        .error {
+            display: none;
+            color: #dc3545;
+        }
+
+        .action-buttons {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            margin: 5px;
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .form-section {
+            display: none;
+        }
     </style>
 </head>
 
 <body>
 <div class="application-container">
 
+    <!-- Search Section -->
     <div class="search-section" id="searchSection">
         <h2 style="font-size:16px;margin-bottom:8px;">গ্রাহক তথ্য খুঁজুন</h2>
 
@@ -86,74 +194,74 @@
         <div class="error" id="error"></div>
     </div>
 
-    <div class="form-section" id="formSection" style="display:none;">
+    <!-- Form Section -->
+    <div class="form-section" id="formSection">
 
-        <h1>আবেদনপত্র</h1>
-<div class="subtext">
-    নির্বাহী প্রকৌশলী<br>
-    বিক্রয় ও বিতরণ বিভাগ<br>
-    বিদ্যুৎ উন্নয়ন বোর্ড, সুনামগঞ্জ।
-</div>
+        <!-- Title -->
+        <div class="title">আবেদন পত্র</div>
 
-        <table>
-    <tr><td class="label">গ্রাহকের নামঃ</td><td id="customerName">-</td></tr>
-    <tr><td class="label">পিতার নামঃ</td><td id="fatherName">-</td></tr>
-    <tr><td class="label">ঠিকানাঃ</td><td id="address">-</td></tr>
-    <tr><td class="label">মোবাইল নংঃ</td><td id="mobileNo">-</td></tr>
-    <tr><td class="label">মিটার নংঃ</td><td id="meterNo">-</td></tr>
-    <tr><td class="label">গ্রাহক নং / হিসাব নংঃ</td><td id="consumerNo">-</td></tr>
-</table>
-
-<table>
-    <tr>
-        <td class="label">উক্ত হিসাবের বিপরীতে কোনো বকেয়া আছে কিনা</td>
-        <td id="arrear">কোনও বকেয়া নেই</td>
-    </tr>
-</table>
-
-<div class="section-title">সর্বশেষ রিচার্জের তথ্য (প্রিপেইড)</div>
-
-<table class="recharge-table" id="rechargeTable">
-    <thead>
-        <tr><th>তারিখ</th><th>টাকার পরিমাণ</th></tr>
-    </thead>
-    <tbody>
-        <tr><td>-</td><td>-</td></tr>
-        <tr><td>-</td><td>-</td></tr>
-        <tr><td>-</td><td>-</td></tr>
-    </tbody>
-</table>
-
-<br>
-
-<div class="section-title">সম্ভাব্য অভিযোগ (যে সমস্যার জন্য আবেদন করা হচ্ছে তা চেক করুন):</div>
-
-        <section class="notes">
-            <strong>সম্ভাব্য অভিযোগ (যে সমস্যার জন্য আবেদন করা হচ্ছে তা চেক করুন):</strong>
-            <ol>
-                <li><input type="checkbox"> লোড ছাড়াও মিটারে টাকা কাটে / মিটারে টাকা কাটে না</li>
-                <li><input type="checkbox"> মিটারের টুইস্ট টাইপ সীল / লীড / প্যাডলক সীল ভাঙা / চুরি হয়েছে</li>
-                <li><input type="checkbox"> মিটার ভেঙে / হারিয়ে / পুড়ে গেছে</li>
-                <li><input type="checkbox"> মিটার স্থানান্তর / পরিবর্তন করতে আগ্রহী</li>
-                <li><input type="checkbox"> মিটারের ডিসপ্লেতে ডিজিট এলোমেলো</li>
-                <li><input type="checkbox"> মিটার সিটি / পিটি নষ্ট হয়েছে</li>
-                <li><input type="checkbox"> মিটার কার্ড হারিয়ে গেছে</li>
-                <li><input type="checkbox"> মিটারের বাটন কাজ করছে না</li>
-                <li><input type="checkbox"> টার্মিনাল কভার খুলে ফেলেছি / অন্য কেউ খুলেছে</li>
-                <li><input type="checkbox"> মিটারে আউটপুট নেই</li>
-                <li><input type="checkbox"> মিটারে তারিখ / সময় ঠিক নেই</li>
-                <li><input type="checkbox"> নাম পরিবর্তন করা প্রয়োজন</li>
-                <li><input type="checkbox"> লোড বৃদ্ধি করা প্রয়োজন</li>
-                <li><input type="checkbox"> ব্যাটারি সমস্যা / লো-ভোল্টেজ সমস্যা</li>
-                <li><input type="checkbox"> মিটারে কোনো পাওয়ার নেই</li>
-                <li><input type="checkbox"> অন্যান্য .....................................................................................</li>
-            </ol>
-        </section>
-
-        <div class="signature">
-            <div class="sig-line">আবেদনকারীর স্বাক্ষর</div>
+        <!-- Office header (LEFT aligned) -->
+        <div class="header">
+            নির্বাহী প্রকৌশলী<br>
+            বিক্রয় ও বিতরণ বিভাগ<br>
+            বিদ্যুৎ উন্নয়ন বোর্ড<br>
+            সুনামগঞ্জ
         </div>
 
+        <!-- Applicant info -->
+        <div class="info-line"><span class="info-label">গ্রাহক/আবেদনকারীর নামঃ </span><span class="info-value" id="customerName">_____________</span></div>
+        <div class="info-line"><span class="info-label">পিতা/স্বামীর নামঃ </span><span class="info-value" id="fatherName">_____________</span></div>
+        <div class="info-line"><span class="info-label">ঠিকানাঃ </span><span class="info-value" id="address">_____________</span></div>
+        <div class="info-line"><span class="info-label">টেলিফোন নংঃ </span><span class="info-value" id="mobileNo">_____________</span></div>
+        <div class="info-line"><span class="info-label">মিটার নং/গ্রাহক নংঃ </span><span class="info-value" id="meterNo">_____________</span>   <b>বকেয়াঃ</b> <span id="arrear">________</span></div>
+
+        <!-- Complaint title box -->
+        <div class="complain-box">সম্ভাব্য অভিযোগ</div>
+
+        <!-- Grid: Left complaints & Right recharge table -->
+        <div class="content-grid">
+
+            <!-- LEFT SIDE: COMPLAINTS -->
+            <div class="complaints">
+                <p>১.  লোড ছাড়াও মিটারে টাকা কাটে / টাকা কাটে না</p>
+                <p>২.  মিটার টুইস্ট সীল/লীড/প্যাডলক সীল ভাঙ্গা / চুরি</p>
+                <p>৩.  মিটার ভেঙ্গে / হারিয়ে / পুড়ে গেছে</p>
+                <p>৪.  মিটার স্থানান্তর / পরিবর্তন করতে আগ্রহী</p>
+                <p>৫.  মিটারের ডিসপ্লেতে ডিজিট এলোমেলো</p>
+                <p>৬.  মিটার সিটি/পিটি নষ্ট</p>
+                <p>৭.  মিটার কার্ড হারিয়েছে</p>
+                <p>৮.  মিটারের বাটন কাজ করে না</p>
+                <p>৯.  টার্মিনাল কভার খুলে গেছে</p>
+                <p>১০. মিটারে আউটপুট নেই</p>
+                <p>১১. মিটারে ডেট/টাইম সঠিক না</p>
+                <p>১২. নাম পরিবর্তন প্রয়োজন</p>
+                <p>১৩. লোড বৃদ্ধি প্রয়োজন</p>
+                <p>১৪. ব্যাটারি/লো-ভোল্টেজ সমস্যা</p>
+                <p>১৫. মিটারে কোন পাওয়ার নেই</p>
+                <p>১৬. অন্যান্য __________________________________________</p>
+            </div>
+
+            <!-- RIGHT SIDE: RECHARGE TABLE -->
+            <div>
+                <div class="recharge-title">সর্বশেষ রিচার্জের তথ্য</div>
+
+                <table class="recharge-table" id="rechargeTable">
+                    <tr><th>তারিখ</th><th>টাকার পরিমাণ</th></tr>
+                    <tr><td id="rechargeDate1">&nbsp;</td><td id="rechargeAmount1">&nbsp;</td></tr>
+                    <tr><td id="rechargeDate2">&nbsp;</td><td id="rechargeAmount2">&nbsp;</td></tr>
+                    <tr><td id="rechargeDate3">&nbsp;</td><td id="rechargeAmount3">&nbsp;</td></tr>
+                </table>
+            </div>
+
+        </div>
+
+        <!-- Signature -->
+        <div class="signature">
+            ...........................<br>
+            আবেদনকারীর সাক্ষর
+        </div>
+
+        <!-- Action Buttons -->
         <div class="action-buttons">
             <button class="btn" onclick="window.print()">🖨️ প্রিন্ট</button>
             <button class="btn" onclick="saveAsPDF()">📄 PDF সেভ</button>
@@ -221,19 +329,17 @@ function fillFormWithData(data){
     document.getElementById("arrear").textContent =
         (data.arrear && data.arrear!=="0") ? data.arrear : "কোনও বকেয়া নেই";
 
-    const tbody=document.getElementById("rechargeTable").querySelector("tbody");
-    tbody.innerHTML="";
-
-    let rechargeData = data.recharges || [];
-    let count = 0;
-
-    rechargeData.slice(0, 4).forEach(r=>{
-        tbody.innerHTML+=`<tr><td>${r.Date||"-"}</td><td>${r.Amount||"-"}</td></tr>`;
-        count++;
-    });
-
-    for (let i = count; i < 4; i++) {
-        tbody.innerHTML += `<tr><td>-</td><td>-</td></tr>`;
+    // Fill recharge table
+    const rechargeData = data.recharges || [];
+    for (let i = 0; i < 3; i++) {
+        const recharge = rechargeData[i];
+        if (recharge) {
+            document.getElementById(`rechargeDate${i+1}`).textContent = recharge.Date || "-";
+            document.getElementById(`rechargeAmount${i+1}`).textContent = recharge.Amount || "-";
+        } else {
+            document.getElementById(`rechargeDate${i+1}`).innerHTML = "&nbsp;";
+            document.getElementById(`rechargeAmount${i+1}`).innerHTML = "&nbsp;";
+        }
     }
 
     document.getElementById("searchSection").style.display="none";
