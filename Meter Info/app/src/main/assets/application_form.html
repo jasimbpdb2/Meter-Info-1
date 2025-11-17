@@ -7,264 +7,85 @@
 
     <style>
 /* ===========================
-   Word-like page styling
+   Optimized for One-Page PDF
+   No change to screen display
    =========================== */
 
-/* Keep all font/text choices exactly as before (no changes to content/font-family) */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
     height: 100%;
-    background: #f2f2f2; /* subtle page background outside the paper */
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* kept as in original */
+    background: #f2f2f2;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: #222;
 }
 
-/* The "paper" container — looks like a printed Word page */
+/* SCREEN VIEW — unchanged */
 .application-container {
-    width: 794px; /* ~A4 width at 96dpi (approx) */
+    width: 794px;
     max-width: calc(100% - 40px);
-    margin: 36px auto; /* space around the paper like Word does */
-    background: #ffffff; /* white paper */
+    margin: 36px auto;
+    background: #ffffff;
     border: 1px solid rgba(0,0,0,0.08);
     border-radius: 3px;
     box-shadow: 0 12px 30px rgba(0,0,0,0.12);
-    padding: 40px 56px; /* page margins inside the paper */
+    padding: 40px 56px;
     line-height: 1.55;
-    font-size: 16px; /* keep relative size comfortable */
-}
-
-/* Document header — similar to Word document header section */
-.header {
-    text-align: center;
-    margin-bottom: 18px;
-    border-bottom: 1px solid rgba(0,0,0,0.08);
-    padding-bottom: 12px;
-}
-
-.header h1 {
-    font-size: 26px;
-    font-weight: 700;
-    color: #111;
-    margin-bottom: 6px;
-}
-
-.header p {
-    font-size: 14px;
-    color: #333;
-    line-height: 1.45;
-}
-
-/* Search Section: kept but neutralized to not look like a web card */
-.search-section {
-    background: transparent;
-    padding: 0;
-    margin-bottom: 18px;
-    border: none;
-}
-
-/* Keep buttons readable but neutral — will look like Word controls */
-.type-selector {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 12px;
-}
-
-.type-btn {
-    padding: 8px 12px;
-    border-radius: 3px;
-    border: 1px solid rgba(0,0,0,0.08);
-    background: #f6f6f6;
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 14px;
-}
-
-.type-btn.active {
-    background: #e9ecef;
-    border-color: rgba(0,0,0,0.12);
-}
-
-/* Search input row */
-.search-row {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 6px;
-}
-
-.search-input {
-    flex: 1;
-    padding: 10px 12px;
-    border: 1px solid rgba(0,0,0,0.1);
-    border-radius: 3px;
-    background: #fff;
-    font-size: 15px;
-}
-
-.search-btn {
-    padding: 10px 16px;
-    border-radius: 3px;
-    border: none;
-    background: #e9ecef;
-    cursor: pointer;
-    font-weight: 600;
-}
-
-/* Info and debug panels kept minimal */
-.debug-info {
-    background: #fafafa;
-    border: 1px solid rgba(0,0,0,0.05);
-    padding: 10px;
-    font-size: 13px;
-    color: #444;
-    margin-top: 8px;
-    max-height: 120px;
-    overflow-y: auto;
-}
-
-/* Main form table — Word-like: borders, row backgrounds, bold labels */
-.form-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 18px;
     font-size: 16px;
 }
 
-.form-table tr:nth-child(even) td {
-    background: transparent; /* avoid heavy zebra, looks like Word by default */
-}
-
-.form-table td {
-    padding: 10px 12px;
-    vertical-align: top;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
-}
-
-/* Left column behaves like a field label in Word */
-.form-table td:first-child {
-    width: 34%;
-    font-weight: 700;
-    color: #111;
-    background: transparent;
-    border-right: none;
-}
-
-/* Value column */
-.form-table td:nth-child(2) {
-    color: #222;
-}
-
-/* If you want the 'বকেয়া' to stand out like a Word highlighted value */
-#arrear {
-    font-weight: 600;
-    color: #b22222; /* a subtle red to indicate arrear; you can keep original color */
-}
-
-/* Recharge (recharge-table) — make it like a simple Word table */
-.recharge-section { margin-top: 18px; }
-
-.recharge-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 15px;
-    margin-top: 8px;
-    border: 1px solid rgba(0,0,0,0.08);
-}
-
-.recharge-table th, .recharge-table td {
-    padding: 8px 10px;
-    border: 1px solid rgba(0,0,0,0.06);
-    text-align: center;
-}
-
-.recharge-table th {
-    background: #f3f3f3;
-    font-weight: 700;
-}
-
-/* Complaint list — keep checkboxes and text unchanged; only spacing adjusted */
-.notes {
-    margin-top: 18px;
-    background: transparent;
-    padding: 6px 0;
-    font-size: 15px;
-}
-
-.notes ol {
-    padding-left: 20px;
-}
-
-.notes li {
-    margin: 6px 0;
-}
-
-/* Signature */
-.signature {
-    margin-top: 26px;
-    text-align: right;
-}
-
-.sig-line {
-    display: inline-block;
-    border-top: 1px solid rgba(0,0,0,0.6);
-    width: 220px;
-    padding-top: 6px;
-    text-align: center;
-    font-size: 14px;
-}
-
-/* Action buttons at bottom — neutral like Word toolbar */
-.action-buttons {
-    display: flex;
-    gap: 10px;
-    justify-content: flex-end;
-    margin-top: 22px;
-}
-
-.btn {
-    padding: 8px 14px;
-    border-radius: 3px;
-    border: 1px solid rgba(0,0,0,0.08);
-    background: #f4f4f4;
-    cursor: pointer;
-    font-weight: 600;
-}
-
-/* Loading / error blocks */
-.loading {
-    display: none;
-    margin-top: 8px;
-    padding: 8px;
-    background: #fffbe6;
-    border: 1px solid rgba(0,0,0,0.06);
-}
-
-.error {
-    display: none;
-    margin-top: 8px;
-    padding: 8px;
-    background: #ffecec;
-    border: 1px solid rgba(0,0,0,0.06);
-    color: #9b1c1c;
-}
-
-/* Print friendly: margins and page breaks similar to Word */
+/* Everything below here is ONLY for PDF/Print */
 @page {
     size: A4;
-    margin: 20mm;
+    margin: 8mm !important;        /* 🔥 smaller margin to fit one page */
 }
 
 @media print {
-    html, body { background: #fff; }
-    .application-container { box-shadow: none; margin: 0; padding: 12mm; width: auto; border: none; }
-    .search-section, .action-buttons, .debug-info { display: none !important; }
-}
 
-/* small responsive tweak */
-@media (max-width: 820px) {
-    .application-container { padding: 24px 18px; margin: 16px; width: auto; }
+    html, body {
+        background: #ffffff !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    /* 🔥 Container compressed ONLY during print */
+    .application-container {
+        margin: 0 !important;
+        padding: 6mm 8mm !important;  /* 🔥 smaller internal padding */
+        width: auto !important;
+        box-shadow: none !important;
+        border: none !important;
+        line-height: 1.25 !important;  /* 🔥 tighter spacing */
+        font-size: 14px !important;    /* 🔥 reduce size slightly for PDF */
+    }
+
+    /* 🔥 Compress table spacing for print only */
+    .form-table td {
+        padding: 4px 6px !important;
+    }
+
+    .recharge-table th,
+    .recharge-table td {
+        padding: 4px 6px !important;
+        font-size: 12px !important;
+    }
+
+    .notes li {
+        margin: 2px 0 !important;
+        line-height: 1.2 !important;
+        font-size: 13px !important;
+    }
+
+    .signature {
+        margin-top: 8px !important;
+    }
+
+    /* Remove UI parts */
+    .search-section,
+    .action-buttons,
+    .debug-info {
+        display: none !important;
+    }
 }
     </style>
 </head>
