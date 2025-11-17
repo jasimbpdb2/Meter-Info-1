@@ -273,7 +273,6 @@
 </div>
 
 <script>
-<script>
 // Add PDF save function (keeps original logic)
 function saveAsPDF() {
     if (window.AndroidInterface && AndroidInterface.saveAsPDF) {
@@ -285,7 +284,7 @@ function saveAsPDF() {
     }
 }
 
-/* ------- UPDATED JS LOGIC TO MATCH JAVA DATA STRUCTURE ------- */
+/* ------- WORKING JS LOGIC FROM YOUR WORKING CODE ------- */
 let selectedType = 'prepaid';
 
 function debugLog(msg){
@@ -310,10 +309,7 @@ function fetchData(){
             const result=AndroidInterface.fetchDataForApplication(input,selectedType);
             const data=JSON.parse(result);
             fillFormWithData(data);
-        }catch(err){ 
-            console.error("App error:", err);
-            showError("App error: " + err.message); 
-        }
+        }catch(err){ showError("App error: "+err); }
     } else {
         showError("AndroidInterface not available");
     }
@@ -323,44 +319,41 @@ function fillFormWithData(data){
     hideLoading();
     if(data.error){ showError(data.error); return; }
 
-    // Safe element setting with null checks - using your Java field names
-    setElementContent("customerName", data.customer_name);
-    setElementContent("fatherName", data.father_name);
-    setElementContent("address", data.address);
-    setElementContent("mobileNo", data.mobile_no);
-    setElementContent("meterNo", data.meter_no);
+    // Use the working data mapping from your original code
+    document.getElementById("customerName").textContent=data.customer_name||"-";
+    document.getElementById("fatherName").textContent=data.father_name||"-";
+    document.getElementById("address").textContent=data.address||"-";
+    document.getElementById("mobileNo").textContent=data.mobile_no||"-";
+    document.getElementById("meterNo").textContent=data.meter_no||"-";
     
-    // Handle arrear
-    const arrearElement = document.getElementById("arrear");
-    if(arrearElement) {
-        arrearElement.textContent = (data.arrear && data.arrear!=="0" && data.arrear!=="") ? data.arrear : "কোনও বকেয়া নেই";
-    }
+    // Handle arrear - using the same logic as working code
+    document.getElementById("arrear").textContent = (data.arrear && data.arrear!=="0") ? data.arrear : "কোনও বকেয়া নেই";
 
-    // Fill recharge table safely - using your Java field names
+    // Fill recharge table using the working logic
     const rechargeData = data.recharges || [];
-    for (let i = 0; i < 3; i++) {
-        const recharge = rechargeData[i];
-        if (recharge) {
-            setElementContent(`rechargeDate${i+1}`, recharge.Date);
-            setElementContent(`rechargeAmount${i+1}`, recharge.Amount);
-        } else {
-            setElementContent(`rechargeDate${i+1}`, " ");
-            setElementContent(`rechargeAmount${i+1}`, " ");
-        }
+    
+    // Clear existing data
+    for (let i = 1; i <= 3; i++) {
+        document.getElementById(`rechargeDate${i}`).textContent = "";
+        document.getElementById(`rechargeAmount${i}`).textContent = "";
+    }
+    
+    // Fill with new data
+    let count = 0;
+    rechargeData.slice(0, 3).forEach(r=>{
+        count++;
+        document.getElementById(`rechargeDate${count}`).textContent = r.Date||"-";
+        document.getElementById(`rechargeAmount${count}`).textContent = r.Amount||"-";
+    });
+
+    // Show empty rows for remaining slots
+    for (let i = count + 1; i <= 3; i++) {
+        document.getElementById(`rechargeDate${i}`).innerHTML = "&nbsp;";
+        document.getElementById(`rechargeAmount${i}`).innerHTML = "&nbsp;";
     }
 
     document.getElementById("searchSection").style.display="none";
     document.getElementById("formSection").style.display="block";
-}
-
-// Safe function to set element content
-function setElementContent(elementId, content) {
-    const element = document.getElementById(elementId);
-    if(element) {
-        element.textContent = content || "-";
-    } else {
-        console.warn("Element not found: " + elementId);
-    }
 }
 
 function showLoading(){
@@ -381,28 +374,20 @@ function showError(m){
     hideLoading();
 }
 
-function hideError(){ 
-    const e=document.getElementById("error"); 
-    if(e) e.style.display="none"; 
-}
+function hideError(){ const e=document.getElementById("error"); if(e) e.style.display="none"; }
 
 function showSearchSection(){
     document.getElementById("formSection").style.display="none";
     document.getElementById("searchSection").style.display="block";
-    // Clear search input
-    document.getElementById("searchInput").value = "";
-    hideError();
 }
 
 function closeForm(){
-    if(window.AndroidInterface){ 
-        AndroidInterface.closeApplication(); 
-    } else {
-        showSearchSection();
-    }
+    if(window.AndroidInterface){ AndroidInterface.closeApplication(); }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     selectType(selectedType);
 });
 </script>
+</body>
+</html>
