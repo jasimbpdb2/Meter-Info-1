@@ -183,11 +183,11 @@ public class MainActivity extends AppCompatActivity {
         });
         // ADD EXCEL BUTTON LISTENER HERE
        // excelBtn.setOnClickListener(v -> {
-            if (isStoragePermissionGranted()) {
+            //if //(isStoragePermissionGranted()) {
                 saveAndShareExcel();
-            } else {
-                Toast.makeText(this, "Please grant storage permission first", Toast.LENGTH_LONG).show();
-                checkStoragePermission();
+           // } else {
+                //Toast.makeText(this, //"Please grant storage permission first", Toast.LENGTH_LONG).show();
+                //checkStoragePermission();
             }
          // ✅ CORRECT PLACE: Add back button listener HERE
     findViewById(R.id.backBtn).setOnClickListener(v -> {
@@ -2105,34 +2105,38 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void checkStoragePermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            // Android 11+ requires MANAGE_EXTERNAL_STORAGE
-            if (!Environment.isExternalStorageManager()) {
-                try {
-                    Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
-                    Uri uri = Uri.fromParts("package", getPackageName(), null);
-                    intent.setData(uri);
-                    startActivity(intent);
-                } catch (Exception e) {
-                    // Fallback for some devices
-                    Intent intent = new Intent();
-                    intent.setAction(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
-                    startActivity(intent);
-                }
-            }
-        } else {
-            // Android 10 and below - request WRITE_EXTERNAL_STORAGE
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                    != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this,
-                        new String[]{
-                                Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                                Manifest.permission.READ_EXTERNAL_STORAGE
-                        },
-                        STORAGE_PERMISSION_CODE);
+    if (isStoragePermissionGranted()) {
+        // Permission already granted, do nothing
+        return;
+    }
+    
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        // Android 11+ - Only request if not already granted
+        if (!Environment.isExternalStorageManager()) {
+            try {
+                Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+                Uri uri = Uri.fromParts("package", getPackageName(), null);
+                intent.setData(uri);
+                startActivity(intent);
+            } catch (Exception e) {
+                Intent intent = new Intent();
+                intent.setAction(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+                startActivity(intent);
             }
         }
+    } else {
+        // Android 10 and below
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{
+                            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                            Manifest.permission.READ_EXTERNAL_STORAGE
+                    },
+                    STORAGE_PERMISSION_CODE);
+        }
     }
+}
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
