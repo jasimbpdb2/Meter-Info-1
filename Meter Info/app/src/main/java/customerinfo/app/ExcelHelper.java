@@ -319,8 +319,22 @@ public class ExcelHelper {
     }
 
     public String getFilePath() {
-        return filePath;
+    String fileName = "MeterLookups.xlsx";
+    
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        // Android 10+ - Save to Downloads folder with timestamp to prevent overwrite
+        File downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+        String uniqueFileName = "MeterLookups_" + timeStamp + ".xlsx";
+        return new File(downloadsDir, uniqueFileName).getAbsolutePath();
+    } else {
+        // Android 9 and below - Save to Downloads with timestamp
+        File downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+        String uniqueFileName = "MeterLookups_" + timeStamp + ".xlsx";
+        return new File(downloadsDir, uniqueFileName).getAbsolutePath();
     }
+}
 
     public int getPrepaidRecordCount() {
         return Math.max(0, prepaidSheet.getPhysicalNumberOfRows() - 1);
