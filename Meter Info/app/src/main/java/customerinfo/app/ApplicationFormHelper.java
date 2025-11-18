@@ -129,20 +129,30 @@ public class ApplicationFormHelper {
                     // Extract ALL customer info from SERVER1 first
                     extractCustomerInfoFromSERVER1(responseBody, customerInfo);
                     
-                    // Only use SERVER2/SERVER3 if consumer number starts with "44"
-                    if (consumerNumber.startsWith("44") && server3Data != null) {
-                        // Supplement with SERVER3 data for "44" series
-                        if (customerInfo.get("customer_name").isEmpty()) {
-                            customerInfo.put("customer_name", server3Data.optString("customerName", ""));
-                        }
-                        if (customerInfo.get("father_name").isEmpty()) {
-                            customerInfo.put("father_name", server3Data.optString("fatherName", ""));
-                        }
-                        if (customerInfo.get("address").isEmpty()) {
-                            customerInfo.put("address", server3Data.optString("customerAddr", ""));
-                        }
-                        if (customerInfo.get("consumer_no").isEmpty()) {
-                            customerInfo.put("consumer_no", server3Data.optString("customerNumber", ""));
+                    // CHANGED: Try SERVER2/SERVER3 for ALL prepaid customers, not just "44" series
+                    if (server3Data != null) {
+                        System.out.println("🔍 PREPAID: Trying SERVER2/3 data for consumer: " + consumerNumber);
+                        
+                        // Check if SERVER3 has valid data
+                        String server3Name = server3Data.optString("customerName", "");
+                        if (!server3Name.isEmpty() && !server3Name.equals("null")) {
+                            System.out.println("✅ PREPAID: SERVER3 data available");
+                            
+                            // Supplement with SERVER3 data if available
+                            if (customerInfo.get("customer_name").isEmpty()) {
+                                customerInfo.put("customer_name", server3Name);
+                            }
+                            if (customerInfo.get("father_name").isEmpty()) {
+                                customerInfo.put("father_name", server3Data.optString("fatherName", ""));
+                            }
+                            if (customerInfo.get("address").isEmpty()) {
+                                customerInfo.put("address", server3Data.optString("customerAddr", ""));
+                            }
+                            if (customerInfo.get("consumer_no").isEmpty()) {
+                                customerInfo.put("consumer_no", server3Data.optString("customerNumber", ""));
+                            }
+                        } else {
+                            System.out.println("❌ PREPAID: SERVER3 returned empty data");
                         }
                     }
                 }
@@ -151,13 +161,37 @@ public class ApplicationFormHelper {
             }
         }
 
-        // FOR POSTPAID: Use SERVER3 data
-        if ("postpaid".equals(type) && server3Data != null) {
-            customerInfo.put("customer_name", server3Data.optString("customerName", ""));
-            customerInfo.put("father_name", server3Data.optString("fatherName", ""));
-            customerInfo.put("address", server3Data.optString("customerAddr", ""));
-            customerInfo.put("consumer_no", server3Data.optString("customerNumber", ""));
-            customerInfo.put("meter_no", server3Data.optString("meterNum", ""));
+        // FOR POSTPAID: Use SERVER3 data if available, otherwise try SERVER2
+        if ("postpaid".equals(type)) {
+            System.out.println("🔍 POSTPAID: Extracting customer info");
+            
+            // Try SERVER3 first
+            if (server3Data != null) {
+                String server3Name = server3Data.optString("customerName", "");
+                if (!server3Name.isEmpty() && !server3Name.equals("null")) {
+                    System.out.println("✅ POSTPAID: Using SERVER3 data");
+                    
+                    customerInfo.put("customer_name", server3Name);
+                    customerInfo.put("father_name", server3Data.optString("fatherName", ""));
+                    customerInfo.put("address", server3Data.optString("customerAddr", ""));
+                    customerInfo.put("consumer_no", server3Data.optString("customerNumber", ""));
+                    customerInfo.put("meter_no", server3Data.optString("meterNum", ""));
+                } else {
+                    System.out.println("❌ POSTPAID: SERVER3 returned empty data");
+                }
+            }
+            
+            // If SERVER3 failed, try SERVER2 as fallback
+            if ((customerInfo.get("customer_name") == null || customerInfo.get("customer_name").isEmpty()) 
+                && server2Data != null && !server2Data.has("error")) {
+                System.out.println("🔍 POSTPAID: Trying SERVER2 as fallback");
+                extractCustomerInfoFromSERVER2(server2Data, customerInfo);
+            }
+            
+            // Final fallback - at least set consumer number
+            if (customerInfo.get("consumer_no") == null || customerInfo.get("consumer_no").isEmpty()) {
+                customerInfo.put("consumer_no", inputNumber);
+            }
         }
 
         // Always set meter number for prepaid
@@ -165,7 +199,7 @@ public class ApplicationFormHelper {
             customerInfo.put("meter_no", inputNumber);
         }
 
-        // Mobile number extraction
+        // Mobile number extraction for prepaid only
         if ("prepaid".equals(type) && server1Result != null) {
             try {
                 Object server1DataObj = server1Result.get("SERVER1_data");
@@ -181,24 +215,6 @@ public class ApplicationFormHelper {
             }
         }
 
-        // SERVER2 mobile number for postpaid
-        if (server2Data != null && !server2Data.has("error")) {
-            if ("postpaid".equals(type) && server2Data.has("balanceInfo")) {
-                try {
-                    JSONObject balanceInfo = server2Data.getJSONObject("balanceInfo");
-                    if (balanceInfo.has("Result") && balanceInfo.getJSONArray("Result").length() > 0) {
-                        JSONObject balanceResult = balanceInfo.getJSONArray("Result").getJSONObject(0);
-                        String mobileNo = balanceResult.optString("MOBILE_NO", "");
-                        if (!mobileNo.isEmpty() && !mobileNo.equals("null")) {
-                            customerInfo.put("mobile_no", mobileNo);
-                        }
-                    }
-                } catch (Exception e) {
-                    System.out.println("❌ Error extracting mobile from SERVER2: " + e.getMessage());
-                }
-            }
-        }
-
         // Clean empty fields
         for (Map.Entry<String, String> entry : customerInfo.entrySet()) {
             String value = entry.getValue();
@@ -208,6 +224,39 @@ public class ApplicationFormHelper {
         }
 
         result.putAll(customerInfo);
+    }
+
+    // NEW METHOD: Extract customer info from SERVER2 for postpaid fallback
+    private void extractCustomerInfoFromSERVER2(JSONObject server2Data, Map<String, String> customerInfo) {
+        try {
+            if (server2Data.has("customerInfo")) {
+                JSONArray customerInfoArray = server2Data.getJSONArray("customerInfo");
+                if (customerInfoArray.length() > 0) {
+                    // Handle the double array structure: customerInfo[0][0]
+                    JSONArray firstArray = customerInfoArray.getJSONArray(0);
+                    if (firstArray.length() > 0) {
+                        JSONObject firstCustomer = firstArray.getJSONObject(0);
+                        
+                        System.out.println("✅ POSTPAID: Extracting from SERVER2 customerInfo");
+                        
+                        if (customerInfo.get("customer_name") == null || customerInfo.get("customer_name").isEmpty()) {
+                            customerInfo.put("customer_name", firstCustomer.optString("CUSTOMER_NAME", ""));
+                        }
+                        if (customerInfo.get("address") == null || customerInfo.get("address").isEmpty()) {
+                            customerInfo.put("address", firstCustomer.optString("ADDRESS", ""));
+                        }
+                        if (customerInfo.get("meter_no") == null || customerInfo.get("meter_no").isEmpty()) {
+                            customerInfo.put("meter_no", firstCustomer.optString("METER_NUM", ""));
+                        }
+                        if (customerInfo.get("consumer_no") == null || customerInfo.get("consumer_no").isEmpty()) {
+                            customerInfo.put("consumer_no", firstCustomer.optString("CUSTOMER_NUMBER", ""));
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("❌ Error extracting customer info from SERVER2: " + e.getMessage());
+        }
     }
 
     // Extract consumer number from SERVER1
@@ -246,7 +295,7 @@ public class ApplicationFormHelper {
                     customerInfo.put("mobile_no", extractDirectValue(result, "customerPhone"));
                     customerInfo.put("consumer_no", extractDirectValue(result, "customerAccountNo"));
                     customerInfo.put("meter_no", extractDirectValue(result, "meterNumber"));
-                    
+
                     System.out.println("✅ Extracted customer info from SERVER1");
                 }
             }
@@ -318,6 +367,7 @@ public class ApplicationFormHelper {
     private void extractBalanceInfo(JSONObject server3Data, JSONObject server2Data, Map<String, Object> result) {
         String arrearAmount = "";
 
+        // CHANGED: If no balance found, return empty so HTML shows "কোনো বকেয়া নেই"
         if (server2Data != null && server2Data.has("finalBalanceInfo")) {
             String balanceString = server2Data.optString("finalBalanceInfo");
             if (isValidValue(balanceString)) {
@@ -347,9 +397,9 @@ public class ApplicationFormHelper {
             }
         }
 
-        if (arrearAmount.equals("0") || arrearAmount.equals("0.00") || arrearAmount.isEmpty()) {
-            arrearAmount = "";
-        }
+        // CHANGED: Don't set empty string - let HTML handle "কোনো বকেয়া নেই"
+        // If arrearAmount is empty, the HTML will show the default "________" 
+        // which you can change to "কোনো বকেয়া নেই" in your JavaScript
 
         result.put("arrear", arrearAmount);
     }
