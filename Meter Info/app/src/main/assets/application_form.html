@@ -26,11 +26,36 @@
         .info-line {
             font-size: 17px;
             margin-bottom: 5px;
+            display: flex;
+            align-items: center;
         }
         .info-label {
             font-weight: normal;
+            min-width: 180px;
         }
         .info-value {
+            font-weight: bold;
+        }
+
+        /* Editable fields */
+        .editable-field {
+            border: 1px dashed #ccc;
+            background: #f9f9f9;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 16px;
+            width: 250px;
+            font-family: "Shonar Bangla", serif;
+            font-weight: bold;
+        }
+
+        .editable-field:focus {
+            border-color: #3498db;
+            background: #fff;
+            outline: none;
+        }
+
+        .static-value {
             font-weight: bold;
         }
 
@@ -164,6 +189,26 @@
         .form-section {
             display: none;
         }
+
+        /* Edit mode controls */
+        .edit-controls {
+            margin: 10px 0;
+            text-align: center;
+        }
+
+        .edit-btn {
+            padding: 6px 12px;
+            background-color: #ffc107;
+            color: #000;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 
@@ -208,18 +253,47 @@
             সুনামগঞ্জ
         </div>
 
-        <!-- Applicant info -->
-        <div class="info-line"><span class="info-label">গ্রাহক/আবেদনকারীর নামঃ </span><span class="info-value" id="customerName">_____________</span></div>
-        <div class="info-line"><span class="info-label">পিতা/স্বামীর নামঃ </span><span class="info-value" id="fatherName">_____________</span></div>
-        <div class="info-line"><span class="info-label">ঠিকানাঃ </span><span class="info-value" id="address">_____________</span></div>
-        <div class="info-line"><span class="info-label">টেলিফোন নংঃ </span><span class="info-value" id="mobileNo">_____________</span></div>
-        
+        <!-- Edit Controls -->
+        <div class="edit-controls">
+            <button class="edit-btn" onclick="toggleEditMode()" id="editToggleBtn">✏️ তথ্য এডিট করুন</button>
+        </div>
+
+        <!-- Applicant info - NOW EDITABLE -->
+        <div class="info-line">
+            <span class="info-label">গ্রাহক/আবেদনকারীর নামঃ </span>
+            <span class="static-value" id="staticCustomerName">_____________</span>
+            <input type="text" class="editable-field hidden" id="editableCustomerName" placeholder="গ্রাহকের নাম">
+        </div>
+
+        <div class="info-line">
+            <span class="info-label">পিতা/স্বামীর নামঃ </span>
+            <span class="static-value" id="staticFatherName">_____________</span>
+            <input type="text" class="editable-field hidden" id="editableFatherName" placeholder="পিতা/স্বামীর নাম">
+        </div>
+
+        <div class="info-line">
+            <span class="info-label">ঠিকানাঃ </span>
+            <span class="static-value" id="staticAddress">_____________</span>
+            <input type="text" class="editable-field hidden" id="editableAddress" placeholder="ঠিকানা">
+        </div>
+
+        <div class="info-line">
+            <span class="info-label">টেলিফোন নংঃ </span>
+            <span class="static-value" id="staticMobileNo">_____________</span>
+            <input type="tel" class="editable-field hidden" id="editableMobileNo" placeholder="টেলিফোন নং">
+        </div>
+
         <!-- SEPARATED METER NO AND CONSUMER NO FIELDS -->
         <div class="info-line">
-            <span class="info-label">মিটার নংঃ </span><span class="info-value" id="meterNo">_____________</span>
+            <span class="info-label">মিটার নংঃ </span>
+            <span class="static-value" id="staticMeterNo">_____________</span>
+            <input type="text" class="editable-field hidden" id="editableMeterNo" placeholder="মিটার নং">
         </div>
+
         <div class="info-line">
-            <span class="info-label">গ্রাহক নংঃ </span><span class="info-value" id="consumerNo">_____________</span>
+            <span class="info-label">গ্রাহক নংঃ </span>
+            <span class="static-value" id="staticConsumerNo">_____________</span>
+            <input type="text" class="editable-field hidden" id="editableConsumerNo" placeholder="গ্রাহক নং">
             <span style="margin-left: 20px;"><b>বকেয়াঃ</b> <b><span id="arrear">________</span></b></span>
         </div>
 
@@ -296,6 +370,7 @@ function saveAsPDF() {
 let selectedType = 'prepaid';
 let currentCustomerType = 'prepaid'; // Track current displayed customer type
 let currentInputNumber = ''; // Store the input number
+let isEditMode = false; // Track edit mode
 
 function debugLog(msg){
     const d=document.getElementById("debugLog");
@@ -306,7 +381,7 @@ function selectType(t){
     selectedType=t;
     document.getElementById("prepaidBtn").classList.toggle("active",t==="prepaid");
     document.getElementById("postpaidBtn").classList.toggle("active",t==="postpaid");
-    
+
     // Update placeholder based on type
     const input = document.getElementById("searchInput");
     if (t === 'prepaid') {
@@ -339,21 +414,33 @@ function fillFormWithData(data){
     hideLoading();
     if(data.error){ showError(data.error); return; }
 
-    // Use the working data mapping from your original code
-    document.getElementById("customerName").textContent=data.customer_name||"-";
-    document.getElementById("fatherName").textContent=data.father_name||"-";
-    document.getElementById("address").textContent=data.address||"-";
-    document.getElementById("mobileNo").textContent=data.mobile_no||"-";
-    
+    // Fill both static and editable fields with API data
+    const fields = [
+        { static: 'staticCustomerName', editable: 'editableCustomerName', value: data.customer_name },
+        { static: 'staticFatherName', editable: 'editableFatherName', value: data.father_name },
+        { static: 'staticAddress', editable: 'editableAddress', value: data.address },
+        { static: 'staticMobileNo', editable: 'editableMobileNo', value: data.mobile_no }
+    ];
+
+    fields.forEach(field => {
+        const displayValue = field.value || '_____________';
+        document.getElementById(field.static).textContent = displayValue;
+        document.getElementById(field.editable).value = field.value || '';
+    });
+
     // Handle meter number and consumer number based on customer type
     if (currentCustomerType === 'prepaid') {
         // For prepaid: show input number as meter number, data.consumer_no as consumer number
-        document.getElementById("meterNo").textContent = currentInputNumber || "-";
-        document.getElementById("consumerNo").textContent = data.consumer_no || "-";
+        document.getElementById("staticMeterNo").textContent = currentInputNumber || "_____________";
+        document.getElementById("editableMeterNo").value = currentInputNumber || "";
+        document.getElementById("staticConsumerNo").textContent = data.consumer_no || "_____________";
+        document.getElementById("editableConsumerNo").value = data.consumer_no || "";
     } else {
         // For postpaid: show data.meter_no as meter number, input number as consumer number
-        document.getElementById("meterNo").textContent = data.meter_no || "-";
-        document.getElementById("consumerNo").textContent = currentInputNumber || "-";
+        document.getElementById("staticMeterNo").textContent = data.meter_no || "_____________";
+        document.getElementById("editableMeterNo").value = data.meter_no || "";
+        document.getElementById("staticConsumerNo").textContent = currentInputNumber || "_____________";
+        document.getElementById("editableConsumerNo").value = currentInputNumber || "";
     }
 
     // Handle arrear - using the same logic as working code
@@ -364,7 +451,7 @@ function fillFormWithData(data){
     if (currentCustomerType === 'prepaid') {
         // Show and fill recharge data for prepaid
         rechargeSection.style.display = 'block';
-        
+
         const rechargeData = data.recharges || [];
 
         // Clear existing data
@@ -391,8 +478,57 @@ function fillFormWithData(data){
         rechargeSection.style.display = 'none';
     }
 
+    // Ensure we're in view mode when data loads
+    if (isEditMode) {
+        toggleEditMode(); // Switch back to view mode
+    }
+
     document.getElementById("searchSection").style.display="none";
     document.getElementById("formSection").style.display="block";
+}
+
+// Toggle between view and edit mode
+function toggleEditMode() {
+    isEditMode = !isEditMode;
+    const editBtn = document.getElementById("editToggleBtn");
+
+    if (isEditMode) {
+        // Switch to edit mode
+        document.querySelectorAll('.static-value').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('.editable-field').forEach(el => el.classList.remove('hidden'));
+        editBtn.textContent = '💾 এডিট সেভ করুন';
+        editBtn.style.backgroundColor = '#28a745';
+    } else {
+        // Switch to view mode and save changes
+        document.querySelectorAll('.static-value').forEach(el => {
+            const fieldId = el.id.replace('static', 'editable');
+            const inputValue = document.getElementById(fieldId).value;
+            el.textContent = inputValue || '_____________';
+            el.classList.remove('hidden');
+        });
+        document.querySelectorAll('.editable-field').forEach(el => el.classList.add('hidden'));
+        editBtn.textContent = '✏️ তথ্য এডিট করুন';
+        editBtn.style.backgroundColor = '#ffc107';
+        
+        // Optional: Save the edited data back to app
+        saveEditedData();
+    }
+}
+
+// Save edited data back to Android app
+function saveEditedData() {
+    const editedData = {
+        customerName: document.getElementById('editableCustomerName').value,
+        fatherName: document.getElementById('editableFatherName').value,
+        address: document.getElementById('editableAddress').value,
+        mobileNo: document.getElementById('editableMobileNo').value,
+        meterNo: document.getElementById('editableMeterNo').value,
+        consumerNo: document.getElementById('editableConsumerNo').value
+    };
+
+    if (window.AndroidInterface && AndroidInterface.saveEditedData) {
+        AndroidInterface.saveEditedData(JSON.stringify(editedData));
+    }
 }
 
 function showLoading(){
@@ -422,6 +558,10 @@ function showSearchSection(){
     document.getElementById("rechargeSection").style.display = 'block';
     // Clear stored input number
     currentInputNumber = '';
+    // Reset to view mode
+    if (isEditMode) {
+        toggleEditMode();
+    }
 }
 
 function closeForm(){
