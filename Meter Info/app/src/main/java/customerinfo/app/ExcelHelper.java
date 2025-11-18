@@ -1,7 +1,7 @@
 package customerinfo.app;
 
 import android.content.Context;
-import android.os.Build;  // ← THIS IS WHAT YOU NEED
+import android.os.Build;
 import android.os.Environment;
 import android.util.Log;
 import java.io.File;
@@ -96,15 +96,23 @@ public class ExcelHelper {
 
     private String getExcelFilePath() {
         File directory = getStorageDir();
+        // Use consistent naming - same file every time
         return new File(directory, EXCEL_FILE_NAME).getAbsolutePath();
     }
 
     private static File getStorageDir() {
         File downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
         File dir = new File(downloadsDir, "BPDB_Records");
+        
         if (!dir.exists()) {
             boolean created = dir.mkdirs();
             Log.d(TAG, "Directory created: " + created + " at " + dir.getAbsolutePath());
+            
+            // Verify directory is writable
+            if (created) {
+                boolean canWrite = dir.canWrite();
+                Log.d(TAG, "Directory is writable: " + canWrite);
+            }
         }
         return dir;
     }
@@ -167,6 +175,7 @@ public class ExcelHelper {
         headerStyle.setFont(headerFont);
         return headerStyle;
     }
+
     private void showToast(final String message) {
         android.os.Handler handler = new android.os.Handler(context.getMainLooper());
         handler.post(new Runnable() {
@@ -217,6 +226,7 @@ public class ExcelHelper {
             boolean saved = saveWorkbook();
             if (saved) {
                 showToast("✅ Prepaid data saved to Excel");
+                debugFileInfo(); // Show file info after save
             } else {
                 showToast("❌ Failed to save prepaid data");
             }
@@ -261,6 +271,7 @@ public class ExcelHelper {
             boolean saved = saveWorkbook();
             if (saved) {
                 showToast("✅ Postpaid data saved to Excel");
+                debugFileInfo(); // Show file info after save
             } else {
                 showToast("❌ Failed to save postpaid data");
             }
@@ -286,12 +297,24 @@ public class ExcelHelper {
     private boolean saveWorkbook() {
         FileOutputStream outputStream = null;
         try {
-            outputStream = new FileOutputStream(filePath);
+            File file = new File(filePath);
+            File parentDir = file.getParentFile();
+            
+            // Ensure directory exists
+            if (parentDir != null && !parentDir.exists()) {
+                boolean dirCreated = parentDir.mkdirs();
+                Log.d(TAG, "Directory created: " + dirCreated);
+            }
+            
+            outputStream = new FileOutputStream(file);
             workbook.write(outputStream);
             Log.d(TAG, "💾 Workbook saved successfully: " + filePath);
+            Log.d(TAG, "📁 File location: " + file.getAbsolutePath());
+            Log.d(TAG, "📊 File size: " + file.length() + " bytes");
             return true;
         } catch (IOException e) {
             Log.e(TAG, "❌ Error saving workbook: " + e.getMessage());
+            e.printStackTrace();
             return false;
         } finally {
             if (outputStream != null) {
@@ -305,7 +328,6 @@ public class ExcelHelper {
     }
 
     public boolean saveExcelFile() {
-        // For compatibility - just save the current workbook
         return saveWorkbook();
     }
 
@@ -319,23 +341,32 @@ public class ExcelHelper {
         }
     }
 
+    // FIXED: Consistent file path
     public String getFilePath() {
-    String fileName = "MeterLookups.xlsx";
-    
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-        // Android 10+ - Save to Downloads folder with timestamp to prevent overwrite
-        File downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-        String uniqueFileName = "MeterLookups_" + timeStamp + ".xlsx";
-        return new File(downloadsDir, uniqueFileName).getAbsolutePath();
-    } else {
-        // Android 9 and below - Save to Downloads with timestamp
-        File downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-        String uniqueFileName = "MeterLookups_" + timeStamp + ".xlsx";
-        return new File(downloadsDir, uniqueFileName).getAbsolutePath();
+        return getExcelFilePath(); // Return the SAME path
     }
-}
+
+    // NEW: Debug method to verify file operations
+    public void debugFileInfo() {
+        try {
+            File file = new File(filePath);
+            File dir = file.getParentFile();
+            
+            Log.d(TAG, "=== FILE DEBUG INFO ===");
+            Log.d(TAG, "File path: " + filePath);
+            Log.d(TAG, "Directory exists: " + (dir != null && dir.exists()));
+            Log.d(TAG, "Directory writable: " + (dir != null && dir.canWrite()));
+            Log.d(TAG, "File exists: " + file.exists());
+            Log.d(TAG, "File size: " + (file.exists() ? file.length() : 0));
+            Log.d(TAG, "Android version: " + Build.VERSION.SDK_INT);
+            Log.d(TAG, "=========================");
+            
+            // Show toast with file location
+            showToast("File saved: " + file.getName());
+        } catch (Exception e) {
+            Log.e(TAG, "Debug error: " + e.getMessage());
+        }
+    }
 
     public int getPrepaidRecordCount() {
         return Math.max(0, prepaidSheet.getPhysicalNumberOfRows() - 1);
