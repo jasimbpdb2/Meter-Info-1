@@ -1,125 +1,107 @@
 package customerinfo.app;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.webkit.WebView;
-import android.webkit.WebViewClient;
-import android.webkit.JavascriptInterface;
-import android.util.Log;
 import androidx.appcompat.app.AppCompatActivity;
+import org.json.JSONObject;
 
 public class MeterDataDisplayActivity extends AppCompatActivity {
 
     private WebView webView;
-    private String meterDataJson;
-    private static final String TAG = "MeterDataDisplay";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.meter_data_display);
+        setContentView(R.layout.activity_meter_data_display);
 
         webView = findViewById(R.id.webView);
-        setupWebView();
-
-        // Get data from intent
-        Intent intent = getIntent();
-        if (intent != null && intent.hasExtra("METER_DATA")) {
-            meterDataJson = intent.getStringExtra("METER_DATA");
-            Log.d(TAG, "Data received in intent: " + (meterDataJson != null ? meterDataJson.length() + " characters" : "NULL"));
-            if (meterDataJson != null) {
-                Log.d(TAG, "First 200 chars: " + meterDataJson.substring(0, Math.min(200, meterDataJson.length())));
-            }
-        } else {
-            Log.e(TAG, "No METER_DATA found in intent");
-            meterDataJson = "{\"error\":\"No data received from MainActivity\"}";
-        }
-    }
-
-    private void setupWebView() {
         webView.getSettings().setJavaScriptEnabled(true);
         webView.getSettings().setDomStorageEnabled(true);
+
+        // Get the JSON data from MainActivity
+        String jsonData = getIntent().getStringExtra("METER_DATA");
         
-        webView.setWebViewClient(new WebViewClient() {
-            @Override
-            public void onPageFinished(WebView view, String url) {
-                Log.d(TAG, "WebView page finished loading: " + url);
-                // Inject data when page loads
-                if (meterDataJson != null) {
-                    injectMeterData();
-                } else {
-                    Log.e(TAG, "No data to inject");
+        if (jsonData != null) {
+            // Load HTML template with the data
+            String htmlContent = generateHTMLContent(jsonData);
+            webView.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null);
+        } else {
+            webView.loadData("<h1>Error: No data received</h1>", "text/html", "UTF-8");
+        }
+    }
+
+    private String generateHTMLContent(String jsonData) {
+        try {
+            JSONObject data = new JSONObject(jsonData);
+            
+            // Simple HTML template that works with MainActivity's data structure
+            String html = "<!DOCTYPE html><html><head>" +
+                    "<meta name='viewport' content='width=device-width, initial-scale=1'>" +
+                    "<style>" +
+                    "body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }" +
+                    ".container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }" +
+                    ".header { background: #2196F3; color: white; padding: 15px; border-radius: 5px; margin-bottom: 20px; }" +
+                    ".section { margin-bottom: 20px; padding: 15px; border-left: 4px solid #2196F3; background: #f9f9f9; }" +
+                    ".error { background: #ffebee; border-left: 4px solid #f44336; color: #c62828; }" +
+                    ".success { background: #e8f5e8; border-left: 4px solid #4caf50; }" +
+                    "h1, h2, h3 { color: #333; }" +
+                    "pre { background: #f5f5f5; padding: 10px; border-radius: 5px; overflow-x: auto; }" +
+                    "</style></head><body>" +
+                    "<div class='container'>" +
+                    "<div class='header'><h1>📊 Meter Information</h1></div>";
+
+            // Check for errors first
+            if (data.has("error")) {
+                html += "<div class='section error'><h2>❌ Error</h2><p>" + data.optString("error") + "</p></div>";
+            }
+
+            // Show search info
+            html += "<div class='section'><h2>🔍 Search Details</h2>" +
+                    "<p><strong>Input:</strong> " + data.optString("search_input", "N/A") + "</p>" +
+                    "<p><strong>Type:</strong> " + data.optString("search_type", "N/A") + "</p>" +
+                    "<p><strong>Time:</strong> " + data.optString("timestamp", "N/A") + "</p></div>";
+
+            // Show formatted text (from MainActivity's working display)
+            if (data.has("formatted_text")) {
+                html += "<div class='section success'><h2>📋 Customer Information</h2>" +
+                        "<pre>" + data.optString("formatted_text") + "</pre></div>";
+            }
+
+            // Show customer info if available
+            if (data.has("customer_info")) {
+                html += "<div class='section'><h2>👤 Customer Details</h2>";
+                try {
+                    JSONObject customerInfo = data.getJSONObject("customer_info");
+                    html += "<table width='100%'>";
+                    for (String key : customerInfo.keySet()) {
+                        html += "<tr><td><strong>" + key + ":</strong></td><td>" + customerInfo.optString(key) + "</td></tr>";
+                    }
+                    html += "</table></div>";
+                } catch (Exception e) {
+                    html += "<p>Error displaying customer info</p></div>";
                 }
             }
-            
-            @Override
-            public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
-                Log.e(TAG, "WebView error: " + description + " (" + errorCode + ")");
+
+            // Show balance info if available
+            if (data.has("balance_info")) {
+                html += "<div class='section'><h2>💰 Balance Information</h2>";
+                try {
+                    JSONObject balanceInfo = data.getJSONObject("balance_info");
+                    html += "<table width='100%'>";
+                    for (String key : balanceInfo.keySet()) {
+                        html += "<tr><td><strong>" + key + ":</strong></td><td>" + balanceInfo.optString(key) + "</td></tr>";
+                    }
+                    html += "</table></div>";
+                } catch (Exception e) {
+                    html += "<p>Error displaying balance info</p></div>";
+                }
             }
-        });
 
-        webView.addJavascriptInterface(new WebAppInterface(), "AndroidInterface");
-        Log.d(TAG, "Loading HTML from assets");
-        webView.loadUrl("file:///android_asset/meter_data_display.html");
-    }
+            html += "</div></body></html>";
+            return html;
 
-    // In MeterDataDisplayActivity.java - update the injectMeterData method
-private void injectMeterData() {
-    try {
-        Log.d(TAG, "Injecting data into WebView");
-        
-        if (meterDataJson == null) {
-            Log.e(TAG, "No data to inject");
-            return;
-        }
-
-        String js = "javascript:if (typeof window.meterData !== 'undefined') { " +
-                   "window.meterData = " + meterDataJson + "; " +
-                   "if (typeof window.displayData === 'function') { " +
-                   "window.displayData(); } else { console.error('displayData function not found'); }" +
-                   "} else { console.error('meterData not defined'); }";
-        
-        Log.d(TAG, "JavaScript to execute: " + js.substring(0, Math.min(100, js.length())) + "...");
-        
-        webView.evaluateJavascript(js, value -> {
-            Log.d(TAG, "JavaScript evaluation completed: " + value);
-        });
-        
-    } catch (Exception e) {
-        Log.e(TAG, "Error injecting data: " + e.getMessage());
-        
-        // Fallback: try direct injection
-        String fallbackJs = "javascript:window.meterData = " + meterDataJson + "; setTimeout(function() { if(window.displayData) window.displayData(); }, 100);";
-        webView.evaluateJavascript(fallbackJs, null);
-    }
-}
-
-    public class WebAppInterface {
-        @JavascriptInterface
-        public String getMeterData() {
-            Log.d(TAG, "getMeterData() called from JavaScript");
-            return meterDataJson != null ? meterDataJson : "{\"error\":\"No data available\"}";
-        }
-
-        @JavascriptInterface
-        public void goBack() {
-            Log.d(TAG, "goBack() called from JavaScript");
-            finish();
-        }
-
-        @JavascriptInterface
-        public void closeApp() {
-            Log.d(TAG, "closeApp() called from JavaScript");
-            finish();
-        }
-    }
-
-    @Override
-    public void onBackPressed() {
-        if (webView.canGoBack()) {
-            webView.goBack();
-        } else {
-            super.onBackPressed();
+        } catch (Exception e) {
+            return "<h1>Error generating HTML: " + e.getMessage() + "</h1>";
         }
     }
 }
