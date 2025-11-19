@@ -200,7 +200,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    public void openMeterDataDisplay(String inputNumber, String type, String subType) {
+      public void openMeterDataDisplay(String inputNumber, String type, String subType) {
     try {
         Log.d(TAG, "🔍 HTML DISPLAY: Starting for " + inputNumber);
 
@@ -208,7 +208,7 @@ public class MainActivity extends AppCompatActivity {
         Map<String, Object> rawData = fetchDataForHTML(inputNumber, type, subType);
 
         Log.d(TAG, "🔍 HTML DISPLAY: Raw data keys: " + rawData.keySet());
-        
+
         // Detailed debug of what we received
         for (String key : rawData.keySet()) {
             Object value = rawData.get(key);
@@ -234,7 +234,7 @@ public class MainActivity extends AppCompatActivity {
         boolean hasServer2Data = rawData.containsKey("SERVER2_data"); 
         boolean hasServer3Data = rawData.containsKey("SERVER3_data");
         boolean hasConsumerNumber = rawData.containsKey("consumer_number");
-        
+
         Log.d(TAG, "🔍 DATA CHECK - SERVER1: " + hasServer1Data + ", SERVER2: " + hasServer2Data + 
               ", SERVER3: " + hasServer3Data + ", Consumer#: " + hasConsumerNumber);
 
@@ -250,7 +250,7 @@ public class MainActivity extends AppCompatActivity {
         Map<String, Object> processedData = helper.processDataForHTMLDisplay(rawData, inputNumber, type, subType);
 
         Log.d(TAG, "✅ HTML DISPLAY: Processed data keys: " + processedData.keySet());
-        
+
         // Check what the HTML helper produced
         if (processedData.containsKey("error")) {
             Log.e(TAG, "❌ HTML HELPER ERROR: " + processedData.get("error"));
@@ -285,28 +285,6 @@ private String getJSONKeys(JSONObject json) {
         return String.join(", ", keyList);
     } catch (Exception e) {
         return "Error getting keys";
-    }
-}
-
-        // THEN: Process for HTML display
-        MeterDataHTMLHelper helper = new MeterDataHTMLHelper();
-        Map<String, Object> processedData = helper.processDataForHTMLDisplay(rawData, inputNumber, type, subType);
-
-        Log.d(TAG, "Processed data keys: " + processedData.keySet());
-
-        // Convert to JSON
-        JSONObject jsonData = new JSONObject(processedData);
-        String jsonString = jsonData.toString();
-        Log.d(TAG, "JSON data length: " + jsonString.length());
-
-        // Start the HTML display activity
-        Intent intent = new Intent(this, MeterDataDisplayActivity.class);
-        intent.putExtra("METER_DATA", jsonString);
-        startActivity(intent);
-
-    } catch (Exception e) {
-        Log.e(TAG, "Error opening meter data display: " + e.getMessage(), e);
-        Toast.makeText(this, "Error displaying data in HTML: " + e.getMessage(), Toast.LENGTH_LONG).show();
     }
 }
 
@@ -372,7 +350,7 @@ private Map<String, Object> fetchDataForHTML(String inputNumber, String type, St
     }
 
     return result;
-}
+}      
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
