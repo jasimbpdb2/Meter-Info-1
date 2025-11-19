@@ -164,11 +164,32 @@
             background: #e74c3c;
             color: white;
         }
+        .debug-section {
+            background: #f8f9fa;
+            border: 1px dashed #ccc;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .debug-toggle {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
         @media print {
             body { background: white; }
             .container { box-shadow: none; }
             .action-buttons { display: none; }
             .btn { display: none; }
+            .debug-section { display: none; }
         }
     </style>
 </head>
@@ -185,6 +206,14 @@
         <div class="error-message" id="error" style="display: none;">
             <!-- Error messages will be shown here -->
         </div>
+
+        <!-- Debug Section -->
+        <div id="debugSection" style="display: none;">
+            <button class="debug-toggle" onclick="toggleDebug()">Toggle Debug Info</button>
+            <div class="debug-section" id="debugInfo">
+                <!-- Debug information will be shown here -->
+            </div>
+        </div>
     </div>
 
     <script>
@@ -193,26 +222,80 @@
 
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', function() {
+            console.log("HTML: DOM Content Loaded");
             loadData();
         });
 
         // Load data from Android interface
         function loadData() {
+            console.log("HTML: Loading data from Android interface");
+            
             if (window.AndroidInterface && AndroidInterface.getMeterData) {
                 try {
+                    console.log("HTML: AndroidInterface found, calling getMeterData()");
                     const dataJson = AndroidInterface.getMeterData();
+                    console.log("HTML: Raw JSON received:", dataJson);
+                    
                     meterData = JSON.parse(dataJson);
+                    console.log("HTML: Parsed meterData:", meterData);
+                    
+                    // Show debug info
+                    showDebugInfo();
+                    
                     displayData();
                 } catch (error) {
+                    console.error("HTML: Error parsing data:", error);
                     showError('Error parsing data: ' + error.message);
                 }
             } else {
+                console.error("HTML: Android interface not available");
                 showError('Android interface not available');
+            }
+        }
+
+        // Show debug information
+        function showDebugInfo() {
+            const debugSection = document.getElementById('debugSection');
+            const debugInfo = document.getElementById('debugInfo');
+            
+            if (meterData) {
+                let debugHTML = '<h3>🔍 Debug Information</h3>';
+                debugHTML += '<p><strong>Data Structure:</strong></p>';
+                debugHTML += '<pre>' + JSON.stringify(meterData, null, 2) + '</pre>';
+                
+                debugHTML += '<p><strong>Available Keys:</strong> ' + Object.keys(meterData).join(', ') + '</p>';
+                
+                if (meterData.customer_info) {
+                    debugHTML += '<p><strong>Customer Info Keys:</strong> ' + Object.keys(meterData.customer_info).join(', ') + '</p>';
+                }
+                
+                if (meterData.balance_info) {
+                    debugHTML += '<p><strong>Balance Info Keys:</strong> ' + Object.keys(meterData.balance_info).join(', ') + '</p>';
+                }
+                
+                if (meterData.error) {
+                    debugHTML += '<p><strong>Error:</strong> ' + meterData.error + '</p>';
+                }
+                
+                debugInfo.innerHTML = debugHTML;
+                debugSection.style.display = 'block';
+            }
+        }
+
+        // Toggle debug visibility
+        function toggleDebug() {
+            const debugInfo = document.getElementById('debugInfo');
+            if (debugInfo.style.display === 'none') {
+                debugInfo.style.display = 'block';
+            } else {
+                debugInfo.style.display = 'none';
             }
         }
 
         // Main data display function
         function displayData() {
+            console.log("HTML: Displaying data");
+            
             const loading = document.getElementById('loading');
             const content = document.getElementById('content');
             const error = document.getElementById('error');
@@ -221,15 +304,18 @@
             error.style.display = 'none';
 
             if (!meterData) {
+                console.error("HTML: No meterData available");
                 showError('No data available');
                 return;
             }
 
             if (meterData.error) {
+                console.error("HTML: Error in meterData:", meterData.error);
                 showError(meterData.error);
                 return;
             }
 
+            console.log("HTML: Creating display content");
             let html = '';
 
             // Header section
@@ -237,15 +323,19 @@
 
             // Multi-customer handling
             if (meterData.is_multi_customer) {
+                console.log("HTML: Multi-customer data detected");
                 html += createMultiCustomerSection();
             } else {
+                console.log("HTML: Single customer data detected");
                 // Single customer display
                 html += createCustomerInfoSection();
                 html += createBalanceSection();
                 
                 if (meterData.search_type === 'prepaid') {
+                    console.log("HTML: Prepaid data detected");
                     html += createPrepaidTransactionsSection();
                 } else {
+                    console.log("HTML: Postpaid data detected");
                     html += createPostpaidBillsSection();
                 }
             }
@@ -255,25 +345,27 @@
 
             content.innerHTML = html;
             content.style.display = 'block';
+            console.log("HTML: Display completed");
         }
 
         // Create header section
         function createHeaderSection() {
+            console.log("HTML: Creating header section");
             return `
                 <div class="header">
                     <h1>BPDB Meter Information</h1>
                     <div class="search-info">
                         <div class="info-item">
                             <span class="info-label">Search Type:</span>
-                            <span class="info-value">${meterData.search_type.toUpperCase()}</span>
+                            <span class="info-value">${meterData.search_type ? meterData.search_type.toUpperCase() : 'N/A'}</span>
                         </div>
                         <div class="info-item">
                             <span class="info-label">Input Number:</span>
-                            <span class="info-value">${meterData.search_input}</span>
+                            <span class="info-value">${meterData.search_input || 'N/A'}</span>
                         </div>
                         <div class="info-item">
                             <span class="info-label">Timestamp:</span>
-                            <span class="info-value">${meterData.timestamp}</span>
+                            <span class="info-value">${meterData.timestamp || 'N/A'}</span>
                         </div>
                     </div>
                 </div>
@@ -282,28 +374,34 @@
 
         // Create multi-customer section
         function createMultiCustomerSection() {
+            console.log("HTML: Creating multi-customer section");
             let html = `
                 <div class="multi-customer">
                     <h3>📊 Multiple Customers Found</h3>
-                    <p>Found ${meterData.customer_count} customer(s) for meter ${meterData.meter_number}</p>
+                    <p>Found ${meterData.customer_count || 0} customer(s) for meter ${meterData.meter_number || 'N/A'}</p>
                 </div>
             `;
 
-            meterData.customers.forEach((customer, index) => {
-                html += `
-                    <div class="customer-card">
-                        <div class="section-title">Customer ${index + 1}</div>
-                        ${createCustomerInfoHTML(customer.customer_info)}
-                        ${createBalanceHTML(customer.balance_info)}
-                    </div>
-                `;
-            });
+            if (meterData.customers && Array.isArray(meterData.customers)) {
+                meterData.customers.forEach((customer, index) => {
+                    html += `
+                        <div class="customer-card">
+                            <div class="section-title">Customer ${index + 1}</div>
+                            ${createCustomerInfoHTML(customer.customer_info)}
+                            ${createBalanceHTML(customer.balance_info)}
+                        </div>
+                    `;
+                });
+            } else {
+                html += '<p>No customer data available</p>';
+            }
 
             return html;
         }
 
         // Create customer info section
         function createCustomerInfoSection() {
+            console.log("HTML: Creating customer info section");
             return `
                 <div class="section">
                     <div class="section-title">👤 Customer Information</div>
@@ -314,7 +412,12 @@
 
         // Create customer info HTML
         function createCustomerInfoHTML(customerInfo) {
-            if (!customerInfo) return '<p>No customer information available</p>';
+            console.log("HTML: Creating customer info HTML", customerInfo);
+            
+            if (!customerInfo) {
+                console.log("HTML: No customer info available");
+                return '<p>No customer information available</p>';
+            }
 
             return `
                 <div class="customer-grid">
@@ -364,6 +467,7 @@
 
         // Create balance section
         function createBalanceSection() {
+            console.log("HTML: Creating balance section");
             return `
                 <div class="section">
                     <div class="section-title">💰 Balance Information</div>
@@ -374,7 +478,10 @@
 
         // Create balance HTML
         function createBalanceHTML(balanceInfo) {
+            console.log("HTML: Creating balance HTML", balanceInfo);
+            
             if (!balanceInfo || Object.keys(balanceInfo).length === 0) {
+                console.log("HTML: No balance info available");
                 return '<p>No balance information available</p>';
             }
 
@@ -416,12 +523,15 @@
                 `;
             }
 
-            return `<div class="balance-grid">${balanceItems}</div>`;
+            return balanceItems ? `<div class="balance-grid">${balanceItems}</div>` : '<p>No balance details available</p>';
         }
 
         // Create prepaid transactions section
         function createPrepaidTransactionsSection() {
+            console.log("HTML: Creating prepaid transactions section", meterData.transactions);
+            
             if (!meterData.transactions || meterData.transactions.length === 0) {
+                console.log("HTML: No transactions available");
                 return '<div class="section"><div class="section-title">🔑 Recent Transactions</div><p>No transaction history available</p></div>';
             }
 
@@ -440,7 +550,7 @@
 
             return `
                 <div class="section">
-                    <div class="section-title">🔑 Recent Transactions (Last ${meterData.transaction_count})</div>
+                    <div class="section-title">🔑 Recent Transactions (Last ${meterData.transaction_count || 0})</div>
                     <table class="transaction-table">
                         <thead>
                             <tr>
@@ -461,7 +571,10 @@
 
         // Create postpaid bills section
         function createPostpaidBillsSection() {
+            console.log("HTML: Creating postpaid bills section", meterData.bill_history);
+            
             if (!meterData.bill_history || meterData.bill_history.length === 0) {
+                console.log("HTML: No bill history available");
                 return '<div class="section"><div class="section-title">📊 Bill History</div><p>No bill history available</p></div>';
             }
 
@@ -473,19 +586,19 @@
                     <div class="balance-grid">
                         <div class="balance-item">
                             <div>Total Bills</div>
-                            <div class="balance-value">${summary.bill_periods}</div>
+                            <div class="balance-value">${summary.bill_periods || 0}</div>
                         </div>
                         <div class="balance-item">
                             <div>Total Consumption</div>
-                            <div class="balance-value">${summary.total_consumption.toFixed(0)} kWh</div>
+                            <div class="balance-value">${(summary.total_consumption || 0).toFixed(0)} kWh</div>
                         </div>
                         <div class="balance-item">
                             <div>Total Amount</div>
-                            <div class="balance-value">৳${summary.total_amount.toFixed(0)}</div>
+                            <div class="balance-value">৳${(summary.total_amount || 0).toFixed(0)}</div>
                         </div>
                         <div class="balance-item">
                             <div>Total Paid</div>
-                            <div class="balance-value">৳${summary.total_paid.toFixed(0)}</div>
+                            <div class="balance-value">৳${(summary.total_paid || 0).toFixed(0)}</div>
                         </div>
                     </div>
                 `;
@@ -498,18 +611,18 @@
                     <tr>
                         <td>${bill.bill_month || 'N/A'}</td>
                         <td>${bill.bill_number || 'N/A'}</td>
-                        <td>${bill.consumption.toFixed(0)}</td>
-                        <td>৳${bill.current_bill.toFixed(0)}</td>
-                        <td>৳${bill.total_bill.toFixed(0)}</td>
-                        <td>৳${bill.paid_amount.toFixed(0)}</td>
-                        <td>৳${bill.balance.toFixed(0)}</td>
+                        <td>${(bill.consumption || 0).toFixed(0)}</td>
+                        <td>৳${(bill.current_bill || 0).toFixed(0)}</td>
+                        <td>৳${(bill.total_bill || 0).toFixed(0)}</td>
+                        <td>৳${(bill.paid_amount || 0).toFixed(0)}</td>
+                        <td>৳${(bill.balance || 0).toFixed(0)}</td>
                     </tr>
                 `;
             });
 
             return `
                 <div class="section">
-                    <div class="section-title">📊 Bill History (Last ${meterData.bill_count} months)</div>
+                    <div class="section-title">📊 Bill History (Last ${meterData.bill_count || 0} months)</div>
                     ${summaryHTML}
                     <table class="bill-table">
                         <thead>
@@ -544,6 +657,7 @@
 
         // Error display function
         function showError(message) {
+            console.error("HTML: Showing error:", message);
             const loading = document.getElementById('loading');
             const content = document.getElementById('content');
             const error = document.getElementById('error');
@@ -556,12 +670,14 @@
 
         // Navigation functions
         function goBack() {
+            console.log("HTML: Going back");
             if (window.AndroidInterface && AndroidInterface.goBack) {
                 AndroidInterface.goBack();
             }
         }
 
         function closeApp() {
+            console.log("HTML: Closing app");
             if (window.AndroidInterface && AndroidInterface.closeApp) {
                 AndroidInterface.closeApp();
             }
