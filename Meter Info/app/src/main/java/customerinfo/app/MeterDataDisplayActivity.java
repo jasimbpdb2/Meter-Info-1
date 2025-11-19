@@ -22,7 +22,9 @@ public class MeterDataDisplayActivity extends AppCompatActivity {
         String jsonData = getIntent().getStringExtra("METER_DATA");
         
         if (jsonData != null) {
-            htmlViewer.displayDataFromJSON(jsonData);
+            // CHANGE FROM:
+
+			htmlViewer.displayData(jsonData);
         }
     }
 }
