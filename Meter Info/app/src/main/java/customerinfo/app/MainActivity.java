@@ -14,6 +14,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import java.util.Date;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -199,32 +200,75 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    // In MainActivity.java - update the openMeterDataDisplay method
-public void openMeterDataDisplay(String inputNumber, String type, String subType) {
+    public void openMeterDataDisplay(String inputNumber, String type, String subType) {
     try {
         Log.d(TAG, "Opening HTML display for: " + inputNumber + " type: " + type + " subType: " + subType);
+
+        // FIRST: Fetch the data using MainActivity's working methods
+        Map<String, Object> rawData = fetchDataForHTML(inputNumber, type, subType);
         
-        // Process data using the helper
+        Log.d(TAG, "Raw data fetched, keys: " + rawData.keySet());
+        
+        if (rawData.containsKey("error")) {
+            Log.e(TAG, "Error fetching data: " + rawData.get("error"));
+            // Still proceed to HTML to show the error
+        }
+
+        // THEN: Process for HTML display
         MeterDataHTMLHelper helper = new MeterDataHTMLHelper();
-        Map<String, Object> processedData = helper.processMeterDataForHTML(inputNumber, type, subType);
-        
+        Map<String, Object> processedData = helper.processDataForHTMLDisplay(rawData, inputNumber, type, subType);
+
         Log.d(TAG, "Processed data keys: " + processedData.keySet());
-        
+
         // Convert to JSON
         JSONObject jsonData = new JSONObject(processedData);
         String jsonString = jsonData.toString();
         Log.d(TAG, "JSON data length: " + jsonString.length());
-        Log.d(TAG, "JSON preview: " + jsonString.substring(0, Math.min(200, jsonString.length())));
-        
+
         // Start the HTML display activity
         Intent intent = new Intent(this, MeterDataDisplayActivity.class);
         intent.putExtra("METER_DATA", jsonString);
         startActivity(intent);
-        
+
     } catch (Exception e) {
         Log.e(TAG, "Error opening meter data display: " + e.getMessage(), e);
         Toast.makeText(this, "Error displaying data in HTML: " + e.getMessage(), Toast.LENGTH_LONG).show();
     }
+}
+
+// NEW METHOD: Fetch data using MainActivity's working methods
+private Map<String, Object> fetchDataForHTML(String inputNumber, String type, String subType) {
+    Map<String, Object> result = new HashMap<>();
+    
+    try {
+        if ("prepaid".equals(type)) {
+            // Use MainActivity's working prepaid method
+            Map<String, Object> prepaidData = fetchPrepaidData(inputNumber);
+            result.putAll(prepaidData);
+            
+        } else if ("postpaid".equals(type)) {
+            if ("consumer_no".equals(subType)) {
+                // Use MainActivity's working postpaid method
+                Map<String, Object> postpaidData = fetchPostpaidData(inputNumber);
+                result.putAll(postpaidData);
+            } else {
+                // Use MainActivity's working meter lookup method
+                Map<String, Object> meterLookupData = fetchMeterLookupData(inputNumber);
+                result.putAll(meterLookupData);
+            }
+        }
+        
+        // Add metadata
+        result.put("search_input", inputNumber);
+        result.put("search_type", type);
+        result.put("timestamp", new Date().toString());
+        
+    } catch (Exception e) {
+        Log.e(TAG, "Error in fetchDataForHTML: " + e.getMessage());
+        result.put("error", "Data fetch failed: " + e.getMessage());
+    }
+    
+    return result;
 }
 
     @Override
