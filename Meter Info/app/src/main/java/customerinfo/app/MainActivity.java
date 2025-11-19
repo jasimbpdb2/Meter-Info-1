@@ -984,7 +984,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // Clean SERVER1 data
-    private Map<String, Object> cleanSERVER1Data(Object SERVER1DataObj) {
+    public Map<String, Object> cleanSERVER1Data(Object SERVER1DataObj) {
         System.out.println("=== DEBUG cleanSERVER1Data START ===");
 
         if (SERVER1DataObj == null) {
@@ -1187,7 +1187,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // CORRECTED: mergeSERVERData with proper unique value handling
-    private Map<String, Object> mergeSERVERData(Map<String, Object> result) {
+    public Map<String, Object> mergeSERVERData(Map<String, Object> result) {
         JSONObject SERVER3Data = (JSONObject) result.get("SERVER3_data");
         Object SERVER2DataObj = result.get("SERVER2_data");
         JSONObject SERVER2Data = null;
