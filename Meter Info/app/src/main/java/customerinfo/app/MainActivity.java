@@ -20,11 +20,6 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import javax.net.ssl.HostnameVerifier;
 import android.graphics.Color;
-import android.graphics.Typeface;
-import android.graphics.drawable.GradientDrawable;
-import android.graphics.drawable.Drawable;
-import android.util.TypedValue;
-import android.view.Gravity;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.widget.Toast;
@@ -36,10 +31,11 @@ import android.os.Environment;
 import android.content.Intent;
 import android.net.Uri;
 import android.provider.Settings;
+
 public class MainActivity extends AppCompatActivity {
 
     private EditText meterInput;
-    private Button submitBtn;
+    private Button submitBtn, htmlViewBtn;
     private TextView resultView;
     private RadioButton prepaidBtn, postpaidBtn, consumerNoOption, meterNoOption;
     private RadioGroup mainRadioGroup, postpaidRadioGroup;
@@ -48,16 +44,12 @@ public class MainActivity extends AppCompatActivity {
     private String postpaidSubType = "consumer_no";
     private ExcelHelper excelHelper;
     private static final int STORAGE_PERMISSION_CODE = 100;
-    private static final String TAG = "ExcelHelper";
-
-
-    private UIHelper uiHelper;
+    private static final String TAG = "MainActivity";
 
     // Fix SSL certificate issues
     static {
         trustAllCertificates();
     }
-
 
     private static void trustAllCertificates() {
         try {
@@ -114,8 +106,8 @@ public class MainActivity extends AppCompatActivity {
         prepaidBtn = findViewById(R.id.prepaidBtn);
         postpaidBtn = findViewById(R.id.postpaidBtn);
         submitBtn = findViewById(R.id.submitBtn);
+        htmlViewBtn = findViewById(R.id.htmlViewBtn);
         resultView = findViewById(R.id.resultView);
-        //excelBtn = findViewById(R.id.excelBtn);
 
         // Postpaid options
         postpaidOptionsLayout = findViewById(R.id.postpaidOptionsLayout);
@@ -130,15 +122,11 @@ public class MainActivity extends AppCompatActivity {
         resultView.setFocusableInTouchMode(true);
         resultView.setLongClickable(true);
 
-        // Initialize UI Helper
-        uiHelper = new UIHelper(this, resultView, findViewById(R.id.tableContainer));
-        // excelHelper = new ExcelHelper(this); // REMOVED - will be created after permission
-
+        // ExcelHelper will be created after permission
         updateButtonStates();
         updatePostpaidSubOptions();
         updateInputHint();
     }
-
 
     private void setupClickListeners() {
         prepaidBtn.setOnClickListener(v -> {
@@ -184,16 +172,52 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
 
-
             fetchData(inputNumber);
         });
 
-        // ✅ CORRECT PLACE: Add back button listener HERE
+        // HTML View Button
+        htmlViewBtn.setOnClickListener(v -> {
+            String inputNumber = meterInput.getText().toString().trim();
+            if (inputNumber.isEmpty()) {
+                showResult("❌ Please enter number first");
+                return;
+            }
+
+            if (selectedType.equals("prepaid") && inputNumber.length() != 12) {
+                showResult("❌ Prepaid meter must be 12 digits");
+                return;
+            }
+
+            openMeterDataDisplay(inputNumber, selectedType, postpaidSubType);
+        });
+
+        // Back button listener
         findViewById(R.id.backBtn).setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, Home.class);
             startActivity(intent);
             finish();
         });
+    }
+
+    // HTML Display Integration
+    public void openMeterDataDisplay(String inputNumber, String type, String subType) {
+        try {
+            // Process data using the helper
+            MeterDataHTMLHelper helper = new MeterDataHTMLHelper();
+            Map<String, Object> processedData = helper.processMeterDataForHTML(inputNumber, type, subType);
+            
+            // Convert to JSON
+            JSONObject jsonData = new JSONObject(processedData);
+            
+            // Start the HTML display activity
+            Intent intent = new Intent(this, MeterDataDisplayActivity.class);
+            intent.putExtra("METER_DATA", jsonData.toString());
+            startActivity(intent);
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error opening meter data display: " + e.getMessage());
+            Toast.makeText(this, "Error displaying data in HTML", Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override
@@ -213,8 +237,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
-        
-
 
     private void updateButtonStates() {
         prepaidBtn.setBackgroundColor(selectedType.equals("prepaid") ? 0xFF3498DB : 0xFF95A5A6);
@@ -239,8 +261,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void fetchData(String inputNumber) {
-        // Clear UI first
-        uiHelper.clearAll();
+        // Clear previous results
+        clearResults();
 
         showResult("🔄 Fetching " + selectedType + " data...\nInput: " + inputNumber);
 
@@ -249,12 +271,11 @@ public class MainActivity extends AppCompatActivity {
                 Map<String, Object> result = fetchDataBasedOnType(inputNumber);
                 String output = displayResult(result, selectedType);
 
-                // ADD THIS LINE to save to Excel
+                // Save to Excel
                 saveLookupToExcel(result, inputNumber);
 
                 runOnUiThread(() -> {
-                    uiHelper.displayTextResult(output);
-                    displayTableIfAvailable(result);
+                    showResult(output);
                 });
 
             } catch (Exception e) {
@@ -262,6 +283,11 @@ public class MainActivity extends AppCompatActivity {
             }
         }).start();
     }
+
+    private void clearResults() {
+        resultView.setText("");
+    }
+
     private Map<String, Object> fetchDataBasedOnType(String inputNumber) {
         if (selectedType.equals("prepaid")) {
             return fetchPrepaidData(inputNumber);
@@ -269,147 +295,6 @@ public class MainActivity extends AppCompatActivity {
             return postpaidSubType.equals("consumer_no") ?
                     fetchPostpaidData(inputNumber) : fetchMeterLookupData(inputNumber);
         }
-    }
-
-    private void displayTableIfAvailable(Map<String, Object> result) {
-        try {
-            // Handle METER NO lookup (multiple customers)
-            if (selectedType.equals("postpaid") && postpaidSubType.equals("meter_no") &&
-                    result.containsKey("customer_results")) {
-
-                // Show tables for ALL customers found in meter lookup
-                List<Map<String, Object>> customerResults = (List<Map<String, Object>>) result.get("customer_results");
-                for (Map<String, Object> customerResult : customerResults) {
-                    showTableForCustomer(customerResult);
-                }
-            }
-            // Handle SINGLE customer (consumer no or prepaid)
-            else {
-                showTableForCustomer(result);
-            }
-        } catch (Exception e) {
-            // Table is optional, ignore errors
-        }
-    }
-
-    private void showTableForCustomer(Map<String, Object> result) {
-        try {
-            Object server2DataObj = result.get("SERVER2_data");
-            if (server2DataObj instanceof JSONObject) {
-                JSONObject server2Data = (JSONObject) server2DataObj;
-                if (server2Data.has("billInfo")) {
-                    JSONArray billInfo = server2Data.getJSONArray("billInfo");
-                    if (billInfo.length() > 0) {
-                        uiHelper.displayBillTable(billInfo);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            // Ignore errors for individual customers
-        }
-    }
-
-    private void showResult(String message) {
-        runOnUiThread(() -> resultView.setText(message));
-    }
-
-    // NEW: Get customer numbers from meter number
-    public static Map<String, Object> getCustomerNumbersByMeter(String meterNumber) {
-        Map<String, Object> result = new HashMap<>();
-        try {
-            String url = "https://billonwebapi.bpdb.gov.bd/api/BillInformation/GetCustomerMeterbyMeterNo/12/" + meterNumber;
-            HttpsURLConnection conn = (HttpsURLConnection) new URL(url).openConnection();
-
-            conn.setRequestMethod("GET");
-            conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
-            conn.setRequestProperty("Accept", "application/json");
-            conn.setConnectTimeout(10000);
-            conn.setReadTimeout(15000);
-
-            System.out.println("🔍 METER LOOKUP API: Fetching customers for meter: " + meterNumber);
-
-            if (conn.getResponseCode() == 200) {
-                BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-                StringBuilder response = new StringBuilder();
-                String line;
-
-                while ((line = reader.readLine()) != null) {
-                    response.append(line);
-                }
-
-                JSONObject meterData = new JSONObject(response.toString());
-
-                if (meterData.getInt("status") == 1 && meterData.has("content")) {
-                    JSONArray customers = meterData.getJSONArray("content");
-                    List<String> customerNumbers = new ArrayList<>();
-
-                    System.out.println("✅ Found " + customers.length() + " customer(s) for meter " + meterNumber);
-
-                    for (int i = 0; i < customers.length(); i++) {
-                        JSONObject customer = customers.getJSONObject(i);
-                        String custNum = customer.optString("CUSTOMER_NUM");
-                        if (!custNum.isEmpty()) {
-                            customerNumbers.add(custNum);
-                            System.out.println("   👤 Customer: " + custNum + " - " + customer.optString("CUSTOMER_NAME", "N/A"));
-                        }
-                    }
-
-                    if (!customerNumbers.isEmpty()) {
-                        result.put("customer_numbers", customerNumbers);
-                        result.put("meter_api_data", meterData);
-                    } else {
-                        result.put("error", "No customer numbers found for this meter");
-                    }
-                } else {
-                    result.put("error", "No customer data found for this meter");
-                }
-            } else {
-                result.put("error", "HTTP Error: " + conn.getResponseCode());
-            }
-        } catch (Exception e) {
-            System.out.println("❌ METER LOOKUP API Error: " + e.getMessage());
-            result.put("error", "Meter API Error: " + e.getMessage());
-        }
-        return result;
-    }
-
-    private Map<String, Object> fetchMeterLookupData(String meterNumber) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("meter_number", meterNumber);
-        result.put("customer_numbers", new ArrayList<String>());
-        result.put("customer_results", new ArrayList<Map<String, Object>>());
-
-        System.out.println("🔍 Starting meter lookup for: " + meterNumber);
-
-        // Step 1: Get customer numbers from meter API
-        Map<String, Object> meterResult = getCustomerNumbersByMeter(meterNumber);
-
-        if (meterResult.containsKey("error")) {
-            result.put("error", meterResult.get("error"));
-            return result;
-        }
-
-        if (!meterResult.containsKey("customer_numbers")) {
-            result.put("error", "No customer numbers found for this meter");
-            return result;
-        }
-
-        List<String> customerNumbers = (List<String>) meterResult.get("customer_numbers");
-        result.put("customer_numbers", customerNumbers);
-        result.put("meter_api_data", meterResult.get("meter_api_data"));
-
-        System.out.println("🔄 Processing " + customerNumbers.size() + " customer(s)");
-
-        // Step 2: Process each customer number with postpaid workflow
-        List<Map<String, Object>> customerResults = new ArrayList<>();
-        for (String custNum : customerNumbers) {
-            System.out.println("🔄 Processing customer: " + custNum);
-            Map<String, Object> customerResult = fetchPostpaidData(custNum);
-            customerResults.add(customerResult);
-        }
-
-        result.put("customer_results", customerResults);
-        return result;
     }
 
     // SERVER 1: Get consumer number from prepaid meter
@@ -472,7 +357,7 @@ public class MainActivity extends AppCompatActivity {
         return null;
     }
 
-    // CORRECTED: SERVER3Lookup to always fetch both servers
+    // SERVER3Lookup to always fetch both servers
     public static Map<String, Object> SERVER3Lookup(String customerNumber) {
         Map<String, Object> result = new HashMap<>();
 
@@ -637,6 +522,105 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // Get customer numbers from meter number
+    public static Map<String, Object> getCustomerNumbersByMeter(String meterNumber) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            String url = "https://billonwebapi.bpdb.gov.bd/api/BillInformation/GetCustomerMeterbyMeterNo/12/" + meterNumber;
+            HttpsURLConnection conn = (HttpsURLConnection) new URL(url).openConnection();
+
+            conn.setRequestMethod("GET");
+            conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
+            conn.setRequestProperty("Accept", "application/json");
+            conn.setConnectTimeout(10000);
+            conn.setReadTimeout(15000);
+
+            System.out.println("🔍 METER LOOKUP API: Fetching customers for meter: " + meterNumber);
+
+            if (conn.getResponseCode() == 200) {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                StringBuilder response = new StringBuilder();
+                String line;
+
+                while ((line = reader.readLine()) != null) {
+                    response.append(line);
+                }
+
+                JSONObject meterData = new JSONObject(response.toString());
+
+                if (meterData.getInt("status") == 1 && meterData.has("content")) {
+                    JSONArray customers = meterData.getJSONArray("content");
+                    List<String> customerNumbers = new ArrayList<>();
+
+                    System.out.println("✅ Found " + customers.length() + " customer(s) for meter " + meterNumber);
+
+                    for (int i = 0; i < customers.length(); i++) {
+                        JSONObject customer = customers.getJSONObject(i);
+                        String custNum = customer.optString("CUSTOMER_NUM");
+                        if (!custNum.isEmpty()) {
+                            customerNumbers.add(custNum);
+                            System.out.println("   👤 Customer: " + custNum + " - " + customer.optString("CUSTOMER_NAME", "N/A"));
+                        }
+                    }
+
+                    if (!customerNumbers.isEmpty()) {
+                        result.put("customer_numbers", customerNumbers);
+                        result.put("meter_api_data", meterData);
+                    } else {
+                        result.put("error", "No customer numbers found for this meter");
+                    }
+                } else {
+                    result.put("error", "No customer data found for this meter");
+                }
+            } else {
+                result.put("error", "HTTP Error: " + conn.getResponseCode());
+            }
+        } catch (Exception e) {
+            System.out.println("❌ METER LOOKUP API Error: " + e.getMessage());
+            result.put("error", "Meter API Error: " + e.getMessage());
+        }
+        return result;
+    }
+
+    private Map<String, Object> fetchMeterLookupData(String meterNumber) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("meter_number", meterNumber);
+        result.put("customer_numbers", new ArrayList<String>());
+        result.put("customer_results", new ArrayList<Map<String, Object>>());
+
+        System.out.println("🔍 Starting meter lookup for: " + meterNumber);
+
+        // Step 1: Get customer numbers from meter API
+        Map<String, Object> meterResult = getCustomerNumbersByMeter(meterNumber);
+
+        if (meterResult.containsKey("error")) {
+            result.put("error", meterResult.get("error"));
+            return result;
+        }
+
+        if (!meterResult.containsKey("customer_numbers")) {
+            result.put("error", "No customer numbers found for this meter");
+            return result;
+        }
+
+        List<String> customerNumbers = (List<String>) meterResult.get("customer_numbers");
+        result.put("customer_numbers", customerNumbers);
+        result.put("meter_api_data", meterResult.get("meter_api_data"));
+
+        System.out.println("🔄 Processing " + customerNumbers.size() + " customer(s)");
+
+        // Step 2: Process each customer number with postpaid workflow
+        List<Map<String, Object>> customerResults = new ArrayList<>();
+        for (String custNum : customerNumbers) {
+            System.out.println("🔄 Processing customer: " + custNum);
+            Map<String, Object> customerResult = fetchPostpaidData(custNum);
+            customerResults.add(customerResult);
+        }
+
+        result.put("customer_results", customerResults);
+        return result;
+    }
+
     private Map<String, Object> fetchPrepaidData(String meterNumber) {
         Map<String, Object> SERVER1Result = SERVER1Lookup(meterNumber);
         Map<String, Object> result = new HashMap<>();
@@ -705,71 +689,306 @@ public class MainActivity extends AppCompatActivity {
         return result;
     }
 
-    private String extractDirectValue(JSONObject jsonObject, String key) {
-        try {
-            if (!jsonObject.has(key)) {
-                return "N/A";
-            }
-
-            Object value = jsonObject.get(key);
-
-            // Handle JSONObject with _text
-            if (value instanceof JSONObject) {
-                JSONObject obj = (JSONObject) value;
-                if (obj.has("_text")) {
-                    String textValue = obj.getString("_text");
-                    return (textValue == null || textValue.isEmpty() || textValue.equals("{}")) ? "N/A" : textValue.trim();
-                }
-                return "N/A";
-            }
-
-            // Handle primitive types directly
-            String stringValue = value.toString().trim();
-            return (stringValue.isEmpty() || stringValue.equals("{}")) ? "N/A" : stringValue;
-
-        } catch (Exception e) {
-            return "N/A";
+    // POLISHED: displayResult with clean sections
+    private String displayResult(Map<String, Object> result, String billType) {
+        if (result == null) {
+            return "❌ No result data available";
         }
-    }
 
-    // IMPROVED: Better handling of _text fields
-    private String getText(Object field) {
-        try {
-            if (field == null) {
-                return "N/A";
+        StringBuilder output = new StringBuilder();
+
+        output.append("\n══════════════════════════════════════════════════\n");
+        output.append("📊 ").append(billType.toUpperCase()).append(" METER INFO\n");
+        output.append("══════════════════════════════════════════════════\n");
+
+        if (result.containsKey("error")) {
+            output.append("❌ Error: ").append(result.get("error")).append("\n");
+            return output.toString();
+        }
+
+        output.append("🔢 Meter Number: ").append(result.getOrDefault("meter_number", "N/A")).append("\n");
+
+        if ("prepaid".equals(billType)) {
+            if (result.get("consumer_number") != null) {
+                output.append("👤 Consumer Number: ").append(result.get("consumer_number")).append("\n");
             }
 
-            if (field instanceof JSONObject) {
-                JSONObject obj = (JSONObject) field;
+            // Show prepaid details from SERVER 1
+            Object SERVER1DataObj = result.get("SERVER1_data");
+            if (SERVER1DataObj != null) {
+                Map<String, Object> cleanedData = cleanSERVER1Data(SERVER1DataObj);
 
-                // Handle _text field (XML-like structure)
-                if (obj.has("_text")) {
-                    Object textValue = obj.get("_text");
-                    if (textValue != null && !textValue.toString().isEmpty() && !textValue.toString().equals("{}")) {
-                        String text = textValue.toString().trim();
-                        return text.isEmpty() ? "N/A" : text;
+                boolean hasValidData = !cleanedData.isEmpty() &&
+                        !cleanedData.containsKey("error") &&
+                        (cleanedData.containsKey("customer_info") ||
+                                cleanedData.containsKey("recent_transactions"));
+
+                if (hasValidData) {
+                    output.append("\n══════════════════════════════════════════════════\n");
+                    output.append("📋 PREPAID CUSTOMER DETAILS\n");
+                    output.append("══════════════════════════════════════════════════\n");
+
+                    String prepaidDisplay = formatPrepaidDisplay(cleanedData);
+                    if (!prepaidDisplay.trim().isEmpty() && !prepaidDisplay.equals("No data available")) {
+                        output.append(prepaidDisplay);
                     }
                 }
-
-                // If it's an empty JSON object, return N/A
-                return "N/A";
             }
 
-            // For empty JSONObject representations
-            if (field.toString().equals("{}")) {
-                return "N/A";
+            // Show merged SERVER 3 + SERVER 2 data
+            Map<String, Object> mergedData = mergeSERVERData(result);
+            if (mergedData != null && !mergedData.isEmpty()) {
+                String displayText = formatMergedDisplayWithoutTable(mergedData);
+                output.append(displayText);
             }
 
-            // For non-JSONObject, return string representation
-            String text = field.toString().trim();
-            return text.isEmpty() || text.equals("{}") ? "N/A" : text;
+        } else if ("postpaid".equals(billType)) {
+            // Handle meter lookup results
+            if (result.containsKey("customer_results")) {
+                List<String> customerNumbers = (List<String>) result.get("customer_numbers");
+                List<Map<String, Object>> customerResults = (List<Map<String, Object>>) result.get("customer_results");
 
-        } catch (Exception e) {
-            return "N/A";
+                output.append("\n📊 Found ").append(customerNumbers.size()).append(" customer(s) for this meter\n\n");
+
+                for (int i = 0; i < customerResults.size(); i++) {
+                    output.append(repeatString("=", 40)).append("\n");
+                    output.append("👤 CUSTOMER ").append(i + 1).append("/").append(customerNumbers.size())
+                            .append(": ").append(customerNumbers.get(i)).append("\n");
+                    output.append(repeatString("=", 40)).append("\n");
+
+                    Map<String, Object> customerResult = customerResults.get(i);
+                    Map<String, Object> mergedData = mergeSERVERData(customerResult);
+
+                    if (mergedData != null && !mergedData.isEmpty()) {
+                        String displayText = formatMergedDisplayWithoutTable(mergedData);
+                        output.append(displayText).append("\n");
+                    } else {
+                        output.append("❌ No data available for this customer\n\n");
+                    }
+                }
+            } else {
+                // Regular postpaid (consumer number)
+                output.append("👤 Consumer Number: ").append(result.getOrDefault("customer_number", "N/A")).append("\n");
+
+                // Show merged SERVER 3 + SERVER 2 data for postpaid
+                Map<String, Object> mergedData = mergeSERVERData(result);
+                if (mergedData != null && !mergedData.isEmpty()) {
+                    output.append(repeatString("=", 30)).append("\n");
+                    String displayText = formatMergedDisplayWithoutTable(mergedData);
+                    output.append(displayText);
+                } else {
+                    output.append("❌ No customer data found\n");
+                }
+            }
         }
+
+        return output.toString();
     }
 
-    // FIXED: Use exact pattern extraction that works (from JVDroid test)
+    // Format prepaid display
+    private String formatPrepaidDisplay(Map<String, Object> cleanedData) {
+        if (cleanedData == null || cleanedData.isEmpty()) {
+            return "No prepaid data available";
+        }
+
+        StringBuilder output = new StringBuilder();
+
+        // Customer Info Section
+        if (cleanedData.containsKey("customer_info")) {
+            output.append("👤 CUSTOMER INFORMATION\n");
+            output.append(repeatString("=", 20)).append("\n");
+            Map<String, String> customerInfo = (Map<String, String>) cleanedData.get("customer_info");
+            for (Map.Entry<String, String> entry : customerInfo.entrySet()) {
+                if (!entry.getValue().equals("N/A")) {
+                    output.append("• ").append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
+                }
+            }
+            output.append("\n");
+        }
+
+        // TOKENS SECTION - Most Important!
+        if (cleanedData.containsKey("recent_transactions")) {
+            output.append("🔑 LAST 3 RECHARGE TOKENS\n");
+            output.append(repeatString("=", 20)).append("\n\n");
+
+            List<Map<String, String>> transactions = (List<Map<String, String>>) cleanedData.get("recent_transactions");
+            for (int i = 0; i < transactions.size(); i++) {
+                Map<String, String> transaction = transactions.get(i);
+                output.append("Order ").append(i + 1).append(":\n");
+                output.append("  📅 Date: ").append(transaction.get("Date")).append("\n");
+                output.append("  🧾 Order: ").append(transaction.get("Order Number")).append("\n");
+                output.append("  👤 Operator: ").append(transaction.get("Operator")).append("\n");
+                output.append("  🔢 Sequence: ").append(transaction.get("Sequence")).append("\n");
+                output.append("  💰 Amount: ").append(transaction.get("Amount")).append("\n");
+                output.append("  ⚡ Energy: ").append(transaction.get("Energy Cost")).append("\n");
+                output.append("  🔑 TOKENS: ").append(transaction.get("Tokens")).append("\n\n");
+            }
+        }
+
+        return output.toString();
+    }
+
+    // Format merged display without table
+    private String formatMergedDisplayWithoutTable(Map<String, Object> mergedData) {
+        if (mergedData == null || mergedData.isEmpty()) {
+            return "No data available";
+        }
+
+        StringBuilder output = new StringBuilder();
+
+        // Customer Info Section
+        if (mergedData.containsKey("customer_info")) {
+            output.append("👤 CUSTOMER INFORMATION\n");
+            output.append("══════════════════════════════════════════════════\n");
+
+            Map<String, String> customerInfo = (Map<String, String>) mergedData.get("customer_info");
+
+            // Group fields logically
+            String[] personalInfo = {
+                    "Customer Name", "Father Name", "Customer Address"
+            };
+
+            String[] meterInfo = {
+                    "Meter Number", "Meter Condition", "Meter Status", "Connection Date"
+            };
+
+            String[] billingInfo = {
+                    "Customer Number", "Location Code", "Area Code", "Bill Group", "Book Number",
+                    "Tariff Description", "Sanctioned Load", "Walk Order", "Account_Number"
+            };
+
+            String[] technicalInfo = {
+                    "Usage Type", "Description", "Start Bill Cycle"
+            };
+
+            String[] readingInfo = {
+                    "Arrear Amount", "Current Reading SR", "Last Bill Reading SR",
+                    "Last Bill Reading OF PK", "Last Bill Reading PK"
+            };
+
+            // Personal Information
+            output.append("\n📋 PERSONAL INFORMATION\n");
+            output.append("──────────────────────────────────────────────────\n");
+            for (String key : personalInfo) {
+                if (customerInfo.containsKey(key) && isValidValue(customerInfo.get(key))) {
+                    output.append("• ").append(key).append(": ").append(customerInfo.get(key)).append("\n");
+                }
+            }
+
+            // Meter Information
+            output.append("\n🔧 METER INFORMATION\n");
+            output.append("──────────────────────────────────────────────────\n");
+            for (String key : meterInfo) {
+                if (customerInfo.containsKey(key) && isValidValue(customerInfo.get(key))) {
+                    output.append("• ").append(key).append(": ").append(customerInfo.get(key)).append("\n");
+                }
+            }
+
+            // Billing Information
+            output.append("\n💳 BILLING INFORMATION\n");
+            output.append("──────────────────────────────────────────────────\n");
+            for (String key : billingInfo) {
+                if (customerInfo.containsKey(key) && isValidValue(customerInfo.get(key))) {
+                    output.append("• ").append(key).append(": ").append(customerInfo.get(key)).append("\n");
+                }
+            }
+
+            // Technical Information
+            output.append("\n⚙️ TECHNICAL INFORMATION\n");
+            output.append("──────────────────────────────────────────────────\n");
+            for (String key : technicalInfo) {
+                if (customerInfo.containsKey(key) && isValidValue(customerInfo.get(key))) {
+                    output.append("• ").append(key).append(": ").append(customerInfo.get(key)).append("\n");
+                }
+            }
+
+            // Reading Information
+            output.append("\n📊 METER READINGS\n");
+            output.append("──────────────────────────────────────────────────\n");
+            for (String key : readingInfo) {
+                if (customerInfo.containsKey(key) && isValidValue(customerInfo.get(key))) {
+                    output.append("• ").append(key).append(": ").append(customerInfo.get(key)).append("\n");
+                }
+            }
+        }
+
+        // Combined Bill Information Section - BUT NO TABLE
+        if (mergedData.containsKey("bill_summary") || mergedData.containsKey("bill_info_raw")) {
+            output.append("\n📊 BILL SUMMARY\n");
+            output.append("══════════════════════════════════════════════════\n");
+
+            // NEW BILL SUMMARY FORMAT (keep this)
+            if (mergedData.containsKey("bill_info_raw")) {
+                try {
+                    JSONArray billInfo = (JSONArray) mergedData.get("bill_info_raw");
+
+                    if (billInfo.length() > 0) {
+                        // Calculate first and last bill periods, totals
+                        JSONObject firstBill = billInfo.getJSONObject(billInfo.length() - 1);
+                        JSONObject lastBill = billInfo.getJSONObject(0);
+
+                        String firstBillPeriod = formatBillMonth(firstBill.optString("BILL_MONTH"));
+                        String lastBillPeriod = formatBillMonth(lastBill.optString("BILL_MONTH"));
+
+                        double totalAmount = 0.0;
+                        double totalPaid = 0.0;
+                        double arrears = 0.0;
+
+                        for (int i = 0; i < billInfo.length(); i++) {
+                            JSONObject bill = billInfo.getJSONObject(i);
+                            totalAmount += bill.optDouble("CURRENT_BILL", 0);
+                            totalPaid += bill.optDouble("PAID_AMT", 0);
+                        }
+
+                        // Calculate arrears as Total Amount minus Total Paid
+                        arrears = totalAmount - totalPaid;
+
+                        // Get total bills count
+                        int totalBills = billInfo.length();
+                        if (mergedData.containsKey("bill_summary")) {
+                            Map<String, Object> billSummary = (Map<String, Object>) mergedData.get("bill_summary");
+                            totalBills = (int) billSummary.getOrDefault("total_bills", billInfo.length());
+                        }
+
+                        // Display new bill summary format
+                        output.append(String.format("%-25s: %s\n", "First Bill Period", firstBillPeriod));
+                        output.append(String.format("%-25s: %s\n", "Last Bill Period", lastBillPeriod));
+                        output.append(String.format("%-25s: %s\n", "Total Bills", totalBills));
+                        output.append(String.format("%-25s: ৳%.0f\n", "Total Amount", totalAmount));
+                        output.append(String.format("%-25s: ৳%.0f\n", "Total Paid", totalPaid));
+                        output.append(String.format("%-25s: ৳%.0f\n", "Arrears", arrears));
+                        output.append("\n");
+                    }
+                } catch (Exception e) {
+                    output.append("❌ Error calculating bill summary: ").append(e.getMessage()).append("\n");
+                }
+            }
+
+            // Final Balance Details - SHOW ZEROS (keep this)
+            if (mergedData.containsKey("balance_info")) {
+                Map<String, String> balanceInfo = (Map<String, String>) mergedData.get("balance_info");
+
+                output.append("💰 FINAL BALANCE DETAILS\n");
+                output.append("──────────────────────────────────────────────────\n");
+
+                String[] balanceOrder = {"Total Balance", "Arrear Amount", "PRN", "LPS", "VAT"};
+
+                for (String key : balanceOrder) {
+                    if (balanceInfo.containsKey(key)) {
+                        String value = balanceInfo.get(key);
+                        if (value == null || value.isEmpty() || value.equals("0") || value.equals("0.00")) {
+                            value = "0";
+                        }
+                        output.append("• ").append(key).append(": ").append(value).append("\n");
+                    }
+                }
+            }
+        }
+
+        return output.toString();
+    }
+
+    // Clean SERVER1 data
     private Map<String, Object> cleanSERVER1Data(Object SERVER1DataObj) {
         System.out.println("=== DEBUG cleanSERVER1Data START ===");
 
@@ -805,7 +1024,31 @@ public class MainActivity extends AppCompatActivity {
             if (SERVER1Data.has("mCustomerData")) {
                 System.out.println("✅ Found mCustomerData");
                 JSONObject mCustomerData = SERVER1Data.getJSONObject("mCustomerData");
-                processCustomerDataDirect(mCustomerData, cleaned);
+                if (mCustomerData.has("result")) {
+                    JSONObject result = mCustomerData.getJSONObject("result");
+
+                    Map<String, String> customerInfo = new HashMap<>();
+                    customerInfo.put("Consumer Number", extractDirectValue(result, "customerAccountNo"));
+                    customerInfo.put("Name", extractDirectValue(result, "customerName"));
+                    customerInfo.put("Address", extractDirectValue(result, "customerAddress"));
+                    customerInfo.put("Phone", extractDirectValue(result, "customerPhone"));
+                    customerInfo.put("Division", extractDirectValue(result, "division"));
+                    customerInfo.put("Sub Division", extractDirectValue(result, "sndDivision"));
+                    customerInfo.put("Tariff Category", extractDirectValue(result, "tariffCategory"));
+                    customerInfo.put("Connection Category", extractDirectValue(result, "connectionCategory"));
+                    customerInfo.put("Account Type", extractDirectValue(result, "accountType"));
+                    customerInfo.put("Meter Type", extractDirectValue(result, "meterType"));
+                    customerInfo.put("Sanctioned Load", extractDirectValue(result, "sanctionLoad"));
+                    customerInfo.put("Meter Number", extractDirectValue(result, "meterNumber"));
+                    customerInfo.put("Last Recharge Amount", extractDirectValue(result, "lastRechargeAmount"));
+                    customerInfo.put("Last Recharge Time", extractDirectValue(result, "lastRechargeTime"));
+                    customerInfo.put("Installation Date", extractDirectValue(result, "installationDate"));
+                    customerInfo.put("Lock Status", extractDirectValue(result, "lockStatus"));
+                    customerInfo.put("Total Recharge This Month", extractDirectValue(result, "totalRechargeThisMonth"));
+
+                    cleaned.put("customer_info", removeEmptyFields(customerInfo));
+                    System.out.println("✅ Added customer_info with " + customerInfo.size() + " fields");
+                }
             }
 
             // Process mOrderData - USE EXACT PATTERN EXTRACTION (PROVEN TO WORK)
@@ -844,7 +1087,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // EXACT PATTERN EXTRACTION FOR TRANSACTIONS AND TOKENS (FROM WORKING JVDROID TEST)
+    // EXACT PATTERN EXTRACTION FOR TRANSACTIONS AND TOKENS
     private List<Map<String, String>> extractTransactionsWithExactPatterns(String response) {
         List<Map<String, String>> transactions = new ArrayList<>();
 
@@ -921,316 +1164,31 @@ public class MainActivity extends AppCompatActivity {
         return "N/A";
     }
 
-    // Process customer data from JSON
-    private void processCustomerDataDirect(JSONObject mCustomerData, Map<String, Object> cleaned) {
+    private String extractDirectValue(JSONObject jsonObject, String key) {
         try {
-            if (mCustomerData.has("result")) {
-                JSONObject result = mCustomerData.getJSONObject("result");
-
-                Map<String, String> customerInfo = new HashMap<>();
-                customerInfo.put("Consumer Number", extractDirectValue(result, "customerAccountNo"));
-                customerInfo.put("Name", extractDirectValue(result, "customerName"));
-                customerInfo.put("Address", extractDirectValue(result, "customerAddress"));
-                customerInfo.put("Phone", extractDirectValue(result, "customerPhone"));
-                customerInfo.put("Division", extractDirectValue(result, "division"));
-                customerInfo.put("Sub Division", extractDirectValue(result, "sndDivision"));
-                customerInfo.put("Tariff Category", extractDirectValue(result, "tariffCategory"));
-                customerInfo.put("Connection Category", extractDirectValue(result, "connectionCategory"));
-                customerInfo.put("Account Type", extractDirectValue(result, "accountType"));
-                customerInfo.put("Meter Type", extractDirectValue(result, "meterType"));
-                customerInfo.put("Sanctioned Load", extractDirectValue(result, "sanctionLoad"));
-                customerInfo.put("Meter Number", extractDirectValue(result, "meterNumber"));
-                customerInfo.put("Last Recharge Amount", extractDirectValue(result, "lastRechargeAmount"));
-                customerInfo.put("Last Recharge Time", extractDirectValue(result, "lastRechargeTime"));
-                customerInfo.put("Installation Date", extractDirectValue(result, "installationDate"));
-                customerInfo.put("Lock Status", extractDirectValue(result, "lockStatus"));
-                customerInfo.put("Total Recharge This Month", extractDirectValue(result, "totalRechargeThisMonth"));
-
-                cleaned.put("customer_info", removeEmptyFields(customerInfo));
-                System.out.println("✅ Added customer_info with " + customerInfo.size() + " fields");
+            if (!jsonObject.has(key)) {
+                return "N/A";
             }
-        } catch (Exception e) {
-            System.out.println("❌ Error processing customer data: " + e.getMessage());
-        }
-    }
 
-    // CORRECTED: cleanSERVER2Data with proper finalBalanceInfo, bill info, and unique value handling
-    private Map<String, Object> cleanSERVER2Data(JSONObject SERVER2Data) {
-        if (SERVER2Data == null || SERVER2Data.has("error")) {
-            Map<String, Object> result = new HashMap<>();
-            if (SERVER2Data != null && SERVER2Data.has("error")) {
-                result.put("error", SERVER2Data.optString("error"));
-            }
-            return result;
-        }
+            Object value = jsonObject.get(key);
 
-        Map<String, Object> cleaned = new HashMap<>();
-
-        System.out.println("🔍 CLEAN SERVER2: Processing SERVER2 data");
-        System.out.println("🔍 CLEAN SERVER2: Available keys: " + getJSONKeys(SERVER2Data));
-
-        try {
-            // 1. Extract Customer Information
-            if (SERVER2Data.has("customerInfo") && SERVER2Data.getJSONArray("customerInfo").length() > 0) {
-                JSONArray customerInfoArray = SERVER2Data.getJSONArray("customerInfo");
-                if (customerInfoArray.length() > 0 && customerInfoArray.getJSONArray(0).length() > 0) {
-                    JSONObject firstCustomer = customerInfoArray.getJSONArray(0).getJSONObject(0);
-                    Map<String, String> customerInfo = new HashMap<>();
-
-                    customerInfo.put("Customer Number", firstCustomer.optString("CUSTOMER_NUMBER"));
-                    customerInfo.put("Customer Name", firstCustomer.optString("CUSTOMER_NAME"));
-                    customerInfo.put("Address", firstCustomer.optString("ADDRESS"));
-                    customerInfo.put("Tariff", firstCustomer.optString("TARIFF"));
-                    customerInfo.put("Location Code", firstCustomer.optString("LOCATION_CODE"));
-                    customerInfo.put("Bill Group", firstCustomer.optString("BILL_GROUP"));
-                    customerInfo.put("Book", firstCustomer.optString("BOOK"));
-                    customerInfo.put("Walking Sequence", firstCustomer.optString("WALKING_SEQUENCE"));
-                    customerInfo.put("Meter Number", firstCustomer.optString("METER_NUM"));
-                    customerInfo.put("Meter Status", getMeterStatus(firstCustomer.optString("METER_STATUS")));
-                    customerInfo.put("Connection Date", formatDate(firstCustomer.optString("METER_CONNECT_DATE")));
-                    customerInfo.put("Description", firstCustomer.optString("DESCR"));
-                    customerInfo.put("Account_Number", firstCustomer.optString("CONS_EXTG_NUM"));
-                    customerInfo.put("Usage Type", firstCustomer.optString("USAGE_TYPE"));
-                    customerInfo.put("Start Bill Cycle", firstCustomer.optString("START_BILL_CYCLE"));
-
-                    cleaned.put("customer_info", removeEmptyFields(customerInfo));
-                    System.out.println("✅ CLEAN SERVER2: Customer info extracted");
+            // Handle JSONObject with _text
+            if (value instanceof JSONObject) {
+                JSONObject obj = (JSONObject) value;
+                if (obj.has("_text")) {
+                    String textValue = obj.getString("_text");
+                    return (textValue == null || textValue.isEmpty() || textValue.equals("{}")) ? "N/A" : textValue.trim();
                 }
-            } else {
-                System.out.println("❌ CLEAN SERVER2: No customerInfo found");
+                return "N/A";
             }
 
-            // 2. Extract Balance Information - FIXED FINALBALANCEINFO PARSING
-            Map<String, String> balanceInfo = new HashMap<>();
-
-            // Method 1: Parse finalBalanceInfo with detailed breakdown
-            if (SERVER2Data.has("finalBalanceInfo")) {
-                String balanceString = SERVER2Data.optString("finalBalanceInfo");
-                System.out.println("🔍 CLEAN SERVER2: finalBalanceInfo raw: " + balanceString);
-
-                if (balanceString != null && !balanceString.equals("null") && !balanceString.isEmpty()) {
-                    balanceInfo = parseFinalBalanceInfo(balanceString);
-                    System.out.println("✅ CLEAN SERVER2: finalBalanceInfo parsed: " + balanceInfo);
-                }
-            }
-
-            // Method 2: Fallback to balanceInfo object
-            if (balanceInfo.isEmpty() && SERVER2Data.has("balanceInfo")) {
-                try {
-                    JSONObject balanceInfoObj = SERVER2Data.getJSONObject("balanceInfo");
-                    if (balanceInfoObj.has("Result") && balanceInfoObj.getJSONArray("Result").length() > 0) {
-                        JSONObject firstBalance = balanceInfoObj.getJSONArray("Result").getJSONObject(0);
-
-                        double totalBalance = firstBalance.optDouble("BALANCE", 0);
-                        double currentBill = firstBalance.optDouble("CURRENT_BILL", 0);
-                        double arrearBill = firstBalance.optDouble("ARREAR_BILL", 0);
-                        double paidAmount = firstBalance.optDouble("PAID_AMT", 0);
-
-                        balanceInfo.put("Total Balance", String.format("%.2f", totalBalance));
-                        balanceInfo.put("Current Bill", String.format("%.2f", currentBill));
-                        balanceInfo.put("Arrear Amount", String.format("%.2f", arrearBill));
-                        balanceInfo.put("Paid Amount", String.format("%.2f", paidAmount));
-
-                        // Calculate components if available
-                        if (totalBalance > 0 && currentBill + arrearBill > 0) {
-                            double principal = currentBill + arrearBill - paidAmount;
-                            double lps = Math.max(0, totalBalance - principal);
-                            balanceInfo.put("PRN", String.format("%.2f", principal));
-                            balanceInfo.put("LPS", String.format("%.2f", lps));
-                        }
-
-                        System.out.println("✅ CLEAN SERVER2: Balance info extracted from balanceInfo");
-                    }
-                } catch (Exception e) {
-                    System.out.println("❌ CLEAN SERVER2: Error parsing balanceInfo: " + e.getMessage());
-                }
-            }
-
-            if (!balanceInfo.isEmpty()) {
-                cleaned.put("balance_info", balanceInfo);
-                System.out.println("✅ CLEAN SERVER2: Balance info finalized: " + balanceInfo.keySet());
-            } else {
-                System.out.println("❌ CLEAN SERVER2: No balance information found");
-            }
-
-            // 3. EXTRACT BILL INFORMATION - FIXED!
-            if (SERVER2Data.has("billInfo")) {
-                try {
-                    JSONArray billInfo = SERVER2Data.getJSONArray("billInfo");
-                    System.out.println("✅ CLEAN SERVER2: billInfo found with " + billInfo.length() + " records");
-
-                    if (billInfo.length() > 0) {
-                        // Store the raw billInfo array
-                        cleaned.put("bill_info_raw", billInfo);
-
-                        // Create detailed bill summary
-                        Map<String, Object> billSummary = new HashMap<>();
-                        billSummary.put("total_bills", billInfo.length());
-
-                        // Get latest bill details
-                        JSONObject latestBill = billInfo.getJSONObject(0);
-                        billSummary.put("latest_bill_date", formatBillMonth(latestBill.optString("BILL_MONTH")));
-                        billSummary.put("latest_bill_number", latestBill.optString("BILL_NO"));
-                        billSummary.put("latest_consumption", latestBill.optDouble("CONS_KWH_SR", 0));
-                        billSummary.put("latest_total_amount", latestBill.optDouble("TOTAL_BILL", 0));
-                        billSummary.put("latest_balance", latestBill.optDouble("BALANCE", 0));
-                        billSummary.put("current_reading_sr", latestBill.optDouble("CONS_KWH_SR", 0));
-
-                        // Extract all bills for detailed analysis
-                        List<Map<String, Object>> allBills = new ArrayList<>();
-                        double totalConsumption = 0;
-                        double totalAmount = 0;
-
-                        for (int i = 0; i < billInfo.length(); i++) {
-                            JSONObject bill = billInfo.getJSONObject(i);
-                            Map<String, Object> billDetail = new HashMap<>();
-
-                            billDetail.put("bill_month", formatBillMonth(bill.optString("BILL_MONTH")));
-                            billDetail.put("bill_number", bill.optString("BILL_NO"));
-                            billDetail.put("consumption", bill.optDouble("CONS_KWH_SR", 0));
-                            billDetail.put("total_amount", bill.optDouble("TOTAL_BILL", 0));
-                            billDetail.put("balance", bill.optDouble("BALANCE", 0));
-                            billDetail.put("due_date", formatDate(bill.optString("INVOICE_DUE_DATE")));
-
-                            allBills.add(billDetail);
-
-                            if (i < 3) { // Recent 3 months
-                                totalConsumption += bill.optDouble("CONS_KWH_SR", 0);
-                                totalAmount += bill.optDouble("TOTAL_BILL", 0);
-                            }
-                        }
-
-                        billSummary.put("recent_consumption", totalConsumption);
-                        billSummary.put("recent_amount", totalAmount);
-                        billSummary.put("all_bills", allBills);
-                        billSummary.put("bill_months_available", billInfo.length());
-
-                        cleaned.put("bill_summary", billSummary);
-                        System.out.println("✅ CLEAN SERVER2: Bill information extracted - " + allBills.size() + " bills");
-                    }
-                } catch (Exception e) {
-                    System.out.println("❌ CLEAN SERVER2: Error processing billInfo: " + e.getMessage());
-                    e.printStackTrace();
-                }
-            } else {
-                System.out.println("❌ CLEAN SERVER2: No billInfo found in SERVER2 data");
-            }
-
-            // 4. Store raw data for unique value analysis
-            cleaned.put("SERVER2_raw_data", SERVER2Data);
+            // Handle primitive types directly
+            String stringValue = value.toString().trim();
+            return (stringValue.isEmpty() || stringValue.equals("{}")) ? "N/A" : stringValue;
 
         } catch (Exception e) {
-            System.out.println("❌ CLEAN SERVER2 ERROR: " + e.getMessage());
-            e.printStackTrace();
+            return "N/A";
         }
-
-        Map<String, Object> finalResult = removeEmptyFields(cleaned);
-        System.out.println("🎯 CLEAN SERVER2 FINAL: " + finalResult.keySet());
-        return finalResult;
-    }
-
-    // NEW: Improved finalBalanceInfo parser
-    private Map<String, String> parseFinalBalanceInfo(String balanceString) {
-        Map<String, String> balanceInfo = new HashMap<>();
-
-        if (balanceString == null || balanceString.isEmpty() || balanceString.equals("null")) {
-            return balanceInfo;
-        }
-
-        try {
-            System.out.println("🔍 PARSING finalBalanceInfo: " + balanceString);
-
-            // Handle different formats
-
-            // Format 1: Simple total amount "1234.56"
-            if (!balanceString.contains(",") && !balanceString.contains(":")) {
-                balanceInfo.put("Total Balance", balanceString.trim());
-                balanceInfo.put("Arrear Amount", balanceString.trim());
-                System.out.println("✅ Parsed as simple total: " + balanceString);
-                return balanceInfo;
-            }
-
-            // Format 2: Detailed breakdown "1234.56, PRN:1000.00, LPS:234.56"
-            String[] parts = balanceString.split(",");
-
-            // First part is always total balance
-            String totalBalance = parts[0].trim();
-            balanceInfo.put("Total Balance", totalBalance);
-            balanceInfo.put("Arrear Amount", totalBalance);
-
-            // Parse detailed components
-            for (int i = 1; i < parts.length; i++) {
-                String part = parts[i].trim();
-                if (part.startsWith("PRN:")) {
-                    balanceInfo.put("PRN", part.substring(4).trim());
-                } else if (part.startsWith("LPS:")) {
-                    balanceInfo.put("LPS", part.substring(4).trim());
-                } else if (part.startsWith("VAT:")) {
-                    balanceInfo.put("VAT", part.substring(4).trim());
-                } else if (part.startsWith("Current:")) {
-                    balanceInfo.put("Current Bill", part.substring(8).trim());
-                } else if (part.startsWith("Arrear:")) {
-                    balanceInfo.put("Arrear Amount", part.substring(7).trim());
-                }
-            }
-
-            System.out.println("✅ Parsed detailed balance: " + balanceInfo);
-
-        } catch (Exception e) {
-            System.out.println("❌ Error parsing finalBalanceInfo: " + e.getMessage());
-            // Fallback: use the entire string as total balance
-            balanceInfo.put("Total Balance", balanceString);
-            balanceInfo.put("Arrear Amount", balanceString);
-        }
-
-        return balanceInfo;
-    }
-
-    private Map<String, Object> cleanSERVER3Data(JSONObject SERVER3Data) {
-        if (SERVER3Data == null) {
-            return new HashMap<>();
-        }
-
-        Map<String, Object> cleaned = new HashMap<>();
-        Map<String, String> customerInfo = new HashMap<>();
-
-        customerInfo.put("Customer Number", SERVER3Data.optString("customerNumber"));
-        customerInfo.put("Customer Name", SERVER3Data.optString("customerName"));
-        customerInfo.put("Customer Address", SERVER3Data.optString("customerAddr"));
-        customerInfo.put("Father Name", SERVER3Data.optString("fatherName"));
-        customerInfo.put("Location Code", SERVER3Data.optString("locationCode"));
-        customerInfo.put("Area Code", SERVER3Data.optString("areaCode"));
-        customerInfo.put("Book Number", SERVER3Data.optString("bookNumber"));
-        customerInfo.put("Bill Group", SERVER3Data.optString("billGroup"));
-        customerInfo.put("Meter Number", SERVER3Data.optString("meterNum"));
-        customerInfo.put("Meter Condition", SERVER3Data.optString("meterConditionDesc"));
-        customerInfo.put("Sanctioned Load", SERVER3Data.optString("sanctionedLoad"));
-        customerInfo.put("Tariff Description", SERVER3Data.optString("tariffDesc"));
-        customerInfo.put("Walk Order", SERVER3Data.optString("walkOrder"));
-        customerInfo.put("Arrear Amount", SERVER3Data.optString("arrearAmount"));
-
-        // Map SERVER3's lastBillReadingSr to match SERVER2's CONS_KWH_SR
-        String lastReadingSr = SERVER3Data.optString("lastBillReadingSr");
-        if (lastReadingSr != null && !lastReadingSr.equals("null") && !lastReadingSr.isEmpty()) {
-            customerInfo.put("Last Bill Reading SR", lastReadingSr);
-            // Also store for bill info merging
-            cleaned.put("current_reading_sr", Double.parseDouble(lastReadingSr));
-        }
-
-        customerInfo.put("Last Bill Reading OF PK", SERVER3Data.optString("lastBillReadingOfPk"));
-        customerInfo.put("Last Bill Reading PK", SERVER3Data.optString("lastBillReadingPk"));
-
-        cleaned.put("customer_info", removeEmptyFields(customerInfo));
-
-        if (SERVER3Data.has("arrearAmount")) {
-            String arrearAmount = SERVER3Data.optString("arrearAmount");
-            Map<String, String> balanceInfo = new HashMap<>();
-            balanceInfo.put("Total Balance", arrearAmount);
-            balanceInfo.put("Arrear Amount", arrearAmount);
-            cleaned.put("balance_info", balanceInfo);
-        }
-
-        return removeEmptyFields(cleaned);
     }
 
     // CORRECTED: mergeSERVERData with proper unique value handling
@@ -1369,295 +1327,287 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // formatMergedDisplay without the table
-    private String formatMergedDisplayWithoutTable(Map<String, Object> mergedData) {
-        if (mergedData == null || mergedData.isEmpty()) {
-            return "No data available";
+    // Clean SERVER2 data
+    private Map<String, Object> cleanSERVER2Data(JSONObject SERVER2Data) {
+        if (SERVER2Data == null || SERVER2Data.has("error")) {
+            Map<String, Object> result = new HashMap<>();
+            if (SERVER2Data != null && SERVER2Data.has("error")) {
+                result.put("error", SERVER2Data.optString("error"));
+            }
+            return result;
         }
 
-        StringBuilder output = new StringBuilder();
+        Map<String, Object> cleaned = new HashMap<>();
 
-        // Customer Info Section - Same as before
-        if (mergedData.containsKey("customer_info")) {
-            output.append("👤 CUSTOMER INFORMATION\n");
-            output.append("══════════════════════════════════════════════════\n");
+        System.out.println("🔍 CLEAN SERVER2: Processing SERVER2 data");
+        System.out.println("🔍 CLEAN SERVER2: Available keys: " + getJSONKeys(SERVER2Data));
 
-            Map<String, String> customerInfo = (Map<String, String>) mergedData.get("customer_info");
+        try {
+            // 1. Extract Customer Information
+            if (SERVER2Data.has("customerInfo") && SERVER2Data.getJSONArray("customerInfo").length() > 0) {
+                JSONArray customerInfoArray = SERVER2Data.getJSONArray("customerInfo");
+                if (customerInfoArray.length() > 0 && customerInfoArray.getJSONArray(0).length() > 0) {
+                    JSONObject firstCustomer = customerInfoArray.getJSONArray(0).getJSONObject(0);
+                    Map<String, String> customerInfo = new HashMap<>();
 
-            // Group fields logically
-            String[] personalInfo = {
-                    "Customer Name", "Father Name", "Customer Address"
-            };
+                    customerInfo.put("Customer Number", firstCustomer.optString("CUSTOMER_NUMBER"));
+                    customerInfo.put("Customer Name", firstCustomer.optString("CUSTOMER_NAME"));
+                    customerInfo.put("Address", firstCustomer.optString("ADDRESS"));
+                    customerInfo.put("Tariff", firstCustomer.optString("TARIFF"));
+                    customerInfo.put("Location Code", firstCustomer.optString("LOCATION_CODE"));
+                    customerInfo.put("Bill Group", firstCustomer.optString("BILL_GROUP"));
+                    customerInfo.put("Book", firstCustomer.optString("BOOK"));
+                    customerInfo.put("Walking Sequence", firstCustomer.optString("WALKING_SEQUENCE"));
+                    customerInfo.put("Meter Number", firstCustomer.optString("METER_NUM"));
+                    customerInfo.put("Meter Status", getMeterStatus(firstCustomer.optString("METER_STATUS")));
+                    customerInfo.put("Connection Date", formatDate(firstCustomer.optString("METER_CONNECT_DATE")));
+                    customerInfo.put("Description", firstCustomer.optString("DESCR"));
+                    customerInfo.put("Account_Number", firstCustomer.optString("CONS_EXTG_NUM"));
+                    customerInfo.put("Usage Type", firstCustomer.optString("USAGE_TYPE"));
+                    customerInfo.put("Start Bill Cycle", firstCustomer.optString("START_BILL_CYCLE"));
 
-            String[] meterInfo = {
-                    "Meter Number", "Meter Condition", "Meter Status", "Connection Date"
-            };
+                    cleaned.put("customer_info", removeEmptyFields(customerInfo));
+                    System.out.println("✅ CLEAN SERVER2: Customer info extracted");
+                }
+            } else {
+                System.out.println("❌ CLEAN SERVER2: No customerInfo found");
+            }
 
-            String[] billingInfo = {
-                    "Customer Number", "Location Code", "Area Code", "Bill Group", "Book Number",
-                    "Tariff Description", "Sanctioned Load", "Walk Order", "Account_Number"
-            };
+            // 2. Extract Balance Information
+            Map<String, String> balanceInfo = new HashMap<>();
 
-            String[] technicalInfo = {
-                    "Usage Type", "Description", "Start Bill Cycle"
-            };
+            // Method 1: Parse finalBalanceInfo with detailed breakdown
+            if (SERVER2Data.has("finalBalanceInfo")) {
+                String balanceString = SERVER2Data.optString("finalBalanceInfo");
+                System.out.println("🔍 CLEAN SERVER2: finalBalanceInfo raw: " + balanceString);
 
-            String[] readingInfo = {
-                    "Arrear Amount", "Current Reading SR", "Last Bill Reading SR",
-                    "Last Bill Reading OF PK", "Last Bill Reading PK"
-            };
-
-            // Personal Information
-            output.append("\n📋 PERSONAL INFORMATION\n");
-            output.append("──────────────────────────────────────────────────\n");
-            for (String key : personalInfo) {
-                if (customerInfo.containsKey(key) && isValidValue(customerInfo.get(key))) {
-                    output.append("• ").append(key).append(": ").append(customerInfo.get(key)).append("\n");
+                if (balanceString != null && !balanceString.equals("null") && !balanceString.isEmpty()) {
+                    balanceInfo = parseFinalBalanceInfo(balanceString);
+                    System.out.println("✅ CLEAN SERVER2: finalBalanceInfo parsed: " + balanceInfo);
                 }
             }
 
-            // Meter Information
-            output.append("\n🔧 METER INFORMATION\n");
-            output.append("──────────────────────────────────────────────────\n");
-            for (String key : meterInfo) {
-                if (customerInfo.containsKey(key) && isValidValue(customerInfo.get(key))) {
-                    output.append("• ").append(key).append(": ").append(customerInfo.get(key)).append("\n");
-                }
-            }
-
-            // Billing Information
-            output.append("\n💳 BILLING INFORMATION\n");
-            output.append("──────────────────────────────────────────────────\n");
-            for (String key : billingInfo) {
-                if (customerInfo.containsKey(key) && isValidValue(customerInfo.get(key))) {
-                    output.append("• ").append(key).append(": ").append(customerInfo.get(key)).append("\n");
-                }
-            }
-
-            // Technical Information
-            output.append("\n⚙️ TECHNICAL INFORMATION\n");
-            output.append("──────────────────────────────────────────────────\n");
-            for (String key : technicalInfo) {
-                if (customerInfo.containsKey(key) && isValidValue(customerInfo.get(key))) {
-                    output.append("• ").append(key).append(": ").append(customerInfo.get(key)).append("\n");
-                }
-            }
-
-            // Reading Information
-            output.append("\n📊 METER READINGS\n");
-            output.append("──────────────────────────────────────────────────\n");
-            for (String key : readingInfo) {
-                if (customerInfo.containsKey(key) && isValidValue(customerInfo.get(key))) {
-                    output.append("• ").append(key).append(": ").append(customerInfo.get(key)).append("\n");
-                }
-            }
-        }
-
-        // Combined Bill Information Section - BUT NO TABLE
-        if (mergedData.containsKey("bill_summary") || mergedData.containsKey("bill_info_raw")) {
-            output.append("\n📊 BILL SUMMARY\n");
-            output.append("══════════════════════════════════════════════════\n");
-
-            // NEW BILL SUMMARY FORMAT (keep this)
-            if (mergedData.containsKey("bill_info_raw")) {
+            // Method 2: Fallback to balanceInfo object
+            if (balanceInfo.isEmpty() && SERVER2Data.has("balanceInfo")) {
                 try {
-                    JSONArray billInfo = (JSONArray) mergedData.get("bill_info_raw");
+                    JSONObject balanceInfoObj = SERVER2Data.getJSONObject("balanceInfo");
+                    if (balanceInfoObj.has("Result") && balanceInfoObj.getJSONArray("Result").length() > 0) {
+                        JSONObject firstBalance = balanceInfoObj.getJSONArray("Result").getJSONObject(0);
+
+                        double totalBalance = firstBalance.optDouble("BALANCE", 0);
+                        double currentBill = firstBalance.optDouble("CURRENT_BILL", 0);
+                        double arrearBill = firstBalance.optDouble("ARREAR_BILL", 0);
+                        double paidAmount = firstBalance.optDouble("PAID_AMT", 0);
+
+                        balanceInfo.put("Total Balance", String.format("%.2f", totalBalance));
+                        balanceInfo.put("Current Bill", String.format("%.2f", currentBill));
+                        balanceInfo.put("Arrear Amount", String.format("%.2f", arrearBill));
+                        balanceInfo.put("Paid Amount", String.format("%.2f", paidAmount));
+
+                        // Calculate components if available
+                        if (totalBalance > 0 && currentBill + arrearBill > 0) {
+                            double principal = currentBill + arrearBill - paidAmount;
+                            double lps = Math.max(0, totalBalance - principal);
+                            balanceInfo.put("PRN", String.format("%.2f", principal));
+                            balanceInfo.put("LPS", String.format("%.2f", lps));
+                        }
+
+                        System.out.println("✅ CLEAN SERVER2: Balance info extracted from balanceInfo");
+                    }
+                } catch (Exception e) {
+                    System.out.println("❌ CLEAN SERVER2: Error parsing balanceInfo: " + e.getMessage());
+                }
+            }
+
+            if (!balanceInfo.isEmpty()) {
+                cleaned.put("balance_info", balanceInfo);
+                System.out.println("✅ CLEAN SERVER2: Balance info finalized: " + balanceInfo.keySet());
+            } else {
+                System.out.println("❌ CLEAN SERVER2: No balance information found");
+            }
+
+            // 3. EXTRACT BILL INFORMATION
+            if (SERVER2Data.has("billInfo")) {
+                try {
+                    JSONArray billInfo = SERVER2Data.getJSONArray("billInfo");
+                    System.out.println("✅ CLEAN SERVER2: billInfo found with " + billInfo.length() + " records");
 
                     if (billInfo.length() > 0) {
-                        // Calculate first and last bill periods, totals
-                        JSONObject firstBill = billInfo.getJSONObject(billInfo.length() - 1);
-                        JSONObject lastBill = billInfo.getJSONObject(0);
+                        // Store the raw billInfo array
+                        cleaned.put("bill_info_raw", billInfo);
 
-                        String firstBillPeriod = formatBillMonth(firstBill.optString("BILL_MONTH"));
-                        String lastBillPeriod = formatBillMonth(lastBill.optString("BILL_MONTH"));
+                        // Create detailed bill summary
+                        Map<String, Object> billSummary = new HashMap<>();
+                        billSummary.put("total_bills", billInfo.length());
 
-                        double totalAmount = 0.0;
-                        double totalPaid = 0.0;
-                        double arrears = 0.0;
+                        // Get latest bill details
+                        JSONObject latestBill = billInfo.getJSONObject(0);
+                        billSummary.put("latest_bill_date", formatBillMonth(latestBill.optString("BILL_MONTH")));
+                        billSummary.put("latest_bill_number", latestBill.optString("BILL_NO"));
+                        billSummary.put("latest_consumption", latestBill.optDouble("CONS_KWH_SR", 0));
+                        billSummary.put("latest_total_amount", latestBill.optDouble("TOTAL_BILL", 0));
+                        billSummary.put("latest_balance", latestBill.optDouble("BALANCE", 0));
+                        billSummary.put("current_reading_sr", latestBill.optDouble("CONS_KWH_SR", 0));
+
+                        // Extract all bills for detailed analysis
+                        List<Map<String, Object>> allBills = new ArrayList<>();
+                        double totalConsumption = 0;
+                        double totalAmount = 0;
 
                         for (int i = 0; i < billInfo.length(); i++) {
                             JSONObject bill = billInfo.getJSONObject(i);
-                            totalAmount += bill.optDouble("CURRENT_BILL", 0);  // Changed from CURRENT_BILL to TOTAL_BILL
-                            totalPaid += bill.optDouble("PAID_AMT", 0);
+                            Map<String, Object> billDetail = new HashMap<>();
+
+                            billDetail.put("bill_month", formatBillMonth(bill.optString("BILL_MONTH")));
+                            billDetail.put("bill_number", bill.optString("BILL_NO"));
+                            billDetail.put("consumption", bill.optDouble("CONS_KWH_SR", 0));
+                            billDetail.put("total_amount", bill.optDouble("TOTAL_BILL", 0));
+                            billDetail.put("balance", bill.optDouble("BALANCE", 0));
+                            billDetail.put("due_date", formatDate(bill.optString("INVOICE_DUE_DATE")));
+
+                            allBills.add(billDetail);
+
+                            if (i < 3) { // Recent 3 months
+                                totalConsumption += bill.optDouble("CONS_KWH_SR", 0);
+                                totalAmount += bill.optDouble("TOTAL_BILL", 0);
+                            }
                         }
 
-// Calculate arrears as Total Amount minus Total Paid
-                        arrears = totalAmount - totalPaid;
+                        billSummary.put("recent_consumption", totalConsumption);
+                        billSummary.put("recent_amount", totalAmount);
+                        billSummary.put("all_bills", allBills);
+                        billSummary.put("bill_months_available", billInfo.length());
 
-                        // Get total bills count
-                        int totalBills = billInfo.length();
-                        if (mergedData.containsKey("bill_summary")) {
-                            Map<String, Object> billSummary = (Map<String, Object>) mergedData.get("bill_summary");
-                            totalBills = (int) billSummary.getOrDefault("total_bills", billInfo.length());
-                        }
-
-                        // Display new bill summary format
-                        output.append(String.format("%-25s: %s\n", "First Bill Period", firstBillPeriod));
-                        output.append(String.format("%-25s: %s\n", "Last Bill Period", lastBillPeriod));
-                        output.append(String.format("%-25s: %s\n", "Total Bills", totalBills));
-                        output.append(String.format("%-25s: ৳%.0f\n", "Total Amount", totalAmount));
-                        output.append(String.format("%-25s: ৳%.0f\n", "Total Paid", totalPaid));
-                        output.append(String.format("%-25s: ৳%.0f\n", "Arrears", arrears));
-                        output.append("\n");
+                        cleaned.put("bill_summary", billSummary);
+                        System.out.println("✅ CLEAN SERVER2: Bill information extracted - " + allBills.size() + " bills");
                     }
                 } catch (Exception e) {
-                    output.append("❌ Error calculating bill summary: ").append(e.getMessage()).append("\n");
+                    System.out.println("❌ CLEAN SERVER2: Error processing billInfo: " + e.getMessage());
+                    e.printStackTrace();
                 }
+            } else {
+                System.out.println("❌ CLEAN SERVER2: No billInfo found in SERVER2 data");
             }
 
-            // Final Balance Details - SHOW ZEROS (keep this)
-            if (mergedData.containsKey("balance_info")) {
-                Map<String, String> balanceInfo = (Map<String, String>) mergedData.get("balance_info");
+            // 4. Store raw data for unique value analysis
+            cleaned.put("SERVER2_raw_data", SERVER2Data);
 
-                output.append("💰 FINAL BALANCE DETAILS\n");
-                output.append("──────────────────────────────────────────────────\n");
-
-                String[] balanceOrder = {"Total Balance", "Arrear Amount", "PRN", "LPS", "VAT"};
-
-                for (String key : balanceOrder) {
-                    if (balanceInfo.containsKey(key)) {
-                        String value = balanceInfo.get(key);
-                        if (value == null || value.isEmpty() || value.equals("0") || value.equals("0.00")) {
-                            value = "0";
-                        }
-                        output.append("• ").append(key).append(": ").append(value).append("\n");
-                    }
-                }
-            }
+        } catch (Exception e) {
+            System.out.println("❌ CLEAN SERVER2 ERROR: " + e.getMessage());
+            e.printStackTrace();
         }
 
-        return output.toString();
+        Map<String, Object> finalResult = removeEmptyFields(cleaned);
+        System.out.println("🎯 CLEAN SERVER2 FINAL: " + finalResult.keySet());
+        return finalResult;
     }
 
+    // Clean SERVER3 data
+    private Map<String, Object> cleanSERVER3Data(JSONObject SERVER3Data) {
+        if (SERVER3Data == null) {
+            return new HashMap<>();
+        }
 
-    // Create cell background with borders
-    private Drawable createCellBackground(boolean isHeader) {
-        GradientDrawable border = new GradientDrawable();
-        border.setColor(isHeader ? Color.LTGRAY : Color.WHITE);
-        border.setStroke(1, Color.GRAY);
-        return border;
+        Map<String, Object> cleaned = new HashMap<>();
+        Map<String, String> customerInfo = new HashMap<>();
+
+        customerInfo.put("Customer Number", SERVER3Data.optString("customerNumber"));
+        customerInfo.put("Customer Name", SERVER3Data.optString("customerName"));
+        customerInfo.put("Customer Address", SERVER3Data.optString("customerAddr"));
+        customerInfo.put("Father Name", SERVER3Data.optString("fatherName"));
+        customerInfo.put("Location Code", SERVER3Data.optString("locationCode"));
+        customerInfo.put("Area Code", SERVER3Data.optString("areaCode"));
+        customerInfo.put("Book Number", SERVER3Data.optString("bookNumber"));
+        customerInfo.put("Bill Group", SERVER3Data.optString("billGroup"));
+        customerInfo.put("Meter Number", SERVER3Data.optString("meterNum"));
+        customerInfo.put("Meter Condition", SERVER3Data.optString("meterConditionDesc"));
+        customerInfo.put("Sanctioned Load", SERVER3Data.optString("sanctionedLoad"));
+        customerInfo.put("Tariff Description", SERVER3Data.optString("tariffDesc"));
+        customerInfo.put("Walk Order", SERVER3Data.optString("walkOrder"));
+        customerInfo.put("Arrear Amount", SERVER3Data.optString("arrearAmount"));
+
+        // Map SERVER3's lastBillReadingSr to match SERVER2's CONS_KWH_SR
+        String lastReadingSr = SERVER3Data.optString("lastBillReadingSr");
+        if (lastReadingSr != null && !lastReadingSr.equals("null") && !lastReadingSr.isEmpty()) {
+            customerInfo.put("Last Bill Reading SR", lastReadingSr);
+            // Also store for bill info merging
+            cleaned.put("current_reading_sr", Double.parseDouble(lastReadingSr));
+        }
+
+        customerInfo.put("Last Bill Reading OF PK", SERVER3Data.optString("lastBillReadingOfPk"));
+        customerInfo.put("Last Bill Reading PK", SERVER3Data.optString("lastBillReadingPk"));
+
+        cleaned.put("customer_info", removeEmptyFields(customerInfo));
+
+        if (SERVER3Data.has("arrearAmount")) {
+            String arrearAmount = SERVER3Data.optString("arrearAmount");
+            Map<String, String> balanceInfo = new HashMap<>();
+            balanceInfo.put("Total Balance", arrearAmount);
+            balanceInfo.put("Arrear Amount", arrearAmount);
+            cleaned.put("balance_info", balanceInfo);
+        }
+
+        return removeEmptyFields(cleaned);
     }
 
-    // Helper method to create bill summary from raw bill data
-    private Map<String, Object> createBillSummary(JSONArray billInfo) {
-        Map<String, Object> billSummary = new HashMap<>();
+    // NEW: Improved finalBalanceInfo parser
+    private Map<String, String> parseFinalBalanceInfo(String balanceString) {
+        Map<String, String> balanceInfo = new HashMap<>();
+
+        if (balanceString == null || balanceString.isEmpty() || balanceString.equals("null")) {
+            return balanceInfo;
+        }
 
         try {
-            if (billInfo.length() > 0) {
-                billSummary.put("total_bills", billInfo.length());
+            System.out.println("🔍 PARSING finalBalanceInfo: " + balanceString);
 
-                // Get latest bill details
-                JSONObject latestBill = billInfo.getJSONObject(0);
-                billSummary.put("latest_bill_date", formatBillMonth(latestBill.optString("BILL_MONTH")));
-                billSummary.put("latest_bill_number", latestBill.optString("BILL_NO"));
-                billSummary.put("latest_consumption", latestBill.optDouble("CONS_KWH_SR", 0));
-                billSummary.put("latest_total_amount", latestBill.optDouble("TOTAL_BILL", 0));
-                billSummary.put("latest_balance", latestBill.optDouble("BALANCE", 0));
-                billSummary.put("current_reading_sr", latestBill.optDouble("CONS_KWH_SR", 0));
+            // Handle different formats
 
-                // Calculate 3-month consumption
-                double recentConsumption = 0;
-                for (int i = 0; i < Math.min(billInfo.length(), 3); i++) {
-                    recentConsumption += billInfo.getJSONObject(i).optDouble("CONS_KWH_SR", 0);
-                }
-                billSummary.put("recent_consumption", recentConsumption);
-                billSummary.put("bill_months_available", billInfo.length());
+            // Format 1: Simple total amount "1234.56"
+            if (!balanceString.contains(",") && !balanceString.contains(":")) {
+                balanceInfo.put("Total Balance", balanceString.trim());
+                balanceInfo.put("Arrear Amount", balanceString.trim());
+                System.out.println("✅ Parsed as simple total: " + balanceString);
+                return balanceInfo;
             }
+
+            // Format 2: Detailed breakdown "1234.56, PRN:1000.00, LPS:234.56"
+            String[] parts = balanceString.split(",");
+
+            // First part is always total balance
+            String totalBalance = parts[0].trim();
+            balanceInfo.put("Total Balance", totalBalance);
+            balanceInfo.put("Arrear Amount", totalBalance);
+
+            // Parse detailed components
+            for (int i = 1; i < parts.length; i++) {
+                String part = parts[i].trim();
+                if (part.startsWith("PRN:")) {
+                    balanceInfo.put("PRN", part.substring(4).trim());
+                } else if (part.startsWith("LPS:")) {
+                    balanceInfo.put("LPS", part.substring(4).trim());
+                } else if (part.startsWith("VAT:")) {
+                    balanceInfo.put("VAT", part.substring(4).trim());
+                } else if (part.startsWith("Current:")) {
+                    balanceInfo.put("Current Bill", part.substring(8).trim());
+                } else if (part.startsWith("Arrear:")) {
+                    balanceInfo.put("Arrear Amount", part.substring(7).trim());
+                }
+            }
+
+            System.out.println("✅ Parsed detailed balance: " + balanceInfo);
+
         } catch (Exception e) {
-            System.out.println("❌ Error creating bill summary: " + e.getMessage());
+            System.out.println("❌ Error parsing finalBalanceInfo: " + e.getMessage());
+            // Fallback: use the entire string as total balance
+            balanceInfo.put("Total Balance", balanceString);
+            balanceInfo.put("Arrear Amount", balanceString);
         }
 
-        return billSummary;
+        return balanceInfo;
     }
 
-    // Helper method to truncate text for table display
-    private String truncateText(String text, int maxLength) {
-        if (text == null || text.length() <= maxLength) {
-            return text;
-        }
-        return text.substring(0, maxLength - 3) + "...";
-    }
-
-    // Helper method to pad text to the right
-    private String padRight(String text, int length) {
-        if (text == null) text = "";
-        if (text.length() > length) {
-            return text.substring(0, length - 3) + "...";
-        }
-        return String.format("%-" + length + "s", text);
-    }
-
-    // Helper method to center text
-    private String centerText(String text, int length) {
-        if (text == null) text = "";
-        if (text.length() > length) {
-            return text.substring(0, length - 3) + "...";
-        }
-
-        int padding = length - text.length();
-        int leftPadding = padding / 2;
-        int rightPadding = padding - leftPadding;
-
-        return repeatString(" ", leftPadding) + text + repeatString(" ", rightPadding);
-    }
-
-    // Helper method to check if value is valid for display
-    private boolean isValidValue(String value) {
-        if (value == null) {
-            return false;
-        }
-
-        String trimmedValue = value.trim();
-
-        return !trimmedValue.isEmpty() &&
-                !trimmedValue.equals("N/A") &&
-                !trimmedValue.equals("null") &&
-                !trimmedValue.equals("{}") &&
-                !trimmedValue.equals("undefined");
-    }
-
-    private String formatPrepaidDisplay(Map<String, Object> cleanedData) {
-        if (cleanedData == null || cleanedData.isEmpty()) {
-            return "No prepaid data available";
-        }
-
-        StringBuilder output = new StringBuilder();
-
-        // Customer Info Section
-        if (cleanedData.containsKey("customer_info")) {
-            output.append("👤 CUSTOMER INFORMATION\n");
-            output.append(repeatString("=", 20)).append("\n");
-            Map<String, String> customerInfo = (Map<String, String>) cleanedData.get("customer_info");
-            for (Map.Entry<String, String> entry : customerInfo.entrySet()) {
-                if (!entry.getValue().equals("N/A")) {
-                    output.append("• ").append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
-                }
-            }
-            output.append("\n");
-        }
-
-        // TOKENS SECTION - Most Important!
-        if (cleanedData.containsKey("recent_transactions")) {
-            output.append("🔑 LAST 3 RECHARGE TOKENS\n");
-            output.append(repeatString("=", 20)).append("\n\n");
-
-            List<Map<String, String>> transactions = (List<Map<String, String>>) cleanedData.get("recent_transactions");
-            for (int i = 0; i < transactions.size(); i++) {
-                Map<String, String> transaction = transactions.get(i);
-                output.append("Order ").append(i + 1).append(":\n");
-                output.append("  📅 Date: ").append(transaction.get("Date")).append("\n");
-                output.append("  🧾 Order: ").append(transaction.get("Order Number")).append("\n");
-                output.append("  👤 Operator: ").append(transaction.get("Operator")).append("\n");
-                output.append("  🔢 Sequence: ").append(transaction.get("Sequence")).append("\n");
-                output.append("  💰 Amount: ").append(transaction.get("Amount")).append("\n");
-                output.append("  ⚡ Energy: ").append(transaction.get("Energy Cost")).append("\n");
-                output.append("  🔑 TOKENS: ").append(transaction.get("Tokens")).append("\n\n");
-            }
-        }
-
-        return output.toString();
-    }
-
+    // Helper methods
     private String getMeterStatus(String statusCode) {
         Map<String, String> statusMap = new HashMap<>();
         statusMap.put("1", "Active");
@@ -1680,48 +1630,57 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private Map<String, String> extractBalanceInfo(String balanceString) {
-        Map<String, String> balanceInfo = new HashMap<>();
-
-        if (balanceString == null || balanceString.isEmpty()) {
-            return balanceInfo;
+    private String formatBillMonth(String dateStr) {
+        if (dateStr == null || dateStr.isEmpty() || dateStr.equals("null")) {
+            return "N/A";
         }
 
         try {
-            // Handle case where we only get the total amount (your actual API response)
-            if (!balanceString.contains(",") && !balanceString.contains(":")) {
-                // Only total amount provided - this is your current API response
-                balanceInfo.put("Total Balance", balanceString.trim());
-                balanceInfo.put("Arrear Amount", balanceString.trim());
-                return balanceInfo;
-            }
+            String[] parts = dateStr.substring(0, 10).split("-");
+            if (parts.length >= 2) {
+                int month = Integer.parseInt(parts[1]);
+                String[] monthNames = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
-            // Handle full breakdown format (your expected format)
-            String[] parts = balanceString.split(",");
-
-            // First part is always total balance
-            String mainBalance = parts[0].trim();
-            balanceInfo.put("Total Balance", mainBalance);
-            balanceInfo.put("Arrear Amount", mainBalance);
-
-            // Parse breakdown components
-            for (int i = 1; i < parts.length; i++) {
-                String part = parts[i].trim();
-                if (part.startsWith("PRN:")) {
-                    balanceInfo.put("PRN", part.substring(4).trim());
-                } else if (part.startsWith("LPS:")) {
-                    balanceInfo.put("LPS", part.substring(4).trim());
-                } else if (part.startsWith("VAT:")) {
-                    balanceInfo.put("VAT", part.substring(4).trim());
+                if (month >= 1 && month <= 12) {
+                    return monthNames[month - 1] + "-" + parts[0];
                 }
             }
-
+            return dateStr.substring(0, 7); // Fallback to YYYY-MM
         } catch (Exception e) {
-            System.out.println("⚠️ Balance parsing warning: " + e.getMessage());
-            balanceInfo.put("Total Balance", balanceString);
+            return dateStr.length() >= 7 ? dateStr.substring(0, 7) : dateStr;
         }
+    }
 
-        return balanceInfo;
+    private String getJSONKeys(JSONObject json) {
+        try {
+            Iterator<String> keys = json.keys();
+            List<String> keyList = new ArrayList<>();
+            while (keys.hasNext()) {
+                keyList.add(keys.next());
+            }
+            return String.join(", ", keyList);
+        } catch (Exception e) {
+            return "Error getting keys";
+        }
+    }
+
+    private boolean isValidValue(String value) {
+        if (value == null) return false;
+        String trimmedValue = value.trim();
+        return !trimmedValue.isEmpty() &&
+                !trimmedValue.equals("N/A") &&
+                !trimmedValue.equals("null") &&
+                !trimmedValue.equals("{}") &&
+                !trimmedValue.equals("undefined");
+    }
+
+    private String repeatString(String str, int count) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < count; i++) {
+            sb.append(str);
+        }
+        return sb.toString();
     }
 
     @SuppressWarnings("unchecked")
@@ -1768,360 +1727,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // IMPROVED: formatBillDisplay with better empty data handling
-    private String formatBillDisplay(JSONObject SERVER2Data) {
-        if (SERVER2Data == null) {
-            return "No bill data available";
-        }
-
-        // Check for error first
-        if (SERVER2Data.has("error")) {
-            return "Error in bill data: " + SERVER2Data.optString("error");
-        }
-
-        StringBuilder output = new StringBuilder();
-
-        try {
-            // DEBUG: Check what's in SERVER2Data
-            System.out.println("📊 BILL DEBUG: SERVER2Data keys: " + getJSONKeys(SERVER2Data));
-
-            if (SERVER2Data.has("billInfo")) {
-                JSONArray billInfo = SERVER2Data.getJSONArray("billInfo");
-                System.out.println("📊 BILL DEBUG: billInfo length: " + billInfo.length());
-
-                if (billInfo.length() > 0) {
-                    int billCount = Math.min(billInfo.length(), 3);
-                    output.append("📊 BILL HISTORY (LAST ").append(billCount).append(" MONTHS)\n\n");
-
-                    // Define fields to display
-                    String[][] fields = {
-                            {"Bill Month", "BILL_MONTH"},
-                            {"Bill No", "BILL_NO"},
-                            {"Consumption", "CONS_KWH_SR"},
-                            {"Current Bill", "CURRENT_BILL"},
-                            {"Arrear Bill", "ARREAR_BILL"},
-                            {"Total Bill", "TOTAL_BILL"},
-                            {"Due Date", "INVOICE_DUE_DATE"},
-                            {"Paid Amount", "PAID_AMT"},
-                            {"Balance", "BALANCE"}
-                    };
-
-                    // Create header
-                    output.append(String.format("%-20s", "FIELD"));
-                    for (int i = 0; i < billCount; i++) {
-                        output.append(String.format("%-20s", "BILL " + (i + 1)));
-                    }
-                    output.append("\n");
-                    output.append(repeatString("─", 20 * (billCount + 1))).append("\n");
-
-                    // Process each field
-                    for (String[] field : fields) {
-                        String fieldName = field[0];
-                        String fieldKey = field[1];
-
-                        output.append(String.format("%-20s", fieldName));
-
-                        for (int i = 0; i < billCount; i++) {
-                            JSONObject bill = billInfo.getJSONObject(i);
-                            String value = getFormattedBillValue(bill, fieldKey);
-                            output.append(String.format("%-20s", value));
-                        }
-                        output.append("\n");
-                    }
-
-                } else {
-                    output.append("❌ No bill history records found\n");
-                }
-            } else {
-                output.append("❌ No bill information available in response\n");
-            }
-
-            // Add final balance info if available
-            if (SERVER2Data.has("finalBalanceInfo")) {
-                String balanceString = SERVER2Data.optString("finalBalanceInfo");
-                if (!balanceString.isEmpty() && !balanceString.equals("null") && !balanceString.equals("0")) {
-                    output.append("\n💰 FINAL BALANCE DETAILS\n");
-                    output.append(repeatString("─", 25)).append("\n");
-
-                    Map<String, String> balanceInfo = extractBalanceInfo(balanceString);
-                    boolean hasBalanceData = false;
-                    for (Map.Entry<String, String> entry : balanceInfo.entrySet()) {
-                        if (!entry.getValue().equals("0") && !entry.getValue().isEmpty()) {
-                            output.append("• ").append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
-                            hasBalanceData = true;
-                        }
-                    }
-                    if (!hasBalanceData) {
-                        output.append("• No outstanding balance\n");
-                    }
-                }
-            }
-
-        } catch (Exception e) {
-            output.append("❌ Error displaying bill data: ").append(e.getMessage()).append("\n");
-            e.printStackTrace();
-        }
-
-        return output.toString();
+    private void showResult(String message) {
+        runOnUiThread(() -> resultView.setText(message));
     }
 
-    // Helper method to format bill values
-    private String getFormattedBillValue(JSONObject bill, String fieldKey) {
-        try {
-            if (!bill.has(fieldKey) || bill.isNull(fieldKey)) {
-                return "N/A";
-            }
-
-            switch (fieldKey) {
-                case "BILL_MONTH":
-                    String dateStr = bill.getString(fieldKey);
-                    return formatBillMonth(dateStr);
-
-                case "INVOICE_DUE_DATE":
-                case "RECEIPT_DATE":
-                    return formatDate(bill.getString(fieldKey));
-
-                case "CURRENT_BILL":
-                case "ARREAR_BILL":
-                case "TOTAL_BILL":
-                case "PAID_AMT":
-                case "BALANCE":
-                    double amount = bill.getDouble(fieldKey);
-                    return "৳" + String.format("%.0f", amount);
-
-                case "CONS_KWH_SR":
-                case "OPN_KWH_SR_RDNG":
-                    double consumption = bill.getDouble(fieldKey);
-                    return String.format("%.0f", consumption);
-
-                default:
-                    return bill.getString(fieldKey);
-            }
-        } catch (Exception e) {
-            return "N/A";
-        }
-    }
-
-    // Helper to format bill month
-    private String formatBillMonth(String dateStr) {
-        if (dateStr == null || dateStr.isEmpty() || dateStr.equals("null")) {
-            return "N/A";
-        }
-
-        try {
-            // Extract YYYY-MM from date string
-            String[] parts = dateStr.substring(0, 10).split("-");
-            if (parts.length >= 2) {
-                int year = Integer.parseInt(parts[0]);
-                int month = Integer.parseInt(parts[1]);
-
-                String[] monthNames = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
-
-                if (month >= 1 && month <= 12) {
-                    return monthNames[month - 1] + "-" + year;
-                }
-            }
-            return dateStr.substring(0, 7); // Fallback to YYYY-MM
-        } catch (Exception e) {
-            return dateStr.length() >= 7 ? dateStr.substring(0, 7) : dateStr;
-        }
-    }
-
-    // Helper to debug JSON keys
-    private String getJSONKeys(JSONObject json) {
-        try {
-            Iterator<String> keys = json.keys();
-            List<String> keyList = new ArrayList<>();
-            while (keys.hasNext()) {
-                keyList.add(keys.next());
-            }
-            return String.join(", ", keyList);
-        } catch (Exception e) {
-            return "Error getting keys";
-        }
-    }
-
-
-    // NEW: Format bill summary for display
-    private String formatBillSummary(Map<String, Object> billSummary) {
-        if (billSummary == null || billSummary.isEmpty()) {
-            return "No bill summary available";
-        }
-
-        StringBuilder output = new StringBuilder();
-
-        try {
-            output.append("📅 Total Bills: ").append(billSummary.getOrDefault("total_bills", "N/A")).append("\n");
-
-            if (billSummary.containsKey("latest_bill_date")) {
-                output.append("📋 Latest Bill Date: ").append(billSummary.get("latest_bill_date")).append("\n");
-            }
-
-            if (billSummary.containsKey("latest_bill_number")) {
-                output.append("🧾 Latest Bill No: ").append(billSummary.get("latest_bill_number")).append("\n");
-            }
-
-            if (billSummary.containsKey("latest_consumption")) {
-                Object consumption = billSummary.get("latest_consumption");
-                if (consumption instanceof Double) {
-                    output.append("⚡ Latest Consumption: ").append(String.format("%.0f", (Double) consumption)).append(" kWh\n");
-                } else {
-                    output.append("⚡ Latest Consumption: ").append(consumption).append(" kWh\n");
-                }
-            }
-
-            if (billSummary.containsKey("latest_total_amount")) {
-                Object amount = billSummary.get("latest_total_amount");
-                if (amount instanceof Double) {
-                    output.append("💵 Latest Amount: ৳").append(String.format("%.0f", (Double) amount)).append("\n");
-                } else {
-                    output.append("💵 Latest Amount: ৳").append(amount).append("\n");
-                }
-            }
-
-            if (billSummary.containsKey("recent_consumption")) {
-                Object recentConsumption = billSummary.get("recent_consumption");
-                if (recentConsumption instanceof Double) {
-                    output.append("📈 Recent 3 Months Consumption: ").append(String.format("%.0f", (Double) recentConsumption)).append(" kWh\n");
-                } else {
-                    output.append("📈 Recent 3 Months Consumption: ").append(recentConsumption).append(" kWh\n");
-                }
-            }
-
-            if (billSummary.containsKey("bill_months_available")) {
-                output.append("📆 Bill History Available: ").append(billSummary.get("bill_months_available")).append(" months\n");
-            }
-
-        } catch (Exception e) {
-            output.append("❌ Error formatting bill summary: ").append(e.getMessage()).append("\n");
-        }
-
-        return output.toString();
-    }
-
-    // IMPROVED: Helper to check if bill display is valid
-    private boolean isValidBillDisplay(String billDisplay) {
-        return billDisplay != null &&
-                !billDisplay.trim().isEmpty() &&
-                !billDisplay.contains("No bill data available") &&
-                !billDisplay.contains("No bill information available") &&
-                !billDisplay.contains("Error in bill data") &&
-                !billDisplay.contains("No bill summary available") &&
-                billDisplay.length() > 20; // Reduced threshold for summary display
-    }
-
-    private String repeatString(String str, int count) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < count; i++) {
-            sb.append(str);
-        }
-        return sb.toString();
-    }
-
-    // POLISHED: displayResult with clean sections
-    private String displayResult(Map<String, Object> result, String billType) {
-        if (result == null) {
-            return "❌ No result data available";
-        }
-
-        StringBuilder output = new StringBuilder();
-
-        output.append("\n══════════════════════════════════════════════════\n");
-        output.append("📊 ").append(billType.toUpperCase()).append(" METER INFO\n");
-        output.append("══════════════════════════════════════════════════\n");
-
-        if (result.containsKey("error")) {
-            output.append("❌ Error: ").append(result.get("error")).append("\n");
-            return output.toString();
-        }
-
-        output.append("🔢 Meter Number: ").append(result.getOrDefault("meter_number", "N/A")).append("\n");
-
-        if ("prepaid".equals(billType)) {
-            if (result.get("consumer_number") != null) {
-                output.append("👤 Consumer Number: ").append(result.get("consumer_number")).append("\n");
-            }
-
-            // Show prepaid details from SERVER 1
-            Object SERVER1DataObj = result.get("SERVER1_data");
-            if (SERVER1DataObj != null) {
-                Map<String, Object> cleanedData = cleanSERVER1Data(SERVER1DataObj);
-
-                boolean hasValidData = !cleanedData.isEmpty() &&
-                        !cleanedData.containsKey("error") &&
-                        (cleanedData.containsKey("customer_info") ||
-                                cleanedData.containsKey("recent_transactions"));
-
-                if (hasValidData) {
-                    output.append("\n══════════════════════════════════════════════════\n");
-                    output.append("📋 PREPAID CUSTOMER DETAILS\n");
-                    output.append("══════════════════════════════════════════════════\n");
-
-                    String prepaidDisplay = formatPrepaidDisplay(cleanedData);
-                    if (!prepaidDisplay.trim().isEmpty() && !prepaidDisplay.equals("No data available")) {
-                        output.append(prepaidDisplay);
-                    }
-                }
-            }
-
-            // Show merged SERVER 3 + SERVER 2 data
-            Map<String, Object> mergedData = mergeSERVERData(result);
-            if (mergedData != null && !mergedData.isEmpty()) {
-                //output.append("\n══════════════════════════════════════════════════\n");
-                //output.append("📋 CUSTOMER INFORMATION\n");
-                //output.append("══════════════════════════════════════════════════\n");
-                String displayText = formatMergedDisplayWithoutTable(mergedData);
-                output.append(displayText);
-            }
-
-        } else if ("postpaid".equals(billType)) {
-            // Handle meter lookup results
-            if (result.containsKey("customer_results")) {
-                List<String> customerNumbers = (List<String>) result.get("customer_numbers");
-                List<Map<String, Object>> customerResults = (List<Map<String, Object>>) result.get("customer_results");
-
-                output.append("\n📊 Found ").append(customerNumbers.size()).append(" customer(s) for this meter\n\n");
-
-                for (int i = 0; i < customerResults.size(); i++) {
-                    output.append(repeatString("=", 40)).append("\n");
-                    output.append("👤 CUSTOMER ").append(i + 1).append("/").append(customerNumbers.size())
-                            .append(": ").append(customerNumbers.get(i)).append("\n");
-                    output.append(repeatString("=", 40)).append("\n");
-
-                    Map<String, Object> customerResult = customerResults.get(i);
-                    Map<String, Object> mergedData = mergeSERVERData(customerResult);
-
-                    if (mergedData != null && !mergedData.isEmpty()) {
-                        String displayText = formatMergedDisplayWithoutTable(mergedData);
-                        output.append(displayText).append("\n");
-                    } else {
-                        output.append("❌ No data available for this customer\n\n");
-                    }
-                }
-            } else {
-                // Regular postpaid (consumer number)
-                output.append("👤 Consumer Number: ").append(result.getOrDefault("customer_number", "N/A")).append("\n");
-
-                // Show merged SERVER 3 + SERVER 2 data for postpaid
-                Map<String, Object> mergedData = mergeSERVERData(result);
-                if (mergedData != null && !mergedData.isEmpty()) {
-                    //output.append("\n").append(repeatString("=", 30)).append("\n");
-                    //output.append("📋 CUSTOMER INFORMATION\n");
-                    output.append(repeatString("=", 30)).append("\n");
-                    String displayText = formatMergedDisplayWithoutTable(mergedData);
-                    output.append(displayText);
-                } else {
-                    output.append("❌ No customer data found\n");
-                }
-            }
-        }
-
-        return output.toString();
-    }
-
-
-  private void checkStoragePermission() {
+    // Storage permission methods
+    private void checkStoragePermission() {
         if (isStoragePermissionGranted()) {
             return;
         }
@@ -2161,6 +1772,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // Excel methods
     private Map<String, String> extractDataForExcel(Map<String, Object> result, String type) {
         java.util.Map<String, String> excelData = new java.util.HashMap<>();
 
