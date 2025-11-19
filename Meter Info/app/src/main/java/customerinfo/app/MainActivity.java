@@ -236,52 +236,68 @@ public class MainActivity extends AppCompatActivity {
     }
 }
 
-// NEW METHOD: Fetch data using MainActivity's working methods
+// FIXED METHOD: Better error handling and data fetching
 private Map<String, Object> fetchDataForHTML(String inputNumber, String type, String subType) {
     Map<String, Object> result = new HashMap<>();
-    
+
     try {
+        Log.d(TAG, "🔍 HTML FETCH: Starting for " + inputNumber + " type: " + type + " subType: " + subType);
+
         if ("prepaid".equals(type)) {
             // Use MainActivity's working prepaid method
             Map<String, Object> prepaidData = fetchPrepaidData(inputNumber);
-            result.putAll(prepaidData);
+            Log.d(TAG, "🔍 HTML FETCH: Prepaid data keys: " + prepaidData.keySet());
             
+            // Check if we got valid data
+            if (prepaidData.containsKey("error")) {
+                Log.e(TAG, "❌ HTML FETCH: Prepaid error: " + prepaidData.get("error"));
+                result.put("error", prepaidData.get("error"));
+            } else {
+                result.putAll(prepaidData);
+                Log.d(TAG, "✅ HTML FETCH: Prepaid data fetched successfully");
+            }
+
         } else if ("postpaid".equals(type)) {
             if ("consumer_no".equals(subType)) {
                 // Use MainActivity's working postpaid method
                 Map<String, Object> postpaidData = fetchPostpaidData(inputNumber);
-                result.putAll(postpaidData);
+                Log.d(TAG, "🔍 HTML FETCH: Postpaid data keys: " + postpaidData.keySet());
+                
+                if (postpaidData.containsKey("error")) {
+                    Log.e(TAG, "❌ HTML FETCH: Postpaid error: " + postpaidData.get("error"));
+                    result.put("error", postpaidData.get("error"));
+                } else {
+                    result.putAll(postpaidData);
+                    Log.d(TAG, "✅ HTML FETCH: Postpaid data fetched successfully");
+                }
             } else {
                 // Use MainActivity's working meter lookup method
                 Map<String, Object> meterLookupData = fetchMeterLookupData(inputNumber);
-                result.putAll(meterLookupData);
+                Log.d(TAG, "🔍 HTML FETCH: Meter lookup data keys: " + meterLookupData.keySet());
+                
+                if (meterLookupData.containsKey("error")) {
+                    Log.e(TAG, "❌ HTML FETCH: Meter lookup error: " + meterLookupData.get("error"));
+                    result.put("error", meterLookupData.get("error"));
+                } else {
+                    result.putAll(meterLookupData);
+                    Log.d(TAG, "✅ HTML FETCH: Meter lookup data fetched successfully");
+                }
             }
         }
-        
+
         // Add metadata
         result.put("search_input", inputNumber);
         result.put("search_type", type);
         result.put("timestamp", new Date().toString());
-        
+
+        Log.d(TAG, "🎯 HTML FETCH: Final result keys: " + result.keySet());
+
     } catch (Exception e) {
-        Log.e(TAG, "Error in fetchDataForHTML: " + e.getMessage());
+        Log.e(TAG, "❌ HTML FETCH: Exception: " + e.getMessage(), e);
         result.put("error", "Data fetch failed: " + e.getMessage());
     }
-    
+
     return result;
-}
-    private String generateHTML(String inputNumber, String type, String subType) {
-    // Step 1: Get the full structured map (same used in lookup)
-    Map<String, Object> result = fetchDataForHTML(inputNumber, type, subType);
-
-    // Step 2: Convert map to formatted text (same as lookup screen)
-    String formattedText = displayResult(result, type);
-
-    // Step 3: Now send formatted text to your existing HTML helper
-    // FIX: Use the correct method signature with 4 parameters
-    String htmlReadyJson = MeterDataHTMLHelper.processDataForHTMLDisplay(result, inputNumber, type, subType);
-
-    return htmlReadyJson;
 }
 
     @Override
