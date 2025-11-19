@@ -35,7 +35,7 @@ import android.provider.Settings;
 public class MainActivity extends AppCompatActivity {
 
     private EditText meterInput;
-    private Button submitBtn;
+    private Button submitBtn,htmlViewBtn;
     private TextView resultView;
     private RadioButton prepaidBtn, postpaidBtn, consumerNoOption, meterNoOption;
     private RadioGroup mainRadioGroup, postpaidRadioGroup;
@@ -117,6 +117,7 @@ public class MainActivity extends AppCompatActivity {
         meterNoOption = findViewById(R.id.meterNoOption);
 
         Button backBtn = findViewById(R.id.backBtn);
+        htmlViewBtn = findViewById(R.id.htmlViewBtn);
 
         resultView.setKeyListener(null);  // This completely disables keyboard
         resultView.setTextIsSelectable(true);
@@ -132,60 +133,85 @@ public class MainActivity extends AppCompatActivity {
         updateInputHint();
     }
 
-    private void setupClickListeners() {
-        prepaidBtn.setOnClickListener(v -> {
-            selectedType = "prepaid";
-            postpaidOptionsLayout.setVisibility(View.GONE);
-            updateButtonStates();
+   private void setupClickListeners() {
+    prepaidBtn.setOnClickListener(v -> {
+        selectedType = "prepaid";
+        postpaidOptionsLayout.setVisibility(View.GONE);
+        updateButtonStates();
+        updateInputHint();
+        showResult("📱 Prepaid selected - Enter 12-digit meter number");
+    });
+
+    postpaidBtn.setOnClickListener(v -> {
+        selectedType = "postpaid";
+        postpaidOptionsLayout.setVisibility(View.VISIBLE);
+        updateButtonStates();
+        updateInputHint();
+        showResult("💡 Postpaid selected - Choose input type");
+    });
+
+    // Postpaid sub-options listeners
+    postpaidRadioGroup.setOnCheckedChangeListener((group, checkedId) -> {
+        if (checkedId == R.id.consumerNoOption) {
+            postpaidSubType = "consumer_no";
+            updatePostpaidSubOptions();
             updateInputHint();
-            showResult("📱 Prepaid selected - Enter 12-digit meter number");
-        });
-
-        postpaidBtn.setOnClickListener(v -> {
-            selectedType = "postpaid";
-            postpaidOptionsLayout.setVisibility(View.VISIBLE);
-            updateButtonStates();
+            showResult("👤 Consumer No selected - Enter consumer number");
+        } else if (checkedId == R.id.meterNoOption) {
+            postpaidSubType = "meter_no";
+            updatePostpaidSubOptions();
             updateInputHint();
-            showResult("💡 Postpaid selected - Choose input type");
-        });
+            showResult("🔢 Meter No selected - Enter meter number");
+        }
+    });
 
-        // Postpaid sub-options listeners
-        postpaidRadioGroup.setOnCheckedChangeListener((group, checkedId) -> {
-            if (checkedId == R.id.consumerNoOption) {
-                postpaidSubType = "consumer_no";
-                updatePostpaidSubOptions();
-                updateInputHint();
-                showResult("👤 Consumer No selected - Enter consumer number");
-            } else if (checkedId == R.id.meterNoOption) {
-                postpaidSubType = "meter_no";
-                updatePostpaidSubOptions();
-                updateInputHint();
-                showResult("🔢 Meter No selected - Enter meter number");
+    submitBtn.setOnClickListener(v -> {
+        String inputNumber = meterInput.getText().toString().trim();
+        if (inputNumber.isEmpty()) {
+            showResult("❌ Please enter number");
+            return;
+        }
+
+        if (selectedType.equals("prepaid") && inputNumber.length() != 12) {
+            showResult("❌ Prepaid meter must be 12 digits");
+            return;
+        }
+
+        fetchData(inputNumber);
+    });
+
+    // ✅ HTML VIEW BUTTON - ADD THIS
+    htmlViewBtn.setOnClickListener(v -> {
+        String inputNumber = meterInput.getText().toString().trim();
+        if (inputNumber.isEmpty()) {
+            showResult("❌ Please enter number first");
+            return;
+        }
+        
+        // Use the SAME data fetching logic as submit button
+        new Thread(() -> {
+            try {
+                Map<String, Object> result = fetchDataBasedOnType(inputNumber);
+                
+                // Convert to JSON and open HTML activity
+                JSONObject jsonData = new JSONObject(result);
+                Intent intent = new Intent(MainActivity.this, MeterDataDisplayActivity.class);
+                intent.putExtra("METER_DATA", jsonData.toString());
+                startActivity(intent);
+                
+            } catch (Exception e) {
+                runOnUiThread(() -> showResult("❌ HTML Error: " + e.getMessage()));
             }
-        });
+        }).start();
+    });
 
-        submitBtn.setOnClickListener(v -> {
-            String inputNumber = meterInput.getText().toString().trim();
-            if (inputNumber.isEmpty()) {
-                showResult("❌ Please enter number");
-                return;
-            }
-
-            if (selectedType.equals("prepaid") && inputNumber.length() != 12) {
-                showResult("❌ Prepaid meter must be 12 digits");
-                return;
-            }
-
-            fetchData(inputNumber);
-        });
-
-        // ✅ CORRECT PLACE: Add back button listener HERE
-        findViewById(R.id.backBtn).setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, Home.class);
-            startActivity(intent);
-            finish();
-        });
-    }
+    // ✅ CORRECT PLACE: Add back button listener HERE
+    findViewById(R.id.backBtn).setOnClickListener(v -> {
+        Intent intent = new Intent(MainActivity.this, Home.class);
+        startActivity(intent);
+        finish();
+    });
+}
 
 
 
