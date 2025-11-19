@@ -252,6 +252,25 @@
         margin: 12mm;
     }
 }
+.complaints p {
+    margin: 3px 0;
+    font-size: 17px;
+    font-weight: bold;
+    page-break-inside: avoid; /* Keep items together */
+}
+
+/* Fix for "অন্যান্য" line specifically */
+.complaints p:last-child {
+    white-space: nowrap; /* Keep text and underline on one line */
+}
+
+.signature {
+    text-align: right;
+    margin-top: 40px;
+    font-size: 18px;
+    font-weight: bold;
+    page-break-inside: avoid; /* Keep signature on same page */
+}
     </style>
 </head>
 
