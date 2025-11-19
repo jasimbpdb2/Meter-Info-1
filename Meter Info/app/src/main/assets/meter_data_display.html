@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BPDB Meter Data</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #3498db;
+        }
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .search-info {
+            background: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+        }
+        .section-title {
+            background: #3498db;
+            color: white;
+            padding: 10px 15px;
+            margin: -20px -20px 15px -20px;
+            border-radius: 5px 5px 0 0;
+            font-weight: bold;
+        }
+        .customer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+        }
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .info-value {
+            color: #34495e;
+        }
+        .balance-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .balance-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            border-left: 4px solid #3498db;
+        }
+        .balance-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #e74c3c;
+            margin-top: 5px;
+        }
+        .transaction-table, .bill-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .transaction-table th, .bill-table th {
+            background: #34495e;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        .transaction-table td, .bill-table td {
+            padding: 10px;
+            border-bottom: 1px solid #bdc3c7;
+        }
+        .transaction-table tr:nth-child(even), .bill-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        .multi-customer {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .customer-card {
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: white;
+        }
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #f5c6cb;
+            text-align: center;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #3498db;
+        }
+        .action-buttons {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #bdc3c7;
+        }
+        .btn {
+            padding: 10px 20px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-print {
+            background: #3498db;
+            color: white;
+        }
+        .btn-back {
+            background: #95a5a6;
+            color: white;
+        }
+        .btn-close {
+            background: #e74c3c;
+            color: white;
+        }
+        @media print {
+            body { background: white; }
+            .container { box-shadow: none; }
+            .action-buttons { display: none; }
+            .btn { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="container">
+        <div class="loading" id="loading">
+            <h2>Loading data...</h2>
+        </div>
+        
+        <div id="content" style="display: none;">
+            <!-- Content will be populated by JavaScript -->
+        </div>
+        
+        <div class="error-message" id="error" style="display: none;">
+            <!-- Error messages will be shown here -->
+        </div>
+    </div>
+
+    <script>
+        // Global data object
+        let meterData = null;
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+        });
+
+        // Load data from Android interface
+        function loadData() {
+            if (window.AndroidInterface && AndroidInterface.getMeterData) {
+                try {
+                    const dataJson = AndroidInterface.getMeterData();
+                    meterData = JSON.parse(dataJson);
+                    displayData();
+                } catch (error) {
+                    showError('Error parsing data: ' + error.message);
+                }
+            } else {
+                showError('Android interface not available');
+            }
+        }
+
+        // Main data display function
+        function displayData() {
+            const loading = document.getElementById('loading');
+            const content = document.getElementById('content');
+            const error = document.getElementById('error');
+
+            loading.style.display = 'none';
+            error.style.display = 'none';
+
+            if (!meterData) {
+                showError('No data available');
+                return;
+            }
+
+            if (meterData.error) {
+                showError(meterData.error);
+                return;
+            }
+
+            let html = '';
+
+            // Header section
+            html += createHeaderSection();
+
+            // Multi-customer handling
+            if (meterData.is_multi_customer) {
+                html += createMultiCustomerSection();
+            } else {
+                // Single customer display
+                html += createCustomerInfoSection();
+                html += createBalanceSection();
+                
+                if (meterData.search_type === 'prepaid') {
+                    html += createPrepaidTransactionsSection();
+                } else {
+                    html += createPostpaidBillsSection();
+                }
+            }
+
+            // Action buttons
+            html += createActionButtons();
+
+            content.innerHTML = html;
+            content.style.display = 'block';
+        }
+
+        // Create header section
+        function createHeaderSection() {
+            return `
+                <div class="header">
+                    <h1>BPDB Meter Information</h1>
+                    <div class="search-info">
+                        <div class="info-item">
+                            <span class="info-label">Search Type:</span>
+                            <span class="info-value">${meterData.search_type.toUpperCase()}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Input Number:</span>
+                            <span class="info-value">${meterData.search_input}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Timestamp:</span>
+                            <span class="info-value">${meterData.timestamp}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Create multi-customer section
+        function createMultiCustomerSection() {
+            let html = `
+                <div class="multi-customer">
+                    <h3>📊 Multiple Customers Found</h3>
+                    <p>Found ${meterData.customer_count} customer(s) for meter ${meterData.meter_number}</p>
+                </div>
+            `;
+
+            meterData.customers.forEach((customer, index) => {
+                html += `
+                    <div class="customer-card">
+                        <div class="section-title">Customer ${index + 1}</div>
+                        ${createCustomerInfoHTML(customer.customer_info)}
+                        ${createBalanceHTML(customer.balance_info)}
+                    </div>
+                `;
+            });
+
+            return html;
+        }
+
+        // Create customer info section
+        function createCustomerInfoSection() {
+            return `
+                <div class="section">
+                    <div class="section-title">👤 Customer Information</div>
+                    ${createCustomerInfoHTML(meterData.customer_info)}
+                </div>
+            `;
+        }
+
+        // Create customer info HTML
+        function createCustomerInfoHTML(customerInfo) {
+            if (!customerInfo) return '<p>No customer information available</p>';
+
+            return `
+                <div class="customer-grid">
+                    <div class="info-item">
+                        <span class="info-label">Customer Name:</span>
+                        <span class="info-value">${customerInfo.customer_name || 'N/A'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Father's Name:</span>
+                        <span class="info-value">${customerInfo.father_name || 'N/A'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Address:</span>
+                        <span class="info-value">${customerInfo.address || 'N/A'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Mobile:</span>
+                        <span class="info-value">${customerInfo.mobile_no || 'N/A'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Meter Number:</span>
+                        <span class="info-value">${customerInfo.meter_number || 'N/A'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Consumer Number:</span>
+                        <span class="info-value">${customerInfo.consumer_number || 'N/A'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Tariff:</span>
+                        <span class="info-value">${customerInfo.tariff_description || customerInfo.tariff_category || 'N/A'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Sanctioned Load:</span>
+                        <span class="info-value">${customerInfo.sanctioned_load || 'N/A'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Location Code:</span>
+                        <span class="info-value">${customerInfo.location_code || 'N/A'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Bill Group:</span>
+                        <span class="info-value">${customerInfo.bill_group || 'N/A'}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Create balance section
+        function createBalanceSection() {
+            return `
+                <div class="section">
+                    <div class="section-title">💰 Balance Information</div>
+                    ${createBalanceHTML(meterData.balance_info)}
+                </div>
+            `;
+        }
+
+        // Create balance HTML
+        function createBalanceHTML(balanceInfo) {
+            if (!balanceInfo || Object.keys(balanceInfo).length === 0) {
+                return '<p>No balance information available</p>';
+            }
+
+            let balanceItems = '';
+            
+            if (balanceInfo.total_balance) {
+                balanceItems += `
+                    <div class="balance-item">
+                        <div>Total Balance</div>
+                        <div class="balance-value">৳${balanceInfo.total_balance}</div>
+                    </div>
+                `;
+            }
+            
+            if (balanceInfo.arrear_amount) {
+                balanceItems += `
+                    <div class="balance-item">
+                        <div>Arrear Amount</div>
+                        <div class="balance-value">৳${balanceInfo.arrear_amount}</div>
+                    </div>
+                `;
+            }
+            
+            if (balanceInfo.current_bill) {
+                balanceItems += `
+                    <div class="balance-item">
+                        <div>Current Bill</div>
+                        <div class="balance-value">৳${balanceInfo.current_bill}</div>
+                    </div>
+                `;
+            }
+            
+            if (balanceInfo.paid_amount) {
+                balanceItems += `
+                    <div class="balance-item">
+                        <div>Paid Amount</div>
+                        <div class="balance-value">৳${balanceInfo.paid_amount}</div>
+                    </div>
+                `;
+            }
+
+            return `<div class="balance-grid">${balanceItems}</div>`;
+        }
+
+        // Create prepaid transactions section
+        function createPrepaidTransactionsSection() {
+            if (!meterData.transactions || meterData.transactions.length === 0) {
+                return '<div class="section"><div class="section-title">🔑 Recent Transactions</div><p>No transaction history available</p></div>';
+            }
+
+            let tableRows = '';
+            meterData.transactions.slice(0, 5).forEach(transaction => {
+                tableRows += `
+                    <tr>
+                        <td>${transaction.date || 'N/A'}</td>
+                        <td>${transaction.order_number || 'N/A'}</td>
+                        <td>৳${transaction.amount || 'N/A'}</td>
+                        <td>${transaction.operator || 'N/A'}</td>
+                        <td>${transaction.tokens || 'N/A'}</td>
+                    </tr>
+                `;
+            });
+
+            return `
+                <div class="section">
+                    <div class="section-title">🔑 Recent Transactions (Last ${meterData.transaction_count})</div>
+                    <table class="transaction-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Order No</th>
+                                <th>Amount</th>
+                                <th>Operator</th>
+                                <th>Tokens</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${tableRows}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        // Create postpaid bills section
+        function createPostpaidBillsSection() {
+            if (!meterData.bill_history || meterData.bill_history.length === 0) {
+                return '<div class="section"><div class="section-title">📊 Bill History</div><p>No bill history available</p></div>';
+            }
+
+            // Bill summary
+            let summaryHTML = '';
+            if (meterData.bill_summary) {
+                const summary = meterData.bill_summary;
+                summaryHTML = `
+                    <div class="balance-grid">
+                        <div class="balance-item">
+                            <div>Total Bills</div>
+                            <div class="balance-value">${summary.bill_periods}</div>
+                        </div>
+                        <div class="balance-item">
+                            <div>Total Consumption</div>
+                            <div class="balance-value">${summary.total_consumption.toFixed(0)} kWh</div>
+                        </div>
+                        <div class="balance-item">
+                            <div>Total Amount</div>
+                            <div class="balance-value">৳${summary.total_amount.toFixed(0)}</div>
+                        </div>
+                        <div class="balance-item">
+                            <div>Total Paid</div>
+                            <div class="balance-value">৳${summary.total_paid.toFixed(0)}</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Bill table
+            let tableRows = '';
+            meterData.bill_history.slice(0, 6).forEach(bill => {
+                tableRows += `
+                    <tr>
+                        <td>${bill.bill_month || 'N/A'}</td>
+                        <td>${bill.bill_number || 'N/A'}</td>
+                        <td>${bill.consumption.toFixed(0)}</td>
+                        <td>৳${bill.current_bill.toFixed(0)}</td>
+                        <td>৳${bill.total_bill.toFixed(0)}</td>
+                        <td>৳${bill.paid_amount.toFixed(0)}</td>
+                        <td>৳${bill.balance.toFixed(0)}</td>
+                    </tr>
+                `;
+            });
+
+            return `
+                <div class="section">
+                    <div class="section-title">📊 Bill History (Last ${meterData.bill_count} months)</div>
+                    ${summaryHTML}
+                    <table class="bill-table">
+                        <thead>
+                            <tr>
+                                <th>Bill Month</th>
+                                <th>Bill No</th>
+                                <th>Consumption (kWh)</th>
+                                <th>Current Bill</th>
+                                <th>Total Bill</th>
+                                <th>Paid Amount</th>
+                                <th>Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${tableRows}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        // Create action buttons
+        function createActionButtons() {
+            return `
+                <div class="action-buttons">
+                    <button class="btn btn-print" onclick="window.print()">🖨️ Print</button>
+                    <button class="btn btn-back" onclick="goBack()">← Back to Search</button>
+                    <button class="btn btn-close" onclick="closeApp()">✕ Close</button>
+                </div>
+            `;
+        }
+
+        // Error display function
+        function showError(message) {
+            const loading = document.getElementById('loading');
+            const content = document.getElementById('content');
+            const error = document.getElementById('error');
+
+            loading.style.display = 'none';
+            content.style.display = 'none';
+            error.style.display = 'block';
+            error.innerHTML = `<strong>Error:</strong> ${message}`;
+        }
+
+        // Navigation functions
+        function goBack() {
+            if (window.AndroidInterface && AndroidInterface.goBack) {
+                AndroidInterface.goBack();
+            }
+        }
+
+        function closeApp() {
+            if (window.AndroidInterface && AndroidInterface.closeApp) {
+                AndroidInterface.closeApp();
+            }
+        }
+    </script>
+</body>
+</html>
