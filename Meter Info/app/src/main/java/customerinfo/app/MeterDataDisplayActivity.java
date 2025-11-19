@@ -63,19 +63,36 @@ public class MeterDataDisplayActivity extends AppCompatActivity {
         webView.loadUrl("file:///android_asset/meter_data_display.html");
     }
 
-    private void injectMeterData() {
-        try {
-            Log.d(TAG, "Injecting data into WebView");
-            String js = "javascript:window.meterData = " + meterDataJson + "; window.displayData();";
-            Log.d(TAG, "JavaScript to execute: " + js.substring(0, Math.min(100, js.length())) + "...");
-            
-            webView.evaluateJavascript(js, value -> {
-                Log.d(TAG, "JavaScript evaluation completed: " + value);
-            });
-        } catch (Exception e) {
-            Log.e(TAG, "Error injecting data: " + e.getMessage());
+    // In MeterDataDisplayActivity.java - update the injectMeterData method
+private void injectMeterData() {
+    try {
+        Log.d(TAG, "Injecting data into WebView");
+        
+        if (meterDataJson == null) {
+            Log.e(TAG, "No data to inject");
+            return;
         }
+
+        String js = "javascript:if (typeof window.meterData !== 'undefined') { " +
+                   "window.meterData = " + meterDataJson + "; " +
+                   "if (typeof window.displayData === 'function') { " +
+                   "window.displayData(); } else { console.error('displayData function not found'); }" +
+                   "} else { console.error('meterData not defined'); }";
+        
+        Log.d(TAG, "JavaScript to execute: " + js.substring(0, Math.min(100, js.length())) + "...");
+        
+        webView.evaluateJavascript(js, value -> {
+            Log.d(TAG, "JavaScript evaluation completed: " + value);
+        });
+        
+    } catch (Exception e) {
+        Log.e(TAG, "Error injecting data: " + e.getMessage());
+        
+        // Fallback: try direct injection
+        String fallbackJs = "javascript:window.meterData = " + meterDataJson + "; setTimeout(function() { if(window.displayData) window.displayData(); }, 100);";
+        webView.evaluateJavascript(fallbackJs, null);
     }
+}
 
     public class WebAppInterface {
         @JavascriptInterface
