@@ -92,7 +92,7 @@ public class MainActivity extends AppCompatActivity {
 
         // THEN setup click listeners
         setupClickListeners();
-        
+
         // Initialize ExcelHelper only if permission already granted
         if (isStoragePermissionGranted()) {
             excelHelper = new ExcelHelper(this);
@@ -176,7 +176,7 @@ public class MainActivity extends AppCompatActivity {
             fetchData(inputNumber);
         });
 
-        // HTML View Button
+        // HTML View Button - SIMPLIFIED: Uses same logic as submit
         htmlViewBtn.setOnClickListener(v -> {
             String inputNumber = meterInput.getText().toString().trim();
             if (inputNumber.isEmpty()) {
@@ -200,157 +200,90 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-      public void openMeterDataDisplay(String inputNumber, String type, String subType) {
-    try {
-        Log.d(TAG, "🔍 HTML DISPLAY: Starting for " + inputNumber);
+    /**
+     * SIMPLIFIED HTML DISPLAY - Uses MainActivity's working logic directly
+     */
+    public void openMeterDataDisplay(String inputNumber, String type, String subType) {
+        try {
+            Log.d(TAG, "🔍 HTML DISPLAY: Starting for " + inputNumber);
 
-        // STEP 1: Fetch the data using MainActivity's working methods
-        Map<String, Object> rawData = fetchDataForHTML(inputNumber, type, subType);
+            // STEP 1: Get the SAME data that normal lookup uses
+            Map<String, Object> rawData = fetchDataBasedOnType(inputNumber);
+            Log.d(TAG, "🔍 HTML DISPLAY: Raw data keys: " + rawData.keySet());
 
-        Log.d(TAG, "🔍 HTML DISPLAY: Raw data keys: " + rawData.keySet());
+            // STEP 2: Use MainActivity's PROVEN processing logic
+            String formattedText = displayResult(rawData, type);
+            Map<String, Object> mergedData = mergeSERVERData(rawData);
 
-        // Detailed debug of what we received
-        for (String key : rawData.keySet()) {
-            Object value = rawData.get(key);
-            if (value != null) {
-                if (value instanceof JSONObject) {
-                    Log.d(TAG, "   📦 " + key + ": JSONObject with keys: " + getJSONKeys((JSONObject)value));
-                } else if (value instanceof String) {
-                    String strValue = (String) value;
-                    Log.d(TAG, "   📦 " + key + ": String (" + strValue.length() + " chars) - " + 
-                          (strValue.length() > 100 ? strValue.substring(0, 100) + "..." : strValue));
-                } else if (value instanceof List) {
-                    Log.d(TAG, "   📦 " + key + ": List with " + ((List)value).size() + " items");
-                } else {
-                    Log.d(TAG, "   📦 " + key + ": " + value.getClass().getSimpleName() + " = " + value);
-                }
-            } else {
-                Log.d(TAG, "   📦 " + key + ": NULL");
-            }
+            Log.d(TAG, "✅ HTML DISPLAY: Formatted text length: " + formattedText.length());
+            Log.d(TAG, "✅ HTML DISPLAY: Merged data available: " + (mergedData != null));
+
+            // STEP 3: Create HTML data using the WORKING merged data
+            Map<String, Object> htmlData = createHTMLDataFromWorkingData(rawData, mergedData, inputNumber, type, subType, formattedText);
+
+            // STEP 4: Convert to JSON and display
+            JSONObject jsonData = new JSONObject(htmlData);
+            String jsonString = jsonData.toString();
+            Log.d(TAG, "📄 HTML DISPLAY: JSON data length: " + jsonString.length());
+
+            Intent intent = new Intent(this, MeterDataDisplayActivity.class);
+            intent.putExtra("METER_DATA", jsonString);
+            startActivity(intent);
+
+        } catch (Exception e) {
+            Log.e(TAG, "❌ HTML DISPLAY: Exception: " + e.getMessage(), e);
+            Toast.makeText(this, "Error displaying data in HTML: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
-
-        // Check if we have the expected data structure
-        boolean hasServer1Data = rawData.containsKey("SERVER1_data");
-        boolean hasServer2Data = rawData.containsKey("SERVER2_data"); 
-        boolean hasServer3Data = rawData.containsKey("SERVER3_data");
-        boolean hasConsumerNumber = rawData.containsKey("consumer_number");
-
-        Log.d(TAG, "🔍 DATA CHECK - SERVER1: " + hasServer1Data + ", SERVER2: " + hasServer2Data + 
-              ", SERVER3: " + hasServer3Data + ", Consumer#: " + hasConsumerNumber);
-
-        if (rawData.containsKey("error")) {
-            Log.e(TAG, "❌ HTML DISPLAY: Error in raw data: " + rawData.get("error"));
-            // Let's see what the normal lookup would show with this same data
-            String normalLookupResult = displayResult(rawData, type);
-            Log.d(TAG, "🔍 NORMAL LOOKUP WOULD SHOW: " + normalLookupResult);
-        }
-
-        // STEP 2: Process for HTML display
-        MeterDataHTMLHelper helper = new MeterDataHTMLHelper();
-        Map<String, Object> processedData = helper.processDataForHTMLDisplay(rawData, inputNumber, type, subType);
-
-        Log.d(TAG, "✅ HTML DISPLAY: Processed data keys: " + processedData.keySet());
-
-        // Check what the HTML helper produced
-        if (processedData.containsKey("error")) {
-            Log.e(TAG, "❌ HTML HELPER ERROR: " + processedData.get("error"));
-        } else {
-            Log.d(TAG, "✅ HTML HELPER SUCCESS - Customer info: " + processedData.containsKey("customer_info"));
-            Log.d(TAG, "✅ HTML HELPER SUCCESS - Balance info: " + processedData.containsKey("balance_info"));
-        }
-
-        // STEP 3: Convert to JSON and start HTML activity
-        JSONObject jsonData = new JSONObject(processedData);
-        String jsonString = jsonData.toString();
-        Log.d(TAG, "📄 HTML DISPLAY: JSON data length: " + jsonString.length());
-
-        Intent intent = new Intent(this, MeterDataDisplayActivity.class);
-        intent.putExtra("METER_DATA", jsonString);
-        startActivity(intent);
-
-    } catch (Exception e) {
-        Log.e(TAG, "❌ HTML DISPLAY: Exception: " + e.getMessage(), e);
-        Toast.makeText(this, "Error displaying data in HTML: " + e.getMessage(), Toast.LENGTH_LONG).show();
     }
-}
 
-// Add this helper method to get JSON keys
-private String getJSONKeys(JSONObject json) {
-    try {
-        Iterator<String> keys = json.keys();
-        List<String> keyList = new ArrayList<>();
-        while (keys.hasNext()) {
-            keyList.add(keys.next());
-        }
-        return String.join(", ", keyList);
-    } catch (Exception e) {
-        return "Error getting keys";
-    }
-}
-
-// FIXED METHOD: Better error handling and data fetching
-private Map<String, Object> fetchDataForHTML(String inputNumber, String type, String subType) {
-    Map<String, Object> result = new HashMap<>();
-
-    try {
-        Log.d(TAG, "🔍 HTML FETCH: Starting for " + inputNumber + " type: " + type + " subType: " + subType);
-
-        if ("prepaid".equals(type)) {
-            // Use MainActivity's working prepaid method
-            Map<String, Object> prepaidData = fetchPrepaidData(inputNumber);
-            Log.d(TAG, "🔍 HTML FETCH: Prepaid data keys: " + prepaidData.keySet());
+    /**
+     * Create HTML data using MainActivity's ALREADY WORKING data processing
+     */
+    private Map<String, Object> createHTMLDataFromWorkingData(Map<String, Object> rawData, Map<String, Object> mergedData, 
+                                                             String inputNumber, String type, String subType, String formattedText) {
+        Map<String, Object> htmlData = new HashMap<>();
+        
+        try {
+            // Add metadata
+            htmlData.put("search_input", inputNumber);
+            htmlData.put("search_type", type);
+            htmlData.put("sub_type", subType);
+            htmlData.put("timestamp", new Date().toString());
+            htmlData.put("formatted_text", formattedText);
             
-            // Check if we got valid data
-            if (prepaidData.containsKey("error")) {
-                Log.e(TAG, "❌ HTML FETCH: Prepaid error: " + prepaidData.get("error"));
-                result.put("error", prepaidData.get("error"));
+            // Add raw data for debugging
+            htmlData.put("raw_data_keys", new ArrayList<>(rawData.keySet()));
+            
+            // If we have merged data (which works in text display), use it for HTML
+            if (mergedData != null && !mergedData.isEmpty()) {
+                htmlData.putAll(mergedData);
+                htmlData.put("data_source", "merged_data");
+                Log.d(TAG, "✅ HTML DATA: Using merged data with " + mergedData.keySet().size() + " keys");
             } else {
-                result.putAll(prepaidData);
-                Log.d(TAG, "✅ HTML FETCH: Prepaid data fetched successfully");
+                // Fallback: use raw data directly
+                htmlData.putAll(rawData);
+                htmlData.put("data_source", "raw_data");
+                Log.d(TAG, "⚠️ HTML DATA: Using raw data as fallback");
             }
-
-        } else if ("postpaid".equals(type)) {
-            if ("consumer_no".equals(subType)) {
-                // Use MainActivity's working postpaid method
-                Map<String, Object> postpaidData = fetchPostpaidData(inputNumber);
-                Log.d(TAG, "🔍 HTML FETCH: Postpaid data keys: " + postpaidData.keySet());
-                
-                if (postpaidData.containsKey("error")) {
-                    Log.e(TAG, "❌ HTML FETCH: Postpaid error: " + postpaidData.get("error"));
-                    result.put("error", postpaidData.get("error"));
-                } else {
-                    result.putAll(postpaidData);
-                    Log.d(TAG, "✅ HTML FETCH: Postpaid data fetched successfully");
-                }
-            } else {
-                // Use MainActivity's working meter lookup method
-                Map<String, Object> meterLookupData = fetchMeterLookupData(inputNumber);
-                Log.d(TAG, "🔍 HTML FETCH: Meter lookup data keys: " + meterLookupData.keySet());
-                
-                if (meterLookupData.containsKey("error")) {
-                    Log.e(TAG, "❌ HTML FETCH: Meter lookup error: " + meterLookupData.get("error"));
-                    result.put("error", meterLookupData.get("error"));
-                } else {
-                    result.putAll(meterLookupData);
-                    Log.d(TAG, "✅ HTML FETCH: Meter lookup data fetched successfully");
-                }
+            
+            // Ensure we have basic structure
+            if (!htmlData.containsKey("customer_info")) {
+                htmlData.put("customer_info", new HashMap<String, String>());
             }
+            if (!htmlData.containsKey("balance_info")) {
+                htmlData.put("balance_info", new HashMap<String, String>());
+            }
+            
+            Log.d(TAG, "🎯 HTML DATA: Final keys - " + htmlData.keySet());
+            
+        } catch (Exception e) {
+            Log.e(TAG, "❌ Error creating HTML data: " + e.getMessage());
+            htmlData.put("error", "HTML data creation failed: " + e.getMessage());
         }
-
-        // Add metadata
-        result.put("search_input", inputNumber);
-        result.put("search_type", type);
-        result.put("timestamp", new Date().toString());
-
-        Log.d(TAG, "🎯 HTML FETCH: Final result keys: " + result.keySet());
-
-    } catch (Exception e) {
-        Log.e(TAG, "❌ HTML FETCH: Exception: " + e.getMessage(), e);
-        result.put("error", "Data fetch failed: " + e.getMessage());
+        
+        return htmlData;
     }
 
-    return result;
-}      
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
