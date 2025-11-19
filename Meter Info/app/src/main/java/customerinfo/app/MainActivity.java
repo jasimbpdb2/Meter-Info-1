@@ -270,6 +270,18 @@ private Map<String, Object> fetchDataForHTML(String inputNumber, String type, St
     
     return result;
 }
+    private String generateHTML(String inputNumber, String type, String subType) {
+    // Step 1: Get the full structured map (same used in lookup)
+    Map<String, Object> result = fetchDataForHTML(inputNumber, type, subType);
+
+    // Step 2: Convert map to formatted text (same as lookup screen)
+    String formattedText = displayResult(result, type);
+
+    // Step 3: Now send formatted text to your existing HTML helper
+    String htmlReadyJson = MeterDataHTMLHelper.processDataForHTMLDisplay(formattedText);
+
+    return htmlReadyJson;
+}
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
