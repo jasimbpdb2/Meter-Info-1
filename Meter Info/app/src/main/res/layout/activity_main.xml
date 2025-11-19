@@ -68,6 +68,13 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Search" />
+    <Button
+  				  android:id="@+id/htmlViewBtn"
+    				android:layout_width="match_parent"
+    				android:layout_height="wrap_content"
+    				android:text="📊 View in HTML"
+    				android:background="#4CAF50"
+   				 android:textColor="#ffffff" />
 
     <!-- HTML DISPLAY AREA - ADD THIS -->
     <LinearLayout
