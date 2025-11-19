@@ -11,24 +11,66 @@ public class MeterDataHTMLHelper {
         // Empty constructor
     }
 
-    /**
-     * Process already-fetched data for HTML display (NO API calls)
-     */
-    public Map<String, Object> processDataForHTMLDisplay(Map<String, Object> rawData, String inputNumber, String type, String subType) {
-        Map<String, Object> result = new HashMap<>();
+ public Map<String, Object> processDataForHTMLDisplay(Map<String, Object> rawData, String inputNumber, String type, String subType) {
+    Map<String, Object> result = new HashMap<>();
 
-        try {
-            System.out.println("🔍 HTML HELPER: Processing " + type + " data for HTML display");
+    try {
+        System.out.println("🔍 HTML HELPER: Processing " + type + " data for HTML display");
+        System.out.println("🔍 HTML HELPER: Raw data keys: " + rawData.keySet());
+        
+        // DEBUG: Check what data we actually received
+        for (String key : rawData.keySet()) {
+            Object value = rawData.get(key);
+            System.out.println("   📦 " + key + " = " + 
+                (value instanceof String ? "String(" + ((String)value).length() + " chars)" : 
+                 value instanceof JSONObject ? "JSONObject" :
+                 value instanceof List ? "List(" + ((List)value).size() + " items)" :
+                 value != null ? value.getClass().getSimpleName() : "null"));
+        }
 
-            // Copy metadata
-            result.put("search_input", rawData.get("search_input"));
-            result.put("search_type", rawData.get("search_type"));
-            result.put("timestamp", rawData.get("timestamp"));
+        // Check if we have the expected server data
+        boolean hasServer1 = rawData.containsKey("SERVER1_data");
+        boolean hasServer2 = rawData.containsKey("SERVER2_data");
+        boolean hasServer3 = rawData.containsKey("SERVER3_data");
+        boolean hasConsumer = rawData.containsKey("consumer_number");
+        
+        System.out.println("🔍 DATA AVAILABILITY - SERVER1: " + hasServer1 + 
+                         ", SERVER2: " + hasServer2 + 
+                         ", SERVER3: " + hasServer3 + 
+                         ", Consumer#: " + hasConsumer);
 
-            if (rawData.containsKey("error")) {
-                result.put("error", rawData.get("error"));
+        // Copy metadata
+        result.put("search_input", rawData.get("search_input"));
+        result.put("search_type", rawData.get("search_type"));
+        result.put("timestamp", rawData.get("timestamp"));
+
+        // Check if raw data already has error
+        if (rawData.containsKey("error")) {
+            System.out.println("❌ HTML HELPER: Found error in raw data: " + rawData.get("error"));
+            result.put("error", rawData.get("error"));
+            return result;
+        }
+
+        // Check if we have minimal data to process
+        if ("prepaid".equals(type)) {
+            if (!hasServer1 && !hasServer2 && !hasServer3) {
+                System.out.println("❌ HTML HELPER: No server data available for prepaid");
+                result.put("error", "No server data available");
                 return result;
             }
+            processPrepaidForHTML(rawData, result, inputNumber);
+        } else {
+            processPostpaidForHTML(rawData, result, inputNumber, subType);
+        }
+
+    } catch (Exception e) {
+        System.out.println("❌ HTML HELPER ERROR: " + e.getMessage());
+        e.printStackTrace(); // Add this to see the full stack trace
+        result.put("error", "HTML processing failed: " + e.getMessage());
+    }
+
+    return result;
+}
 
             if ("prepaid".equals(type)) {
                 processPrepaidForHTML(rawData, result, inputNumber);
