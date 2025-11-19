@@ -209,6 +209,49 @@
         .hidden {
             display: none;
         }
+@media print {
+
+    /* Hide search UI */
+    #searchSection,
+    .search-section,
+    .search-row,
+    .type-selector,
+    .type-btn,
+    #searchBtn,
+    #searchInput,
+    .loading,
+    .error,
+    .debug-info {
+        display: none !important;
+    }
+
+    /* Hide edit button and input fields */
+    .edit-controls,
+    .editable-field {
+        display: none !important;
+    }
+
+    /* Show only static values in print */
+    .static-value {
+        display: inline !important;
+    }
+
+    /* Hide action buttons under form */
+    .action-buttons {
+        display: none !important;
+    }
+
+    /* Prevent unwanted background shading */
+    body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    /* Ensure page margins are tight like official form */
+    @page {
+        margin: 12mm;
+    }
+}
     </style>
 </head>
 
