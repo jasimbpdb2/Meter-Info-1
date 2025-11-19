@@ -199,26 +199,33 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    // HTML Display Integration
-    public void openMeterDataDisplay(String inputNumber, String type, String subType) {
-        try {
-            // Process data using the helper
-            MeterDataHTMLHelper helper = new MeterDataHTMLHelper();
-            Map<String, Object> processedData = helper.processMeterDataForHTML(inputNumber, type, subType);
-            
-            // Convert to JSON
-            JSONObject jsonData = new JSONObject(processedData);
-            
-            // Start the HTML display activity
-            Intent intent = new Intent(this, MeterDataDisplayActivity.class);
-            intent.putExtra("METER_DATA", jsonData.toString());
-            startActivity(intent);
-            
-        } catch (Exception e) {
-            Log.e(TAG, "Error opening meter data display: " + e.getMessage());
-            Toast.makeText(this, "Error displaying data in HTML", Toast.LENGTH_SHORT).show();
-        }
+    // In MainActivity.java - update the openMeterDataDisplay method
+public void openMeterDataDisplay(String inputNumber, String type, String subType) {
+    try {
+        Log.d(TAG, "Opening HTML display for: " + inputNumber + " type: " + type + " subType: " + subType);
+        
+        // Process data using the helper
+        MeterDataHTMLHelper helper = new MeterDataHTMLHelper();
+        Map<String, Object> processedData = helper.processMeterDataForHTML(inputNumber, type, subType);
+        
+        Log.d(TAG, "Processed data keys: " + processedData.keySet());
+        
+        // Convert to JSON
+        JSONObject jsonData = new JSONObject(processedData);
+        String jsonString = jsonData.toString();
+        Log.d(TAG, "JSON data length: " + jsonString.length());
+        Log.d(TAG, "JSON preview: " + jsonString.substring(0, Math.min(200, jsonString.length())));
+        
+        // Start the HTML display activity
+        Intent intent = new Intent(this, MeterDataDisplayActivity.class);
+        intent.putExtra("METER_DATA", jsonString);
+        startActivity(intent);
+        
+    } catch (Exception e) {
+        Log.e(TAG, "Error opening meter data display: " + e.getMessage(), e);
+        Toast.makeText(this, "Error displaying data in HTML: " + e.getMessage(), Toast.LENGTH_LONG).show();
     }
+}
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
