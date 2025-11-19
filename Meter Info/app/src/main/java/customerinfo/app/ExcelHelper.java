@@ -298,39 +298,70 @@ public class ExcelHelper {
         return value;
     }
 
-    private boolean saveWorkbook() {
+   private boolean saveWorkbook() {
     try {
-        String relativePath = "BPDB_Records/" + EXCEL_FILE_NAME;
+        String relativePath = "BPDB_Records/";
+        Uri fileUri = null;
 
-        ContentValues values = new ContentValues();
-        values.put(MediaStore.Downloads.DISPLAY_NAME, EXCEL_FILE_NAME);
-        values.put(MediaStore.Downloads.MIME_TYPE, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        values.put(MediaStore.Downloads.RELATIVE_PATH, relativePath);
+        // 1️⃣ Search for existing file in MediaStore
+        String selection =
+                MediaStore.Downloads.RELATIVE_PATH + "=? AND " +
+                MediaStore.Downloads.DISPLAY_NAME + "=?";
+        String[] args = new String[]{ relativePath, EXCEL_FILE_NAME };
 
-        Uri uri = context.getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+        android.database.Cursor cursor = context.getContentResolver().query(
+                MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                new String[]{ MediaStore.Downloads._ID },
+                selection,
+                args,
+                null
+        );
 
-        if (uri == null) {
-            Log.e(TAG, "❌ Failed to create URI (MediaStore returned null)");
+        if (cursor != null && cursor.moveToFirst()) {
+            long id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Downloads._ID));
+            fileUri = Uri.withAppendedPath(MediaStore.Downloads.EXTERNAL_CONTENT_URI, "" + id);
+            Log.d(TAG, "🔄 File found in MediaStore → Overwriting");
+        }
+
+        if (cursor != null) cursor.close();
+
+        // 2️⃣ If file not found → create new
+        if (fileUri == null) {
+            Log.d(TAG, "🆕 No existing file → creating new");
+
+            ContentValues values = new ContentValues();
+            values.put(MediaStore.Downloads.DISPLAY_NAME, EXCEL_FILE_NAME);
+            values.put(MediaStore.Downloads.MIME_TYPE,
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            values.put(MediaStore.Downloads.RELATIVE_PATH, relativePath);
+
+            fileUri = context.getContentResolver().insert(
+                    MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                    values
+            );
+
+            if (fileUri == null) {
+                Log.e(TAG, "❌ Failed to create file URI");
+                return false;
+            }
+        }
+
+        // 3️⃣ Write (overwrite mode if file existed)
+        OutputStream os = context.getContentResolver().openOutputStream(fileUri, "rwt");
+        if (os == null) {
+            Log.e(TAG, "❌ OutputStream NULL");
             return false;
         }
 
-        OutputStream outputStream = context.getContentResolver().openOutputStream(uri);
-        if (outputStream == null) {
-            Log.e(TAG, "❌ OutputStream is null");
-            return false;
-        }
+        workbook.write(os);
+        os.close();
 
-        workbook.write(outputStream);
-        outputStream.close();
-
-        Log.d(TAG, "💾 File saved successfully using MediaStore: " + uri.toString());
-        //showToast("Excel saved in: Downloads/BPDB_Records");
+        //showToast("Saved"); // simple save message
 
         return true;
 
     } catch (Exception e) {
-        Log.e(TAG, "❌ MediaStore save error: " + e.getMessage());
-        e.printStackTrace();
+        Log.e(TAG, "❌ Save error: " + e.getMessage());
         return false;
     }
 }
