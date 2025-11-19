@@ -202,17 +202,91 @@ public class MainActivity extends AppCompatActivity {
 
     public void openMeterDataDisplay(String inputNumber, String type, String subType) {
     try {
-        Log.d(TAG, "Opening HTML display for: " + inputNumber + " type: " + type + " subType: " + subType);
+        Log.d(TAG, "🔍 HTML DISPLAY: Starting for " + inputNumber);
 
-        // FIRST: Fetch the data using MainActivity's working methods
+        // STEP 1: Fetch the data using MainActivity's working methods
         Map<String, Object> rawData = fetchDataForHTML(inputNumber, type, subType);
+
+        Log.d(TAG, "🔍 HTML DISPLAY: Raw data keys: " + rawData.keySet());
         
-        Log.d(TAG, "Raw data fetched, keys: " + rawData.keySet());
-        
-        if (rawData.containsKey("error")) {
-            Log.e(TAG, "Error fetching data: " + rawData.get("error"));
-            // Still proceed to HTML to show the error
+        // Detailed debug of what we received
+        for (String key : rawData.keySet()) {
+            Object value = rawData.get(key);
+            if (value != null) {
+                if (value instanceof JSONObject) {
+                    Log.d(TAG, "   📦 " + key + ": JSONObject with keys: " + getJSONKeys((JSONObject)value));
+                } else if (value instanceof String) {
+                    String strValue = (String) value;
+                    Log.d(TAG, "   📦 " + key + ": String (" + strValue.length() + " chars) - " + 
+                          (strValue.length() > 100 ? strValue.substring(0, 100) + "..." : strValue));
+                } else if (value instanceof List) {
+                    Log.d(TAG, "   📦 " + key + ": List with " + ((List)value).size() + " items");
+                } else {
+                    Log.d(TAG, "   📦 " + key + ": " + value.getClass().getSimpleName() + " = " + value);
+                }
+            } else {
+                Log.d(TAG, "   📦 " + key + ": NULL");
+            }
         }
+
+        // Check if we have the expected data structure
+        boolean hasServer1Data = rawData.containsKey("SERVER1_data");
+        boolean hasServer2Data = rawData.containsKey("SERVER2_data"); 
+        boolean hasServer3Data = rawData.containsKey("SERVER3_data");
+        boolean hasConsumerNumber = rawData.containsKey("consumer_number");
+        
+        Log.d(TAG, "🔍 DATA CHECK - SERVER1: " + hasServer1Data + ", SERVER2: " + hasServer2Data + 
+              ", SERVER3: " + hasServer3Data + ", Consumer#: " + hasConsumerNumber);
+
+        if (rawData.containsKey("error")) {
+            Log.e(TAG, "❌ HTML DISPLAY: Error in raw data: " + rawData.get("error"));
+            // Let's see what the normal lookup would show with this same data
+            String normalLookupResult = displayResult(rawData, type);
+            Log.d(TAG, "🔍 NORMAL LOOKUP WOULD SHOW: " + normalLookupResult);
+        }
+
+        // STEP 2: Process for HTML display
+        MeterDataHTMLHelper helper = new MeterDataHTMLHelper();
+        Map<String, Object> processedData = helper.processDataForHTMLDisplay(rawData, inputNumber, type, subType);
+
+        Log.d(TAG, "✅ HTML DISPLAY: Processed data keys: " + processedData.keySet());
+        
+        // Check what the HTML helper produced
+        if (processedData.containsKey("error")) {
+            Log.e(TAG, "❌ HTML HELPER ERROR: " + processedData.get("error"));
+        } else {
+            Log.d(TAG, "✅ HTML HELPER SUCCESS - Customer info: " + processedData.containsKey("customer_info"));
+            Log.d(TAG, "✅ HTML HELPER SUCCESS - Balance info: " + processedData.containsKey("balance_info"));
+        }
+
+        // STEP 3: Convert to JSON and start HTML activity
+        JSONObject jsonData = new JSONObject(processedData);
+        String jsonString = jsonData.toString();
+        Log.d(TAG, "📄 HTML DISPLAY: JSON data length: " + jsonString.length());
+
+        Intent intent = new Intent(this, MeterDataDisplayActivity.class);
+        intent.putExtra("METER_DATA", jsonString);
+        startActivity(intent);
+
+    } catch (Exception e) {
+        Log.e(TAG, "❌ HTML DISPLAY: Exception: " + e.getMessage(), e);
+        Toast.makeText(this, "Error displaying data in HTML: " + e.getMessage(), Toast.LENGTH_LONG).show();
+    }
+}
+
+// Add this helper method to get JSON keys
+private String getJSONKeys(JSONObject json) {
+    try {
+        Iterator<String> keys = json.keys();
+        List<String> keyList = new ArrayList<>();
+        while (keys.hasNext()) {
+            keyList.add(keys.next());
+        }
+        return String.join(", ", keyList);
+    } catch (Exception e) {
+        return "Error getting keys";
+    }
+}
 
         // THEN: Process for HTML display
         MeterDataHTMLHelper helper = new MeterDataHTMLHelper();
