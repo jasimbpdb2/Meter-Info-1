@@ -14,7 +14,6 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import java.util.Date;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -36,7 +35,7 @@ import android.provider.Settings;
 public class MainActivity extends AppCompatActivity {
 
     private EditText meterInput;
-    private Button submitBtn, htmlViewBtn;
+    private Button submitBtn;
     private TextView resultView;
     private RadioButton prepaidBtn, postpaidBtn, consumerNoOption, meterNoOption;
     private RadioGroup mainRadioGroup, postpaidRadioGroup;
@@ -46,6 +45,8 @@ public class MainActivity extends AppCompatActivity {
     private ExcelHelper excelHelper;
     private static final int STORAGE_PERMISSION_CODE = 100;
     private static final String TAG = "MainActivity";
+
+    private UIHelper uiHelper;
 
     // Fix SSL certificate issues
     static {
@@ -92,7 +93,7 @@ public class MainActivity extends AppCompatActivity {
 
         // THEN setup click listeners
         setupClickListeners();
-
+        
         // Initialize ExcelHelper only if permission already granted
         if (isStoragePermissionGranted()) {
             excelHelper = new ExcelHelper(this);
@@ -107,7 +108,6 @@ public class MainActivity extends AppCompatActivity {
         prepaidBtn = findViewById(R.id.prepaidBtn);
         postpaidBtn = findViewById(R.id.postpaidBtn);
         submitBtn = findViewById(R.id.submitBtn);
-        htmlViewBtn = findViewById(R.id.htmlViewBtn);
         resultView = findViewById(R.id.resultView);
 
         // Postpaid options
@@ -123,7 +123,10 @@ public class MainActivity extends AppCompatActivity {
         resultView.setFocusableInTouchMode(true);
         resultView.setLongClickable(true);
 
-        // ExcelHelper will be created after permission
+        // Initialize UI Helper
+        uiHelper = new UIHelper(this, resultView, findViewById(R.id.tableContainer));
+        // excelHelper = new ExcelHelper(this); // REMOVED - will be created after permission
+
         updateButtonStates();
         updatePostpaidSubOptions();
         updateInputHint();
@@ -176,23 +179,7 @@ public class MainActivity extends AppCompatActivity {
             fetchData(inputNumber);
         });
 
-        // HTML View Button - SIMPLIFIED: Uses same logic as submit
-        htmlViewBtn.setOnClickListener(v -> {
-            String inputNumber = meterInput.getText().toString().trim();
-            if (inputNumber.isEmpty()) {
-                showResult("❌ Please enter number first");
-                return;
-            }
-
-            if (selectedType.equals("prepaid") && inputNumber.length() != 12) {
-                showResult("❌ Prepaid meter must be 12 digits");
-                return;
-            }
-
-            openMeterDataDisplay(inputNumber, selectedType, postpaidSubType);
-        });
-
-        // Back button listener
+        // ✅ CORRECT PLACE: Add back button listener HERE
         findViewById(R.id.backBtn).setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, Home.class);
             startActivity(intent);
@@ -200,89 +187,6 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    /**
-     * SIMPLIFIED HTML DISPLAY - Uses MainActivity's working logic directly
-     */
-    public void openMeterDataDisplay(String inputNumber, String type, String subType) {
-        try {
-            Log.d(TAG, "🔍 HTML DISPLAY: Starting for " + inputNumber);
-
-            // STEP 1: Get the SAME data that normal lookup uses
-            Map<String, Object> rawData = fetchDataBasedOnType(inputNumber);
-            Log.d(TAG, "🔍 HTML DISPLAY: Raw data keys: " + rawData.keySet());
-
-            // STEP 2: Use MainActivity's PROVEN processing logic
-            String formattedText = displayResult(rawData, type);
-            Map<String, Object> mergedData = mergeSERVERData(rawData);
-
-            Log.d(TAG, "✅ HTML DISPLAY: Formatted text length: " + formattedText.length());
-            Log.d(TAG, "✅ HTML DISPLAY: Merged data available: " + (mergedData != null));
-
-            // STEP 3: Create HTML data using the WORKING merged data
-            Map<String, Object> htmlData = createHTMLDataFromWorkingData(rawData, mergedData, inputNumber, type, subType, formattedText);
-
-            // STEP 4: Convert to JSON and display
-            JSONObject jsonData = new JSONObject(htmlData);
-            String jsonString = jsonData.toString();
-            Log.d(TAG, "📄 HTML DISPLAY: JSON data length: " + jsonString.length());
-
-            Intent intent = new Intent(this, MeterDataDisplayActivity.class);
-            intent.putExtra("METER_DATA", jsonString);
-            startActivity(intent);
-
-        } catch (Exception e) {
-            Log.e(TAG, "❌ HTML DISPLAY: Exception: " + e.getMessage(), e);
-            Toast.makeText(this, "Error displaying data in HTML: " + e.getMessage(), Toast.LENGTH_LONG).show();
-        }
-    }
-
-    /**
-     * Create HTML data using MainActivity's ALREADY WORKING data processing
-     */
-    private Map<String, Object> createHTMLDataFromWorkingData(Map<String, Object> rawData, Map<String, Object> mergedData, 
-                                                             String inputNumber, String type, String subType, String formattedText) {
-        Map<String, Object> htmlData = new HashMap<>();
-        
-        try {
-            // Add metadata
-            htmlData.put("search_input", inputNumber);
-            htmlData.put("search_type", type);
-            htmlData.put("sub_type", subType);
-            htmlData.put("timestamp", new Date().toString());
-            htmlData.put("formatted_text", formattedText);
-            
-            // Add raw data for debugging
-            htmlData.put("raw_data_keys", new ArrayList<>(rawData.keySet()));
-            
-            // If we have merged data (which works in text display), use it for HTML
-            if (mergedData != null && !mergedData.isEmpty()) {
-                htmlData.putAll(mergedData);
-                htmlData.put("data_source", "merged_data");
-                Log.d(TAG, "✅ HTML DATA: Using merged data with " + mergedData.keySet().size() + " keys");
-            } else {
-                // Fallback: use raw data directly
-                htmlData.putAll(rawData);
-                htmlData.put("data_source", "raw_data");
-                Log.d(TAG, "⚠️ HTML DATA: Using raw data as fallback");
-            }
-            
-            // Ensure we have basic structure
-            if (!htmlData.containsKey("customer_info")) {
-                htmlData.put("customer_info", new HashMap<String, String>());
-            }
-            if (!htmlData.containsKey("balance_info")) {
-                htmlData.put("balance_info", new HashMap<String, String>());
-            }
-            
-            Log.d(TAG, "🎯 HTML DATA: Final keys - " + htmlData.keySet());
-            
-        } catch (Exception e) {
-            Log.e(TAG, "❌ Error creating HTML data: " + e.getMessage());
-            htmlData.put("error", "HTML data creation failed: " + e.getMessage());
-        }
-        
-        return htmlData;
-    }
 
 
     @Override
