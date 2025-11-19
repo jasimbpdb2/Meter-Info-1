@@ -324,7 +324,7 @@ public class ExcelHelper {
         outputStream.close();
 
         Log.d(TAG, "💾 File saved successfully using MediaStore: " + uri.toString());
-        showToast("Excel saved in: Downloads/BPDB_Records");
+        //showToast("Excel saved in: Downloads/BPDB_Records");
 
         return true;
 
@@ -369,7 +369,7 @@ public class ExcelHelper {
             Log.d(TAG, "=========================");
             
             // Show toast with file location
-            showToast("File saved: " + file.getName());
+            //showToast("File saved: " + file.getName());
         } catch (Exception e) {
             Log.e(TAG, "Debug error: " + e.getMessage());
         }
