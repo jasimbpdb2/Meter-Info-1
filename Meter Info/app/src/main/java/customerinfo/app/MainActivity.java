@@ -278,7 +278,8 @@ private Map<String, Object> fetchDataForHTML(String inputNumber, String type, St
     String formattedText = displayResult(result, type);
 
     // Step 3: Now send formatted text to your existing HTML helper
-    String htmlReadyJson = MeterDataHTMLHelper.processDataForHTMLDisplay(formattedText);
+    // FIX: Use the correct method signature with 4 parameters
+    String htmlReadyJson = MeterDataHTMLHelper.processDataForHTMLDisplay(result, inputNumber, type, subType);
 
     return htmlReadyJson;
 }
