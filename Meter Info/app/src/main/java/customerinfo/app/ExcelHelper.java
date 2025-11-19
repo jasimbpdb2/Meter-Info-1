@@ -295,38 +295,41 @@ public class ExcelHelper {
     }
 
     private boolean saveWorkbook() {
-        FileOutputStream outputStream = null;
-        try {
-            File file = new File(filePath);
-            File parentDir = file.getParentFile();
-            
-            // Ensure directory exists
-            if (parentDir != null && !parentDir.exists()) {
-                boolean dirCreated = parentDir.mkdirs();
-                Log.d(TAG, "Directory created: " + dirCreated);
-            }
-            
-            outputStream = new FileOutputStream(file);
-            workbook.write(outputStream);
-            Log.d(TAG, "💾 Workbook saved successfully: " + filePath);
-            Log.d(TAG, "📁 File location: " + file.getAbsolutePath());
-            Log.d(TAG, "📊 File size: " + file.length() + " bytes");
-            return true;
-        } catch (IOException e) {
-            Log.e(TAG, "❌ Error saving workbook: " + e.getMessage());
-            e.printStackTrace();
-            return false;
-        } finally {
-            if (outputStream != null) {
-                try {
-                    outputStream.close();
-                } catch (IOException e) {
-                    Log.e(TAG, "❌ Error closing output stream: " + e.getMessage());
-                }
-            }
-        }
-    }
+    try {
+        String relativePath = "BPDB_Records/" + EXCEL_FILE_NAME;
 
+        ContentValues values = new ContentValues();
+        values.put(MediaStore.Downloads.DISPLAY_NAME, EXCEL_FILE_NAME);
+        values.put(MediaStore.Downloads.MIME_TYPE, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        values.put(MediaStore.Downloads.RELATIVE_PATH, relativePath);
+
+        Uri uri = context.getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+
+        if (uri == null) {
+            Log.e(TAG, "❌ Failed to create URI (MediaStore returned null)");
+            return false;
+        }
+
+        OutputStream outputStream = context.getContentResolver().openOutputStream(uri);
+        if (outputStream == null) {
+            Log.e(TAG, "❌ OutputStream is null");
+            return false;
+        }
+
+        workbook.write(outputStream);
+        outputStream.close();
+
+        Log.d(TAG, "💾 File saved successfully using MediaStore: " + uri.toString());
+        showToast("Excel saved in: Downloads/BPDB_Records");
+
+        return true;
+
+    } catch (Exception e) {
+        Log.e(TAG, "❌ MediaStore save error: " + e.getMessage());
+        e.printStackTrace();
+        return false;
+    }
+}
     public boolean saveExcelFile() {
         return saveWorkbook();
     }
