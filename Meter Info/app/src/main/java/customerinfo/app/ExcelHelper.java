@@ -1,13 +1,8 @@
 package customerinfo.app;
 
 import android.content.Context;
-import android.os.Build;
 import android.os.Environment;
 import android.util.Log;
-import android.content.ContentValues;
-import android.net.Uri;
-import android.provider.MediaStore;
-import java.io.OutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -107,11 +102,11 @@ public class ExcelHelper {
     private static File getStorageDir() {
         File downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
         File dir = new File(downloadsDir, "BPDB_Records");
-        
+
         if (!dir.exists()) {
             boolean created = dir.mkdirs();
             Log.d(TAG, "Directory created: " + created + " at " + dir.getAbsolutePath());
-            
+
             // Verify directory is writable
             if (created) {
                 boolean canWrite = dir.canWrite();
@@ -230,7 +225,7 @@ public class ExcelHelper {
             boolean saved = saveWorkbook();
             if (saved) {
                 showToast("✅ Prepaid data saved to Excel");
-                debugFileInfo(); // Show file info after save
+                debugFileInfo();
             } else {
                 showToast("❌ Failed to save prepaid data");
             }
@@ -275,7 +270,7 @@ public class ExcelHelper {
             boolean saved = saveWorkbook();
             if (saved) {
                 showToast("✅ Postpaid data saved to Excel");
-                debugFileInfo(); // Show file info after save
+                debugFileInfo();
             } else {
                 showToast("❌ Failed to save postpaid data");
             }
@@ -298,73 +293,34 @@ public class ExcelHelper {
         return value;
     }
 
-   private boolean saveWorkbook() {
-    try {
-        String relativePath = "BPDB_Records/";
-        Uri fileUri = null;
-
-        // 1️⃣ Search for existing file in MediaStore
-        String selection =
-                MediaStore.Downloads.RELATIVE_PATH + "=? AND " +
-                MediaStore.Downloads.DISPLAY_NAME + "=?";
-        String[] args = new String[]{ relativePath, EXCEL_FILE_NAME };
-
-        android.database.Cursor cursor = context.getContentResolver().query(
-                MediaStore.Downloads.EXTERNAL_CONTENT_URI,
-                new String[]{ MediaStore.Downloads._ID },
-                selection,
-                args,
-                null
-        );
-
-        if (cursor != null && cursor.moveToFirst()) {
-            long id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Downloads._ID));
-            fileUri = Uri.withAppendedPath(MediaStore.Downloads.EXTERNAL_CONTENT_URI, "" + id);
-            Log.d(TAG, "🔄 File found in MediaStore → Overwriting");
-        }
-
-        if (cursor != null) cursor.close();
-
-        // 2️⃣ If file not found → create new
-        if (fileUri == null) {
-            Log.d(TAG, "🆕 No existing file → creating new");
-
-            ContentValues values = new ContentValues();
-            values.put(MediaStore.Downloads.DISPLAY_NAME, EXCEL_FILE_NAME);
-            values.put(MediaStore.Downloads.MIME_TYPE,
-                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            values.put(MediaStore.Downloads.RELATIVE_PATH, relativePath);
-
-            fileUri = context.getContentResolver().insert(
-                    MediaStore.Downloads.EXTERNAL_CONTENT_URI,
-                    values
-            );
-
-            if (fileUri == null) {
-                Log.e(TAG, "❌ Failed to create file URI");
-                return false;
+    // ✅ FIXED: Simple file overwrite - NO MORE NUMBERED FILES!
+    private boolean saveWorkbook() {
+        try {
+            File file = new File(getExcelFilePath());
+            File directory = file.getParentFile();
+            
+            // Ensure directory exists
+            if (!directory.exists()) {
+                directory.mkdirs();
             }
-        }
-
-        // 3️⃣ Write (overwrite mode if file existed)
-        OutputStream os = context.getContentResolver().openOutputStream(fileUri, "rwt");
-        if (os == null) {
-            Log.e(TAG, "❌ OutputStream NULL");
+            
+            Log.d(TAG, "💾 Saving to: " + file.getAbsolutePath());
+            
+            // DIRECT FILE OVERWRITE - No MediaStore complications
+            FileOutputStream fos = new FileOutputStream(file, false); // false = overwrite
+            workbook.write(fos);
+            fos.close();
+            
+            Log.d(TAG, "✅ Successfully saved: " + file.length() + " bytes");
+            
+            return true;
+            
+        } catch (Exception e) {
+            Log.e(TAG, "❌ Save error: " + e.getMessage());
             return false;
         }
-
-        workbook.write(os);
-        os.close();
-
-        //showToast("Saved"); // simple save message
-
-        return true;
-
-    } catch (Exception e) {
-        Log.e(TAG, "❌ Save error: " + e.getMessage());
-        return false;
     }
-}
+
     public boolean saveExcelFile() {
         return saveWorkbook();
     }
@@ -379,28 +335,27 @@ public class ExcelHelper {
         }
     }
 
-    // FIXED: Consistent file path
+    // ✅ FIXED: Consistent file path
     public String getFilePath() {
         return getExcelFilePath(); // Return the SAME path
     }
 
-    // NEW: Debug method to verify file operations
+    // Debug method to verify file operations
     public void debugFileInfo() {
         try {
             File file = new File(filePath);
             File dir = file.getParentFile();
-            
+
             Log.d(TAG, "=== FILE DEBUG INFO ===");
             Log.d(TAG, "File path: " + filePath);
             Log.d(TAG, "Directory exists: " + (dir != null && dir.exists()));
             Log.d(TAG, "Directory writable: " + (dir != null && dir.canWrite()));
             Log.d(TAG, "File exists: " + file.exists());
             Log.d(TAG, "File size: " + (file.exists() ? file.length() : 0));
-            Log.d(TAG, "Android version: " + Build.VERSION.SDK_INT);
+            Log.d(TAG, "Prepaid records: " + getPrepaidRecordCount());
+            Log.d(TAG, "Postpaid records: " + getPostpaidRecordCount());
             Log.d(TAG, "=========================");
-            
-            // Show toast with file location
-            //showToast("File saved: " + file.getName());
+
         } catch (Exception e) {
             Log.e(TAG, "Debug error: " + e.getMessage());
         }
