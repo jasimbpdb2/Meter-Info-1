@@ -45,17 +45,29 @@ public class MeterDataHTMLHelper {
         Map<String, Object> result = new HashMap<>();
 
         try {
-            // Step 1: Get basic meter info from SERVER1
+            // Step 1: Get basic meter info from SERVER1 - USE THE SAME METHOD AS MainActivity
             Map<String, Object> server1Result = MainActivity.SERVER1Lookup(meterNumber);
+            System.out.println("🔍 PREPAID: SERVER1 result - " + (server1Result.containsKey("error") ? "ERROR: " + server1Result.get("error") : "SUCCESS"));
+            
             String consumerNumber = (String) server1Result.get("consumer_number");
 
             if (consumerNumber == null || server1Result.containsKey("error")) {
-                result.put("error", "Invalid meter number or data not found");
+                String errorMsg = server1Result.containsKey("error") ? 
+                    server1Result.get("error").toString() : "Invalid meter number or data not found";
+                result.put("error", errorMsg);
                 return result;
             }
 
-            // Step 2: Get detailed customer info from SERVER3
+            System.out.println("✅ PREPAID: Found consumer number: " + consumerNumber);
+
+            // Step 2: Get detailed customer info from SERVER3 - USE THE SAME METHOD AS MainActivity
             Map<String, Object> server3Result = MainActivity.SERVER3Lookup(consumerNumber);
+            System.out.println("🔍 PREPAID: SERVER3 result - " + (server3Result.containsKey("error") ? "ERROR: " + server3Result.get("error") : "SUCCESS"));
+
+            if (server3Result.containsKey("error")) {
+                result.put("error", "Customer data not found: " + server3Result.get("error"));
+                return result;
+            }
 
             // Step 3: Extract and structure the data
             extractPrepaidCustomerInfo(server1Result, server3Result, result, meterNumber);
@@ -63,6 +75,7 @@ public class MeterDataHTMLHelper {
             extractPrepaidTransactions(server1Result, result);
 
         } catch (Exception e) {
+            System.out.println("❌ PREPAID DATA PROCESSING ERROR: " + e.getMessage());
             result.put("error", "Prepaid data processing failed: " + e.getMessage());
         }
 
@@ -84,6 +97,7 @@ public class MeterDataHTMLHelper {
                 result = processPostpaidConsumerLookup(inputNumber);
             }
         } catch (Exception e) {
+            System.out.println("❌ POSTPAID DATA PROCESSING ERROR: " + e.getMessage());
             result.put("error", "Postpaid data processing failed: " + e.getMessage());
         }
 
@@ -97,7 +111,9 @@ public class MeterDataHTMLHelper {
         Map<String, Object> result = new HashMap<>();
 
         try {
+            System.out.println("🔍 POSTPAID: Looking up consumer: " + consumerNumber);
             Map<String, Object> server3Result = MainActivity.SERVER3Lookup(consumerNumber);
+            System.out.println("🔍 POSTPAID: SERVER3 result - " + (server3Result.containsKey("error") ? "ERROR: " + server3Result.get("error") : "SUCCESS"));
 
             if (server3Result.containsKey("error")) {
                 result.put("error", "Customer data not found: " + server3Result.get("error"));
@@ -109,6 +125,7 @@ public class MeterDataHTMLHelper {
             extractPostpaidBillInfo(server3Result, result);
 
         } catch (Exception e) {
+            System.out.println("❌ POSTPAID CONSUMER LOOKUP ERROR: " + e.getMessage());
             result.put("error", "Postpaid consumer lookup failed: " + e.getMessage());
         }
 
@@ -122,8 +139,10 @@ public class MeterDataHTMLHelper {
         Map<String, Object> result = new HashMap<>();
 
         try {
+            System.out.println("🔍 POSTPAID METER: Looking up meter: " + meterNumber);
             // Get customer numbers from meter
             Map<String, Object> meterResult = MainActivity.getCustomerNumbersByMeter(meterNumber);
+            System.out.println("🔍 POSTPAID METER: Meter lookup result - " + (meterResult.containsKey("error") ? "ERROR: " + meterResult.get("error") : "SUCCESS"));
 
             if (meterResult.containsKey("error")) {
                 result.put("error", meterResult.get("error"));
@@ -133,8 +152,11 @@ public class MeterDataHTMLHelper {
             List<String> customerNumbers = (List<String>) meterResult.get("customer_numbers");
             List<Map<String, Object>> customerResults = new ArrayList<>();
 
+            System.out.println("🔄 POSTPAID METER: Processing " + customerNumbers.size() + " customer(s)");
+
             // Process each customer
             for (String custNum : customerNumbers) {
+                System.out.println("🔄 POSTPAID METER: Processing customer: " + custNum);
                 Map<String, Object> customerResult = processPostpaidConsumerLookup(custNum);
                 customerResults.add(customerResult);
             }
@@ -145,6 +167,7 @@ public class MeterDataHTMLHelper {
             result.put("is_multi_customer", true);
 
         } catch (Exception e) {
+            System.out.println("❌ POSTPAID METER LOOKUP ERROR: " + e.getMessage());
             result.put("error", "Postpaid meter lookup failed: " + e.getMessage());
         }
 
@@ -178,6 +201,7 @@ public class MeterDataHTMLHelper {
             customerInfo.put("consumer_number", (String) server1Result.get("consumer_number"));
 
             result.put("customer_info", customerInfo);
+            System.out.println("✅ PREPAID: Customer info extracted with " + customerInfo.size() + " fields");
 
         } catch (Exception e) {
             System.out.println("❌ Error extracting prepaid customer info: " + e.getMessage());
@@ -205,6 +229,8 @@ public class MeterDataHTMLHelper {
                     customerInfo.put("sanctioned_load", extractDirectValue(result, "sanctionLoad"));
                     customerInfo.put("division", extractDirectValue(result, "division"));
                     customerInfo.put("sub_division", extractDirectValue(result, "sndDivision"));
+                    
+                    System.out.println("✅ SERVER1: Extracted customer info");
                 }
             }
         } catch (Exception e) {
@@ -234,6 +260,8 @@ public class MeterDataHTMLHelper {
             customerInfo.put("book_number", server3Data.optString("bookNumber", ""));
             customerInfo.put("tariff_description", server3Data.optString("tariffDesc", ""));
             customerInfo.put("walk_order", server3Data.optString("walkOrder", ""));
+
+            System.out.println("✅ SERVER3: Supplemented customer info");
 
         } catch (Exception e) {
             System.out.println("❌ Error supplementing with SERVER3 data: " + e.getMessage());
@@ -274,6 +302,7 @@ public class MeterDataHTMLHelper {
             }
 
             result.put("customer_info", customerInfo);
+            System.out.println("✅ POSTPAID: Customer info extracted with " + customerInfo.size() + " fields");
 
         } catch (Exception e) {
             System.out.println("❌ Error extracting postpaid customer info: " + e.getMessage());
@@ -307,6 +336,8 @@ public class MeterDataHTMLHelper {
                         customerInfo.put("connection_date", formatDate(firstCustomer.optString("METER_CONNECT_DATE")));
                         customerInfo.put("usage_type", firstCustomer.optString("USAGE_TYPE", ""));
                         customerInfo.put("description", firstCustomer.optString("DESCR", ""));
+                        
+                        System.out.println("✅ SERVER2: Supplemented customer info");
                     }
                 }
             }
@@ -341,6 +372,7 @@ public class MeterDataHTMLHelper {
             }
 
             result.put("balance_info", balanceInfo);
+            System.out.println("✅ PREPAID: Balance info extracted");
 
         } catch (Exception e) {
             System.out.println("❌ Error extracting prepaid balance info: " + e.getMessage());
@@ -372,6 +404,7 @@ public class MeterDataHTMLHelper {
             }
 
             result.put("balance_info", balanceInfo);
+            System.out.println("✅ POSTPAID: Balance info extracted");
 
         } catch (Exception e) {
             System.out.println("❌ Error extracting postpaid balance info: " + e.getMessage());
@@ -412,6 +445,8 @@ public class MeterDataHTMLHelper {
                 }
             }
 
+            System.out.println("✅ SERVER2: Balance info extracted");
+
         } catch (Exception e) {
             System.out.println("❌ Error extracting balance from SERVER2: " + e.getMessage());
         }
@@ -431,6 +466,7 @@ public class MeterDataHTMLHelper {
 
             result.put("transactions", transactions);
             result.put("transaction_count", transactions.size());
+            System.out.println("✅ PREPAID: Extracted " + transactions.size() + " transactions");
 
         } catch (Exception e) {
             System.out.println("❌ Error extracting prepaid transactions: " + e.getMessage());
@@ -475,6 +511,8 @@ public class MeterDataHTMLHelper {
                         Map<String, Object> billSummary = createBillSummary(bills);
                         result.put("bill_summary", billSummary);
                     }
+                    
+                    System.out.println("✅ POSTPAID: Extracted " + bills.size() + " bills");
                 }
             }
 
