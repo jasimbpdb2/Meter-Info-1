@@ -412,12 +412,12 @@ public class HTMLViewerHelper {
     }
 
     // These methods need to be copied from your MainActivity:
-    private Map<String, Object> cleanSERVER1Data(Object SERVER1DataObj) {
+    public Map<String, Object> cleanSERVER1Data(Object SERVER1DataObj) {
         // COPY THE EXACT cleanSERVER1Data METHOD FROM YOUR MainActivity
         return MainActivity.cleanSERVER1Data(SERVER1DataObj);
     }
 
-    private Map<String, Object> mergeSERVERData(Map<String, Object> result) {
+    public Map<String, Object> mergeSERVERData(Map<String, Object> result) {
         // COPY THE EXACT mergeSERVERData METHOD FROM YOUR MainActivity
         return MainActivity.mergeSERVERData(result);
     }
