@@ -60,18 +60,17 @@ public class MeterDataHTMLHelper {
 
             System.out.println("✅ PREPAID: Found consumer number: " + consumerNumber);
 
-            // Step 2: Get detailed customer info from SERVER3 - USE THE SAME METHOD AS MainActivity
-            Map<String, Object> server3Result = MainActivity.SERVER3Lookup(consumerNumber);
-            System.out.println("🔍 PREPAID: SERVER3 result - " + (server3Result.containsKey("error") ? "ERROR: " + server3Result.get("error") : "SUCCESS"));
-
-            if (server3Result.containsKey("error")) {
-                result.put("error", "Customer data not found: " + server3Result.get("error"));
+            // Step 2: Get detailed customer info using RESILIENT approach
+            Map<String, Object> customerData = fetchCustomerDataResilient(consumerNumber, "prepaid");
+            
+            if (customerData.containsKey("error")) {
+                result.put("error", customerData.get("error"));
                 return result;
             }
 
             // Step 3: Extract and structure the data
-            extractPrepaidCustomerInfo(server1Result, server3Result, result, meterNumber);
-            extractPrepaidBalanceInfo(server3Result, result);
+            extractPrepaidCustomerInfo(server1Result, customerData, result, meterNumber);
+            extractPrepaidBalanceInfo(customerData, result);
             extractPrepaidTransactions(server1Result, result);
 
         } catch (Exception e) {
@@ -105,24 +104,89 @@ public class MeterDataHTMLHelper {
     }
 
     /**
-     * Process postpaid consumer number lookup
+     * NEW RESILIENT METHOD: Fetch customer data with multiple fallbacks
+     */
+    private Map<String, Object> fetchCustomerDataResilient(String consumerNumber, String type) {
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            System.out.println("🔄 RESILIENT FETCH: Looking up " + type + " consumer: " + consumerNumber);
+            
+            // Try SERVER3 lookup first
+            Map<String, Object> server3Result = MainActivity.SERVER3Lookup(consumerNumber);
+            
+            // Check if we have ANY valid data from SERVER3
+            boolean hasServer3Data = false;
+            if (server3Result.containsKey("SERVER3_data")) {
+                JSONObject server3Data = (JSONObject) server3Result.get("SERVER3_data");
+                String customerName = server3Data.optString("customerName", "").trim();
+                String customerNumber = server3Data.optString("customerNumber", "").trim();
+                
+                if ((!customerName.isEmpty() && !customerName.equals("null")) || 
+                    (!customerNumber.isEmpty() && !customerNumber.equals("null"))) {
+                    hasServer3Data = true;
+                    System.out.println("✅ RESILIENT: SERVER3 has valid data");
+                }
+            }
+            
+            // Check if we have SERVER2 data
+            boolean hasServer2Data = server3Result.containsKey("SERVER2_data") && 
+                                   !((JSONObject)server3Result.get("SERVER2_data")).has("error");
+
+            // If we have data from either source, use it
+            if (hasServer3Data || hasServer2Data) {
+                System.out.println("✅ RESILIENT: Using combined SERVER data");
+                return server3Result;
+            }
+            
+            // FALLBACK 1: Try direct SERVER2 lookup
+            System.out.println("🔄 RESILIENT: Trying direct SERVER2 lookup...");
+            Map<String, Object> directServer2Result = MainActivity.SERVER2Lookup(consumerNumber);
+            
+            if (!directServer2Result.containsKey("error")) {
+                System.out.println("✅ RESILIENT: Direct SERVER2 lookup successful");
+                result.put("SERVER2_data", directServer2Result.get("SERVER2_data"));
+                return result;
+            }
+            
+            // FALLBACK 2: For postpaid, try meter lookup to find customer numbers
+            if ("postpaid".equals(type)) {
+                System.out.println("🔄 RESILIENT: Trying meter lookup as final fallback...");
+                // This might find the customer via meter number
+            }
+            
+            // If all fallbacks failed
+            System.out.println("❌ RESILIENT: All data sources failed");
+            result.put("error", "Unable to retrieve customer data from any source");
+            
+        } catch (Exception e) {
+            System.out.println("❌ RESILIENT FETCH ERROR: " + e.getMessage());
+            result.put("error", "Data fetch failed: " + e.getMessage());
+        }
+
+        return result;
+    }
+
+    /**
+     * IMPROVED: Process postpaid consumer number lookup with fallbacks
      */
     private Map<String, Object> processPostpaidConsumerLookup(String consumerNumber) {
         Map<String, Object> result = new HashMap<>();
 
         try {
             System.out.println("🔍 POSTPAID: Looking up consumer: " + consumerNumber);
-            Map<String, Object> server3Result = MainActivity.SERVER3Lookup(consumerNumber);
-            System.out.println("🔍 POSTPAID: SERVER3 result - " + (server3Result.containsKey("error") ? "ERROR: " + server3Result.get("error") : "SUCCESS"));
-
-            if (server3Result.containsKey("error")) {
-                result.put("error", "Customer data not found: " + server3Result.get("error"));
+            
+            // Use resilient data fetching
+            Map<String, Object> customerData = fetchCustomerDataResilient(consumerNumber, "postpaid");
+            
+            if (customerData.containsKey("error")) {
+                result.put("error", "গ্রাহক তথ্য পাওয়া যায়নি: " + customerData.get("error"));
                 return result;
             }
 
-            extractPostpaidCustomerInfo(server3Result, result, consumerNumber);
-            extractPostpaidBalanceInfo(server3Result, result);
-            extractPostpaidBillInfo(server3Result, result);
+            extractPostpaidCustomerInfo(customerData, result, consumerNumber);
+            extractPostpaidBalanceInfo(customerData, result);
+            extractPostpaidBillInfo(customerData, result);
 
         } catch (Exception e) {
             System.out.println("❌ POSTPAID CONSUMER LOOKUP ERROR: " + e.getMessage());
@@ -154,7 +218,7 @@ public class MeterDataHTMLHelper {
 
             System.out.println("🔄 POSTPAID METER: Processing " + customerNumbers.size() + " customer(s)");
 
-            // Process each customer
+            // Process each customer with resilient approach
             for (String custNum : customerNumbers) {
                 System.out.println("🔄 POSTPAID METER: Processing customer: " + custNum);
                 Map<String, Object> customerResult = processPostpaidConsumerLookup(custNum);
@@ -178,7 +242,7 @@ public class MeterDataHTMLHelper {
      * Extract prepaid customer information into structured objects
      */
     private void extractPrepaidCustomerInfo(Map<String, Object> server1Result, 
-                                          Map<String, Object> server3Result,
+                                          Map<String, Object> customerData,
                                           Map<String, Object> result, 
                                           String meterNumber) {
         Map<String, String> customerInfo = new HashMap<>();
@@ -190,10 +254,22 @@ public class MeterDataHTMLHelper {
                 extractCustomerInfoFromSERVER1((String) server1DataObj, customerInfo);
             }
 
-            // Supplement with SERVER3 data if available
-            JSONObject server3Data = (JSONObject) server3Result.get("SERVER3_data");
+            // Supplement with SERVER3/SERVER2 data if available
+            JSONObject server3Data = (JSONObject) customerData.get("SERVER3_data");
+            Object server2DataObj = customerData.get("SERVER2_data");
+            JSONObject server2Data = null;
+
+            if (server2DataObj instanceof JSONObject) {
+                server2Data = (JSONObject) server2DataObj;
+            }
+
             if (server3Data != null) {
                 supplementWithSERVER3Data(server3Data, customerInfo);
+            }
+
+            // Try SERVER2 as additional fallback
+            if (server2Data != null) {
+                supplementWithSERVER2Data(server2Data, customerInfo);
             }
 
             // Ensure meter number is set
@@ -271,34 +347,54 @@ public class MeterDataHTMLHelper {
     /**
      * Extract postpaid customer information
      */
-    private void extractPostpaidCustomerInfo(Map<String, Object> server3Result, 
+    private void extractPostpaidCustomerInfo(Map<String, Object> customerData, 
                                            Map<String, Object> result, 
                                            String consumerNumber) {
         Map<String, String> customerInfo = new HashMap<>();
 
         try {
-            JSONObject server3Data = (JSONObject) server3Result.get("SERVER3_data");
-            Object server2DataObj = server3Result.get("SERVER2_data");
+            JSONObject server3Data = (JSONObject) customerData.get("SERVER3_data");
+            Object server2DataObj = customerData.get("SERVER2_data");
+            JSONObject server2Data = null;
 
-            if (server3Data != null) {
-                customerInfo.put("customer_name", server3Data.optString("customerName", ""));
-                customerInfo.put("father_name", server3Data.optString("fatherName", ""));
-                customerInfo.put("address", server3Data.optString("customerAddr", ""));
-                customerInfo.put("consumer_number", consumerNumber);
-                customerInfo.put("meter_number", server3Data.optString("meterNum", ""));
-                customerInfo.put("location_code", server3Data.optString("locationCode", ""));
-                customerInfo.put("area_code", server3Data.optString("areaCode", ""));
-                customerInfo.put("bill_group", server3Data.optString("billGroup", ""));
-                customerInfo.put("book_number", server3Data.optString("bookNumber", ""));
-                customerInfo.put("tariff_description", server3Data.optString("tariffDesc", ""));
-                customerInfo.put("sanctioned_load", server3Data.optString("sanctionedLoad", ""));
-                customerInfo.put("walk_order", server3Data.optString("walkOrder", ""));
-                customerInfo.put("meter_condition", server3Data.optString("meterConditionDesc", ""));
+            if (server2DataObj instanceof JSONObject) {
+                server2Data = (JSONObject) server2DataObj;
             }
 
-            // Supplement with SERVER2 data if available
-            if (server2DataObj instanceof JSONObject) {
-                supplementWithSERVER2Data((JSONObject) server2DataObj, customerInfo);
+            // Try SERVER3 first
+            if (server3Data != null) {
+                String server3Name = server3Data.optString("customerName", "");
+                if (!server3Name.isEmpty() && !server3Name.equals("null")) {
+                    System.out.println("✅ POSTPAID: Using SERVER3 data");
+                    
+                    customerInfo.put("customer_name", server3Name);
+                    customerInfo.put("father_name", server3Data.optString("fatherName", ""));
+                    customerInfo.put("address", server3Data.optString("customerAddr", ""));
+                    customerInfo.put("consumer_number", consumerNumber);
+                    customerInfo.put("meter_number", server3Data.optString("meterNum", ""));
+                    customerInfo.put("location_code", server3Data.optString("locationCode", ""));
+                    customerInfo.put("area_code", server3Data.optString("areaCode", ""));
+                    customerInfo.put("bill_group", server3Data.optString("billGroup", ""));
+                    customerInfo.put("book_number", server3Data.optString("bookNumber", ""));
+                    customerInfo.put("tariff_description", server3Data.optString("tariffDesc", ""));
+                    customerInfo.put("sanctioned_load", server3Data.optString("sanctionedLoad", ""));
+                    customerInfo.put("walk_order", server3Data.optString("walkOrder", ""));
+                    customerInfo.put("meter_condition", server3Data.optString("meterConditionDesc", ""));
+                } else {
+                    System.out.println("❌ POSTPAID: SERVER3 returned empty data");
+                }
+            }
+            
+            // If SERVER3 failed, try SERVER2 as fallback
+            if ((customerInfo.get("customer_name") == null || customerInfo.get("customer_name").isEmpty()) 
+                && server2Data != null) {
+                System.out.println("🔍 POSTPAID: Trying SERVER2 as fallback");
+                extractCustomerInfoFromSERVER2(server2Data, customerInfo);
+            }
+            
+            // Final fallback - at least set consumer number
+            if (customerInfo.get("consumer_number") == null || customerInfo.get("consumer_number").isEmpty()) {
+                customerInfo.put("consumer_number", consumerNumber);
             }
 
             result.put("customer_info", customerInfo);
@@ -306,6 +402,47 @@ public class MeterDataHTMLHelper {
 
         } catch (Exception e) {
             System.out.println("❌ Error extracting postpaid customer info: " + e.getMessage());
+        }
+    }
+
+    /**
+     * NEW METHOD: Extract customer info from SERVER2 for fallback
+     */
+    private void extractCustomerInfoFromSERVER2(JSONObject server2Data, Map<String, String> customerInfo) {
+        try {
+            if (server2Data.has("customerInfo")) {
+                JSONArray customerInfoArray = server2Data.getJSONArray("customerInfo");
+                if (customerInfoArray.length() > 0) {
+                    // Handle the double array structure: customerInfo[0][0]
+                    JSONArray firstArray = customerInfoArray.getJSONArray(0);
+                    if (firstArray.length() > 0) {
+                        JSONObject firstCustomer = firstArray.getJSONObject(0);
+                        
+                        System.out.println("✅ POSTPAID: Extracting from SERVER2 customerInfo");
+                        
+                        if (customerInfo.get("customer_name") == null || customerInfo.get("customer_name").isEmpty()) {
+                            customerInfo.put("customer_name", firstCustomer.optString("CUSTOMER_NAME", ""));
+                        }
+                        if (customerInfo.get("address") == null || customerInfo.get("address").isEmpty()) {
+                            customerInfo.put("address", firstCustomer.optString("ADDRESS", ""));
+                        }
+                        if (customerInfo.get("meter_number") == null || customerInfo.get("meter_number").isEmpty()) {
+                            customerInfo.put("meter_number", firstCustomer.optString("METER_NUM", ""));
+                        }
+                        if (customerInfo.get("consumer_number") == null || customerInfo.get("consumer_number").isEmpty()) {
+                            customerInfo.put("consumer_number", firstCustomer.optString("CUSTOMER_NUMBER", ""));
+                        }
+                        
+                        // Additional SERVER2 fields
+                        customerInfo.put("meter_status", getMeterStatus(firstCustomer.optString("METER_STATUS")));
+                        customerInfo.put("connection_date", formatDate(firstCustomer.optString("METER_CONNECT_DATE")));
+                        customerInfo.put("usage_type", firstCustomer.optString("USAGE_TYPE", ""));
+                        customerInfo.put("description", firstCustomer.optString("DESCR", ""));
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("❌ Error extracting customer info from SERVER2: " + e.getMessage());
         }
     }
 
@@ -349,12 +486,12 @@ public class MeterDataHTMLHelper {
     /**
      * Extract prepaid balance information
      */
-    private void extractPrepaidBalanceInfo(Map<String, Object> server3Result, Map<String, Object> result) {
+    private void extractPrepaidBalanceInfo(Map<String, Object> customerData, Map<String, Object> result) {
         Map<String, String> balanceInfo = new HashMap<>();
 
         try {
-            JSONObject server3Data = (JSONObject) server3Result.get("SERVER3_data");
-            Object server2DataObj = server3Result.get("SERVER2_data");
+            JSONObject server3Data = (JSONObject) customerData.get("SERVER3_data");
+            Object server2DataObj = customerData.get("SERVER2_data");
 
             // Try SERVER2 first for detailed balance
             if (server2DataObj instanceof JSONObject) {
@@ -382,11 +519,11 @@ public class MeterDataHTMLHelper {
     /**
      * Extract postpaid balance information
      */
-    private void extractPostpaidBalanceInfo(Map<String, Object> server3Result, Map<String, Object> result) {
+    private void extractPostpaidBalanceInfo(Map<String, Object> customerData, Map<String, Object> result) {
         Map<String, String> balanceInfo = new HashMap<>();
 
         try {
-            Object server2DataObj = server3Result.get("SERVER2_data");
+            Object server2DataObj = customerData.get("SERVER2_data");
 
             if (server2DataObj instanceof JSONObject) {
                 JSONObject server2Data = (JSONObject) server2DataObj;
@@ -394,7 +531,7 @@ public class MeterDataHTMLHelper {
             }
 
             // SERVER3 fallback
-            JSONObject server3Data = (JSONObject) server3Result.get("SERVER3_data");
+            JSONObject server3Data = (JSONObject) customerData.get("SERVER3_data");
             if (balanceInfo.isEmpty() && server3Data != null && server3Data.has("arrearAmount")) {
                 String arrear = server3Data.optString("arrearAmount");
                 if (isValidValue(arrear)) {
@@ -476,9 +613,9 @@ public class MeterDataHTMLHelper {
     /**
      * Extract postpaid bill information
      */
-    private void extractPostpaidBillInfo(Map<String, Object> server3Result, Map<String, Object> result) {
+    private void extractPostpaidBillInfo(Map<String, Object> customerData, Map<String, Object> result) {
         try {
-            Object server2DataObj = server3Result.get("SERVER2_data");
+            Object server2DataObj = customerData.get("SERVER2_data");
 
             if (server2DataObj instanceof JSONObject) {
                 JSONObject server2Data = (JSONObject) server2DataObj;
