@@ -1,747 +1,812 @@
-package customerinfo.app
+package customerinfo.app;
 
-import android.content.Context
-import org.json.JSONArray
-import org.json.JSONObject
-import java.text.SimpleDateFormat
-import java.util.*
-import kotlin.collections.HashMap
+import android.content.Context;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.regex.Pattern;
 
-class TemplateHelper {
+public class TemplateHelper {
 
-    companion object {
-        const val TEMPLATE_POSTPAID = "postpaid_template.html"
-        const val TEMPLATE_PREPAID = "prepaid_template.html"
+    public static final String TEMPLATE_POSTPAID = "postpaid_template.html";
+    public static final String TEMPLATE_PREPAID = "prepaid_template.html";
 
-        // Postpaid template data structure
-        data class PostpaidData(
-            val customerNumber: String,
-            val multipleCustomers: MultipleCustomersData? = null,
-            val singleCustomer: SingleCustomerData? = null,
-            val billInfo: BillInfoData? = null,
-            val balanceInfo: BalanceInfoData? = null,
-            val billSummary: BillSummaryData? = null,
-            val error: ErrorData? = null
-        )
+    // Data classes as static nested classes
+    public static class PostpaidData {
+        public String customerNumber;
+        public MultipleCustomersData multipleCustomers;
+        public SingleCustomerData singleCustomer;
+        public BillInfoData billInfo;
+        public BalanceInfoData balanceInfo;
+        public BillSummaryData billSummary;
+        public ErrorData error;
 
-        data class MultipleCustomersData(
-            val customerCount: Int,
-            val customers: List<CustomerData>
-        )
+        public PostpaidData(String customerNumber, MultipleCustomersData multipleCustomers, 
+                          SingleCustomerData singleCustomer, BillInfoData billInfo, 
+                          BalanceInfoData balanceInfo, BillSummaryData billSummary, ErrorData error) {
+            this.customerNumber = customerNumber;
+            this.multipleCustomers = multipleCustomers;
+            this.singleCustomer = singleCustomer;
+            this.billInfo = billInfo;
+            this.balanceInfo = balanceInfo;
+            this.billSummary = billSummary;
+            this.error = error;
+        }
+    }
 
-        data class CustomerData(
-            val index: Int,
-            val customerNumber: String,
-            val customerInfo: List<KeyValuePair>
-        )
+    public static class MultipleCustomersData {
+        public int customerCount;
+        public List<CustomerData> customers;
 
-        data class SingleCustomerData(
-            val customerInfo: List<KeyValuePair>
-        )
+        public MultipleCustomersData(int customerCount, List<CustomerData> customers) {
+            this.customerCount = customerCount;
+            this.customers = customers;
+        }
+    }
 
-        data class BillInfoData(
-            val bills: List<BillData>
-        )
+    public static class CustomerData {
+        public int index;
+        public String customerNumber;
+        public List<KeyValuePair> customerInfo;
 
-        data class BillData(
-            val billMonth: String,
-            val billNo: String,
-            val consumption: String,
-            val currentBill: String,
-            val dueDate: String,
-            val paidAmt: String,
-            val receiptDate: String,
-            val balance: String
-        )
+        public CustomerData(int index, String customerNumber, List<KeyValuePair> customerInfo) {
+            this.index = index;
+            this.customerNumber = customerNumber;
+            this.customerInfo = customerInfo;
+        }
+    }
 
-        data class BalanceInfoData(
-            val fields: List<KeyValuePair>
-        )
+    public static class SingleCustomerData {
+        public List<KeyValuePair> customerInfo;
 
-        data class BillSummaryData(
-            val fields: List<KeyValuePair>
-        )
+        public SingleCustomerData(List<KeyValuePair> customerInfo) {
+            this.customerInfo = customerInfo;
+        }
+    }
 
-        // Prepaid template data structure
-        data class PrepaidData(
-            val meterNumber: String,
-            val consumerNumber: String,
-            val prepaidCustomerInfo: PrepaidCustomerInfoData? = null,
-            val tokens: TokensData? = null,
-            val postpaidCustomerInfo: CustomerInfoData? = null,
-            val billInfo: BillInfoData? = null,
-            val balanceInfo: BalanceInfoData? = null,
-            val billSummary: BillSummaryData? = null,
-            val error: ErrorData? = null
-        )
+    public static class BillInfoData {
+        public List<BillData> bills;
 
-        data class PrepaidCustomerInfoData(
-            val fields: List<KeyValuePair>
-        )
+        public BillInfoData(List<BillData> bills) {
+            this.bills = bills;
+        }
+    }
 
-        data class TokensData(
-            val tokenList: List<TokenData>
-        )
+    public static class BillData {
+        public String billMonth;
+        public String billNo;
+        public String consumption;
+        public String currentBill;
+        public String dueDate;
+        public String paidAmt;
+        public String receiptDate;
+        public String balance;
 
-        data class TokenData(
-            val index: Int,
-            val token: String,
-            val date: String,
-            val amount: String,
-            val operator: String,
-            val sequence: String
-        )
+        public BillData(String billMonth, String billNo, String consumption, String currentBill, 
+                       String dueDate, String paidAmt, String receiptDate, String balance) {
+            this.billMonth = billMonth;
+            this.billNo = billNo;
+            this.consumption = consumption;
+            this.currentBill = currentBill;
+            this.dueDate = dueDate;
+            this.paidAmt = paidAmt;
+            this.receiptDate = receiptDate;
+            this.balance = balance;
+        }
+    }
 
-        data class CustomerInfoData(
-            val fields: List<KeyValuePair>
-        )
+    public static class BalanceInfoData {
+        public List<KeyValuePair> fields;
 
-        // Common data structures
-        data class KeyValuePair(
-            val key: String,
-            val value: String
-        )
+        public BalanceInfoData(List<KeyValuePair> fields) {
+            this.fields = fields;
+        }
+    }
 
-        data class ErrorData(
-            val errorMessage: String
-        )
+    public static class BillSummaryData {
+        public List<KeyValuePair> fields;
 
-        // Convert MainActivity result to PostpaidData
-        fun convertToPostpaidData(result: Map<String, Any>): PostpaidData {
-            return try {
-                val customerNumber = result["customer_number"]?.toString() ?: "N/A"
+        public BillSummaryData(List<KeyValuePair> fields) {
+            this.fields = fields;
+        }
+    }
+
+    public static class PrepaidData {
+        public String meterNumber;
+        public String consumerNumber;
+        public PrepaidCustomerInfoData prepaidCustomerInfo;
+        public TokensData tokens;
+        public CustomerInfoData postpaidCustomerInfo;
+        public BillInfoData billInfo;
+        public BalanceInfoData balanceInfo;
+        public BillSummaryData billSummary;
+        public ErrorData error;
+
+        public PrepaidData(String meterNumber, String consumerNumber, PrepaidCustomerInfoData prepaidCustomerInfo,
+                          TokensData tokens, CustomerInfoData postpaidCustomerInfo, BillInfoData billInfo,
+                          BalanceInfoData balanceInfo, BillSummaryData billSummary, ErrorData error) {
+            this.meterNumber = meterNumber;
+            this.consumerNumber = consumerNumber;
+            this.prepaidCustomerInfo = prepaidCustomerInfo;
+            this.tokens = tokens;
+            this.postpaidCustomerInfo = postpaidCustomerInfo;
+            this.billInfo = billInfo;
+            this.balanceInfo = balanceInfo;
+            this.billSummary = billSummary;
+            this.error = error;
+        }
+    }
+
+    public static class PrepaidCustomerInfoData {
+        public List<KeyValuePair> fields;
+
+        public PrepaidCustomerInfoData(List<KeyValuePair> fields) {
+            this.fields = fields;
+        }
+    }
+
+    public static class TokensData {
+        public List<TokenData> tokenList;
+
+        public TokensData(List<TokenData> tokenList) {
+            this.tokenList = tokenList;
+        }
+    }
+
+    public static class TokenData {
+        public int index;
+        public String token;
+        public String date;
+        public String amount;
+        public String operator;
+        public String sequence;
+
+        public TokenData(int index, String token, String date, String amount, String operator, String sequence) {
+            this.index = index;
+            this.token = token;
+            this.date = date;
+            this.amount = amount;
+            this.operator = operator;
+            this.sequence = sequence;
+        }
+    }
+
+    public static class CustomerInfoData {
+        public List<KeyValuePair> fields;
+
+        public CustomerInfoData(List<KeyValuePair> fields) {
+            this.fields = fields;
+        }
+    }
+
+    public static class KeyValuePair {
+        public String key;
+        public String value;
+
+        public KeyValuePair(String key, String value) {
+            this.key = key;
+            this.value = value;
+        }
+    }
+
+    public static class ErrorData {
+        public String errorMessage;
+
+        public ErrorData(String errorMessage) {
+            this.errorMessage = errorMessage;
+        }
+    }
+
+    // Convert MainActivity result to PostpaidData
+    public static PostpaidData convertToPostpaidData(Map<String, Object> result) {
+        try {
+            String customerNumber = getSafeString(result.get("customer_number"));
+            
+            // Check if it's multiple customers (meter lookup)
+            if (result.containsKey("customer_results")) {
+                List<String> customerNumbers = (List<String>) result.get("customer_numbers");
+                List<Map<String, Object>> customerResults = (List<Map<String, Object>>) result.get("customer_results");
                 
-                // Check if it's multiple customers (meter lookup)
-                if (result.containsKey("customer_results")) {
-                    val customerNumbers = result["customer_numbers"] as? List<String> ?: emptyList()
-                    val customerResults = result["customer_results"] as? List<Map<String, Any>> ?: emptyList()
-                    
-                    val customers = mutableListOf<CustomerData>()
-                    for ((index, customerResult) in customerResults.withIndex()) {
-                        val mergedData = MainActivity().mergeSERVERData(customerResult as Map<String, Object>)
-                        if (mergedData != null) {
-                            val customerInfo = extractCustomerInfo(mergedData)
-                            customers.add(
-                                CustomerData(
-                                    index = index + 1,
-                                    customerNumber = customerNumbers.getOrNull(index) ?: "N/A",
-                                    customerInfo = customerInfo
-                                )
-                            )
-                        }
+                List<CustomerData> customers = new ArrayList<>();
+                for (int i = 0; i < customerResults.size(); i++) {
+                    Map<String, Object> customerResult = customerResults.get(i);
+                    Map<String, Object> mergedData = new MainActivity().mergeSERVERData((Map<String, Object>) customerResult);
+                    if (mergedData != null) {
+                        List<KeyValuePair> customerInfo = extractCustomerInfo(mergedData);
+                        String custNumber = i < customerNumbers.size() ? customerNumbers.get(i) : "N/A";
+                        customers.add(new CustomerData(i + 1, custNumber, customerInfo));
                     }
-                    
-                    PostpaidData(
-                        customerNumber = customerNumber,
-                        multipleCustomers = MultipleCustomersData(
-                            customerCount = customers.size,
-                            customers = customers
-                        ),
-                        billInfo = extractBillInfo(result),
-                        balanceInfo = extractBalanceInfo(result),
-                        billSummary = extractBillSummary(result),
-                        error = extractError(result)
-                    )
-                } else {
-                    // Single customer
-                    val mergedData = MainActivity().mergeSERVERData(result as Map<String, Object>)
-                    PostpaidData(
-                        customerNumber = customerNumber,
-                        singleCustomer = SingleCustomerData(
-                            customerInfo = extractCustomerInfo(mergedData)
-                        ),
-                        billInfo = extractBillInfo(result),
-                        balanceInfo = extractBalanceInfo(result),
-                        billSummary = extractBillSummary(result),
-                        error = extractError(result)
-                    )
-                }
-            } catch (e: Exception) {
-                PostpaidData(
-                    customerNumber = "N/A",
-                    error = ErrorData("Error converting data: ${e.message}")
-                )
-            }
-        }
-
-        // Convert MainActivity result to PrepaidData
-        fun convertToPrepaidData(result: Map<String, Any>): PrepaidData {
-            return try {
-                val meterNumber = result["meter_number"]?.toString() ?: "N/A"
-                val consumerNumber = result["consumer_number"]?.toString() ?: "N/A"
-                
-                // Extract SERVER1 data for prepaid info
-                val SERVER1Data = result["SERVER1_data"]
-                val cleanedSERVER1Data = if (SERVER1Data != null) {
-                    MainActivity().cleanSERVER1Data(SERVER1Data)
-                } else {
-                    emptyMap<String, Any>()
                 }
                 
-                // Extract merged data for customer info
-                val mergedData = MainActivity().mergeSERVERData(result as Map<String, Object>)
-                
-                PrepaidData(
-                    meterNumber = meterNumber,
-                    consumerNumber = consumerNumber,
-                    prepaidCustomerInfo = extractPrepaidCustomerInfo(cleanedSERVER1Data),
-                    tokens = extractTokens(cleanedSERVER1Data),
-                    postpaidCustomerInfo = extractCustomerInfoData(mergedData),
-                    billInfo = extractBillInfo(result),
-                    balanceInfo = extractBalanceInfo(result),
-                    billSummary = extractBillSummary(result),
-                    error = extractError(result)
-                )
-            } catch (e: Exception) {
-                PrepaidData(
-                    meterNumber = "N/A",
-                    consumerNumber = "N/A",
-                    error = ErrorData("Error converting data: ${e.message}")
-                )
-            }
-        }
-
-        // Extract customer info from merged data
-        private fun extractCustomerInfo(mergedData: Map<String, Any>?): List<KeyValuePair> {
-            val fields = mutableListOf<KeyValuePair>()
-            if (mergedData == null) return fields
-            
-            try {
-                val customerInfo = mergedData["customer_info"] as? Map<String, String>
-                customerInfo?.forEach { (key, value) ->
-                    if (isValidValue(value)) {
-                        fields.add(KeyValuePair(key, value))
-                    }
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-            return fields
-        }
-
-        // Extract prepaid customer info from SERVER1 data
-        private fun extractPrepaidCustomerInfo(cleanedSERVER1Data: Map<String, Any>): PrepaidCustomerInfoData {
-            val fields = mutableListOf<KeyValuePair>()
-            
-            try {
-                val customerInfo = cleanedSERVER1Data["customer_info"] as? Map<String, String>
-                customerInfo?.forEach { (key, value) ->
-                    if (isValidValue(value)) {
-                        fields.add(KeyValuePair(key, value))
-                    }
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-            
-            return PrepaidCustomerInfoData(fields = fields)
-        }
-
-        // Extract tokens from SERVER1 data
-        private fun extractTokens(cleanedSERVER1Data: Map<String, Any>): TokensData? {
-            val tokenList = mutableListOf<TokenData>()
-            
-            try {
-                val transactions = cleanedSERVER1Data["recent_transactions"] as? List<Map<String, String>>
-                transactions?.take(3)?.forEachIndexed { index, transaction ->
-                    tokenList.add(
-                        TokenData(
-                            index = index + 1,
-                            token = transaction["Tokens"] ?: "N/A",
-                            date = transaction["Date"] ?: "N/A",
-                            amount = transaction["Amount"] ?: "N/A",
-                            operator = transaction["Operator"] ?: "N/A",
-                            sequence = transaction["Sequence"] ?: "N/A"
-                        )
-                    )
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-            
-            return if (tokenList.isNotEmpty()) TokensData(tokenList) else null
-        }
-
-        // Extract customer info as CustomerInfoData
-        private fun extractCustomerInfoData(mergedData: Map<String, Any>?): CustomerInfoData {
-            val fields = mutableListOf<KeyValuePair>()
-            if (mergedData == null) return CustomerInfoData(fields)
-            
-            try {
-                val customerInfo = mergedData["customer_info"] as? Map<String, String>
-                customerInfo?.forEach { (key, value) ->
-                    if (isValidValue(value)) {
-                        fields.add(KeyValuePair(key, value))
-                    }
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-            
-            return CustomerInfoData(fields = fields)
-        }
-
-        // Extract bill info
-        private fun extractBillInfo(result: Map<String, Any>): BillInfoData? {
-            val bills = mutableListOf<BillData>()
-            
-            try {
-                val mergedData = MainActivity().mergeSERVERData(result as Map<String, Object>)
-                if (mergedData != null && mergedData.containsKey("bill_info_raw")) {
-                    val billInfoArray = mergedData["bill_info_raw"] as? JSONArray
-                    billInfoArray?.let { array ->
-                        for (i in 0 until array.length()) {
-                            val bill = array.getJSONObject(i)
-                            bills.add(
-                                BillData(
-                                    billMonth = formatBillMonth(bill.optString("BILL_MONTH")),
-                                    billNo = bill.optString("BILL_NO"),
-                                    consumption = bill.optString("CONS_KWH_SR"),
-                                    currentBill = bill.optString("TOTAL_BILL"),
-                                    dueDate = formatDate(bill.optString("INVOICE_DUE_DATE")),
-                                    paidAmt = bill.optString("PAID_AMT"),
-                                    receiptDate = formatDate(bill.optString("RECEIPT_DATE")),
-                                    balance = bill.optString("BALANCE")
-                                )
-                            )
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-            
-            return if (bills.isNotEmpty()) BillInfoData(bills) else null
-        }
-
-        // Extract balance info
-        private fun extractBalanceInfo(result: Map<String, Any>): BalanceInfoData? {
-            val fields = mutableListOf<KeyValuePair>()
-            
-            try {
-                val mergedData = MainActivity().mergeSERVERData(result as Map<String, Object>)
-                if (mergedData != null && mergedData.containsKey("balance_info")) {
-                    val balanceInfo = mergedData["balance_info"] as? Map<String, String>
-                    balanceInfo?.forEach { (key, value) ->
-                        if (isValidValue(value)) {
-                            fields.add(KeyValuePair(key, value))
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-            
-            return if (fields.isNotEmpty()) BalanceInfoData(fields) else null
-        }
-
-        // Extract bill summary
-        private fun extractBillSummary(result: Map<String, Any>): BillSummaryData? {
-            val fields = mutableListOf<KeyValuePair>()
-            
-            try {
-                val mergedData = MainActivity().mergeSERVERData(result as Map<String, Object>)
-                if (mergedData != null && mergedData.containsKey("bill_summary")) {
-                    val billSummary = mergedData["bill_summary"] as? Map<String, Any>
-                    
-                    // Add relevant summary fields
-                    billSummary?.let { summary ->
-                        summary["total_bills"]?.let {
-                            fields.add(KeyValuePair("Total Bills", it.toString()))
-                        }
-                        summary["latest_bill_date"]?.let {
-                            fields.add(KeyValuePair("Latest Bill Date", it.toString()))
-                        }
-                        summary["latest_total_amount"]?.let {
-                            fields.add(KeyValuePair("Latest Amount", "৳$it"))
-                        }
-                        summary["recent_consumption"]?.let {
-                            fields.add(KeyValuePair("Recent Consumption", "$it kWh"))
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-            
-            return if (fields.isNotEmpty()) BillSummaryData(fields) else null
-        }
-
-        // Extract error
-        private fun extractError(result: Map<String, Any>): ErrorData? {
-            return if (result.containsKey("error")) {
-                ErrorData(result["error"].toString())
+                return new PostpaidData(
+                    customerNumber,
+                    new MultipleCustomersData(customers.size(), customers),
+                    null,
+                    extractBillInfo(result),
+                    extractBalanceInfo(result),
+                    extractBillSummary(result),
+                    extractError(result)
+                );
             } else {
-                null
+                // Single customer
+                Map<String, Object> mergedData = new MainActivity().mergeSERVERData(result);
+                return new PostpaidData(
+                    customerNumber,
+                    null,
+                    new SingleCustomerData(extractCustomerInfo(mergedData)),
+                    extractBillInfo(result),
+                    extractBalanceInfo(result),
+                    extractBillSummary(result),
+                    extractError(result)
+                );
             }
+        } catch (Exception e) {
+            return new PostpaidData(
+                "N/A",
+                null, null, null, null, null,
+                new ErrorData("Error converting data: " + e.getMessage())
+            );
         }
+    }
 
-        // Helper methods from MainActivity
-        private fun isValidValue(value: String): Boolean {
-            if (value == null) return false
-            val trimmedValue = value.trim()
-            return !trimmedValue.isEmpty() &&
-                    !trimmedValue.equals("N/A") &&
-                    !trimmedValue.equals("null") &&
-                    !trimmedValue.equals("{}") &&
-                    !trimmedValue.equals("undefined")
+    // Convert MainActivity result to PrepaidData
+    public static PrepaidData convertToPrepaidData(Map<String, Object> result) {
+        try {
+            String meterNumber = getSafeString(result.get("meter_number"));
+            String consumerNumber = getSafeString(result.get("consumer_number"));
+            
+            // Extract SERVER1 data for prepaid info
+            Object SERVER1Data = result.get("SERVER1_data");
+            Map<String, Object> cleanedSERVER1Data;
+            if (SERVER1Data != null) {
+                cleanedSERVER1Data = new MainActivity().cleanSERVER1Data(SERVER1Data);
+            } else {
+                cleanedSERVER1Data = new HashMap<>();
+            }
+            
+            // Extract merged data for customer info
+            Map<String, Object> mergedData = new MainActivity().mergeSERVERData(result);
+            
+            return new PrepaidData(
+                meterNumber,
+                consumerNumber,
+                extractPrepaidCustomerInfo(cleanedSERVER1Data),
+                extractTokens(cleanedSERVER1Data),
+                extractCustomerInfoData(mergedData),
+                extractBillInfo(result),
+                extractBalanceInfo(result),
+                extractBillSummary(result),
+                extractError(result)
+            );
+        } catch (Exception e) {
+            return new PrepaidData(
+                "N/A", "N/A", null, null, null, null, null, null,
+                new ErrorData("Error converting data: " + e.getMessage())
+            );
         }
+    }
 
-        private fun formatDate(dateString: String): String {
-            if (dateString == null || dateString.isEmpty()) {
-                return "N/A"
-            }
-            try {
-                if (dateString.contains("T")) {
-                    return dateString.split("T")[0]
-                }
-                return dateString
-            } catch (e: Exception) {
-                return dateString
-            }
-        }
-
-        private fun formatBillMonth(dateStr: String): String {
-            if (dateStr == null || dateStr.isEmpty() || dateStr.equals("null")) {
-                return "N/A"
-            }
-
-            try {
-                val parts = dateStr.substring(0, 10).split("-")
-                if (parts.size >= 2) {
-                    val month = parts[1].toInt()
-                    val monthNames = arrayOf("Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
-
-                    if (month in 1..12) {
-                        return "${monthNames[month - 1]}-${parts[0]}"
+    // Extract customer info from merged data
+    private static List<KeyValuePair> extractCustomerInfo(Map<String, Object> mergedData) {
+        List<KeyValuePair> fields = new ArrayList<>();
+        if (mergedData == null) return fields;
+        
+        try {
+            Map<String, String> customerInfo = (Map<String, String>) mergedData.get("customer_info");
+            if (customerInfo != null) {
+                for (Map.Entry<String, String> entry : customerInfo.entrySet()) {
+                    if (isValidValue(entry.getValue())) {
+                        fields.add(new KeyValuePair(entry.getKey(), entry.getValue()));
                     }
                 }
-                return dateStr.substring(0, 7) // Fallback to YYYY-MM
-            } catch (e: Exception) {
-                return if (dateStr.length >= 7) dateStr.substring(0, 7) else dateStr
             }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+        return fields;
+    }
 
-        // Template rendering methods
-        fun renderPostpaidTemplate(context: Context, data: PostpaidData): String {
-            val template = loadTemplate(context, TEMPLATE_POSTPAID)
-            return replacePostpaidPlaceholders(template, data)
-        }
-
-        fun renderPrepaidTemplate(context: Context, data: PrepaidData): String {
-            val template = loadTemplate(context, TEMPLATE_PREPAID)
-            return replacePrepaidPlaceholders(template, data)
-        }
-
-        private fun loadTemplate(context: Context, templateName: String): String {
-            return try {
-                val inputStream = context.assets.open(templateName)
-                val size = inputStream.available()
-                val buffer = ByteArray(size)
-                inputStream.read(buffer)
-                inputStream.close()
-                String(buffer, Charsets.UTF_8)
-            } catch (e: Exception) {
-                // Fallback template
-                """
-                <html>
-                <body>
-                    <h1>Error loading template</h1>
-                    <p>${e.message}</p>
-                </body>
-                </html>
-                """
-            }
-        }
-
-        private fun replacePostpaidPlaceholders(template: String, data: PostpaidData): String {
-            var result = template.replace("{{CUSTOMER_NUMBER}}", data.customerNumber)
-
-            // Handle multiple customers
-            data.multipleCustomers?.let { multiple ->
-                result = result.replace("{{#MULTIPLE_CUSTOMERS}}", "")
-                    .replace("{{/MULTIPLE_CUSTOMERS}}", "")
-                
-                result = result.replace("{{CUSTOMER_COUNT}}", multiple.customerCount.toString())
-                
-                val customersHtml = StringBuilder()
-                multiple.customers.forEach { customer ->
-                    var customerHtml = """
-                        <div class="customer-card">
-                            <h4>👤 Customer ${customer.index}: ${customer.customerNumber}</h4>
-                    """
-                    
-                    customer.customerInfo.forEach { info ->
-                        customerHtml += """
-                            <div class="field">
-                                <span><strong>${info.key}:</strong></span>
-                                <span>${info.value}</span>
-                            </div>
-                        """
+    // Extract prepaid customer info from SERVER1 data
+    private static PrepaidCustomerInfoData extractPrepaidCustomerInfo(Map<String, Object> cleanedSERVER1Data) {
+        List<KeyValuePair> fields = new ArrayList<>();
+        
+        try {
+            Map<String, String> customerInfo = (Map<String, String>) cleanedSERVER1Data.get("customer_info");
+            if (customerInfo != null) {
+                for (Map.Entry<String, String> entry : customerInfo.entrySet()) {
+                    if (isValidValue(entry.getValue())) {
+                        fields.add(new KeyValuePair(entry.getKey(), entry.getValue()));
                     }
-                    
-                    customerHtml += "</div>"
-                    customersHtml.append(customerHtml)
                 }
-                
-                result = result.replace("{{#CUSTOMERS}}{{/CUSTOMERS}}", customersHtml.toString())
-            } ?: run {
-                result = result.replace("{{#MULTIPLE_CUSTOMERS}}", "<!--")
-                    .replace("{{/MULTIPLE_CUSTOMERS}}", "-->")
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        return new PrepaidCustomerInfoData(fields);
+    }
 
-            // Handle single customer
-            data.singleCustomer?.let { single ->
-                result = result.replace("{{#SINGLE_CUSTOMER}}", "")
-                    .replace("{{/SINGLE_CUSTOMER}}", "")
-                
-                val customerInfoHtml = StringBuilder()
-                single.customerInfo.forEach { info ->
-                    customerInfoHtml.append("""
-                        <div class="field">
-                            <span><strong>${info.key}:</strong></span>
-                            <span>${info.value}</span>
-                        </div>
-                    """)
+    // Extract tokens from SERVER1 data
+    private static TokensData extractTokens(Map<String, Object> cleanedSERVER1Data) {
+        List<TokenData> tokenList = new ArrayList<>();
+        
+        try {
+            List<Map<String, String>> transactions = (List<Map<String, String>>) cleanedSERVER1Data.get("recent_transactions");
+            if (transactions != null) {
+                int count = Math.min(transactions.size(), 3);
+                for (int i = 0; i < count; i++) {
+                    Map<String, String> transaction = transactions.get(i);
+                    tokenList.add(new TokenData(
+                        i + 1,
+                        getSafeString(transaction.get("Tokens")),
+                        getSafeString(transaction.get("Date")),
+                        getSafeString(transaction.get("Amount")),
+                        getSafeString(transaction.get("Operator")),
+                        getSafeString(transaction.get("Sequence"))
+                    ));
                 }
-                
-                result = result.replace("{{#CUSTOMER_INFO}}{{/CUSTOMER_INFO}}", customerInfoHtml.toString())
-            } ?: run {
-                result = result.replace("{{#SINGLE_CUSTOMER}}", "<!--")
-                    .replace("{{/SINGLE_CUSTOMER}}", "-->")
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        return tokenList.isEmpty() ? null : new TokensData(tokenList);
+    }
 
-            // Handle bill info
-            data.billInfo?.let { billInfo ->
-                result = result.replace("{{#BILL_INFO}}", "")
-                    .replace("{{/BILL_INFO}}", "")
-                
-                val billsHtml = StringBuilder()
-                billInfo.bills.forEach { bill ->
-                    billsHtml.append("""
-                        <tr>
-                            <td>${bill.billMonth}</td>
-                            <td>${bill.billNo}</td>
-                            <td>${bill.consumption}</td>
-                            <td>${bill.currentBill}</td>
-                            <td>${bill.dueDate}</td>
-                            <td>${bill.paidAmt}</td>
-                            <td>${bill.receiptDate}</td>
-                            <td>${bill.balance}</td>
-                        </tr>
-                    """)
+    // Extract customer info as CustomerInfoData
+    private static CustomerInfoData extractCustomerInfoData(Map<String, Object> mergedData) {
+        List<KeyValuePair> fields = new ArrayList<>();
+        if (mergedData == null) return new CustomerInfoData(fields);
+        
+        try {
+            Map<String, String> customerInfo = (Map<String, String>) mergedData.get("customer_info");
+            if (customerInfo != null) {
+                for (Map.Entry<String, String> entry : customerInfo.entrySet()) {
+                    if (isValidValue(entry.getValue())) {
+                        fields.add(new KeyValuePair(entry.getKey(), entry.getValue()));
+                    }
                 }
-                
-                result = result.replace("{{#BILLS}}{{/BILLS}}", billsHtml.toString())
-            } ?: run {
-                result = result.replace("{{#BILL_INFO}}", "<!--")
-                    .replace("{{/BILL_INFO}}", "-->")
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        return new CustomerInfoData(fields);
+    }
 
-            // Handle balance info
-            data.balanceInfo?.let { balanceInfo ->
-                result = result.replace("{{#BALANCE_INFO}}", "")
-                    .replace("{{/BALANCE_INFO}}", "")
-                
-                val balanceHtml = StringBuilder()
-                balanceInfo.fields.forEach { field ->
-                    balanceHtml.append("""
-                        <div class="field">
-                            <span><strong>${field.key}:</strong></span>
-                            <span>${field.value}</span>
-                        </div>
-                    """)
+    // Extract bill info
+    private static BillInfoData extractBillInfo(Map<String, Object> result) {
+        List<BillData> bills = new ArrayList<>();
+        
+        try {
+            Map<String, Object> mergedData = new MainActivity().mergeSERVERData(result);
+            if (mergedData != null && mergedData.containsKey("bill_info_raw")) {
+                JSONArray billInfoArray = (JSONArray) mergedData.get("bill_info_raw");
+                if (billInfoArray != null) {
+                    for (int i = 0; i < billInfoArray.length(); i++) {
+                        JSONObject bill = billInfoArray.getJSONObject(i);
+                        bills.add(new BillData(
+                            formatBillMonth(bill.optString("BILL_MONTH")),
+                            bill.optString("BILL_NO"),
+                            bill.optString("CONS_KWH_SR"),
+                            bill.optString("TOTAL_BILL"),
+                            formatDate(bill.optString("INVOICE_DUE_DATE")),
+                            bill.optString("PAID_AMT"),
+                            formatDate(bill.optString("RECEIPT_DATE")),
+                            bill.optString("BALANCE")
+                        ));
+                    }
                 }
-                
-                result = result.replace("{{#FIELDS}}{{/FIELDS}}", balanceHtml.toString())
-            } ?: run {
-                result = result.replace("{{#BALANCE_INFO}}", "<!--")
-                    .replace("{{/BALANCE_INFO}}", "-->")
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        return bills.isEmpty() ? null : new BillInfoData(bills);
+    }
 
-            // Handle bill summary
-            data.billSummary?.let { billSummary ->
-                result = result.replace("{{#BILL_SUMMARY}}", "")
-                    .replace("{{/BILL_SUMMARY}}", "")
-                
-                val summaryHtml = StringBuilder()
-                billSummary.fields.forEach { field ->
-                    summaryHtml.append("""
-                        <div class="field">
-                            <span><strong>${field.key}:</strong></span>
-                            <span>${field.value}</span>
-                        </div>
-                    """)
+    // Extract balance info
+    private static BalanceInfoData extractBalanceInfo(Map<String, Object> result) {
+        List<KeyValuePair> fields = new ArrayList<>();
+        
+        try {
+            Map<String, Object> mergedData = new MainActivity().mergeSERVERData(result);
+            if (mergedData != null && mergedData.containsKey("balance_info")) {
+                Map<String, String> balanceInfo = (Map<String, String>) mergedData.get("balance_info");
+                if (balanceInfo != null) {
+                    for (Map.Entry<String, String> entry : balanceInfo.entrySet()) {
+                        if (isValidValue(entry.getValue())) {
+                            fields.add(new KeyValuePair(entry.getKey(), entry.getValue()));
+                        }
+                    }
                 }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        return fields.isEmpty() ? null : new BalanceInfoData(fields);
+    }
+
+    // Extract bill summary
+    private static BillSummaryData extractBillSummary(Map<String, Object> result) {
+        List<KeyValuePair> fields = new ArrayList<>();
+        
+        try {
+            Map<String, Object> mergedData = new MainActivity().mergeSERVERData(result);
+            if (mergedData != null && mergedData.containsKey("bill_summary")) {
+                Map<String, Object> billSummary = (Map<String, Object>) mergedData.get("bill_summary");
                 
-                result = result.replace("{{#FIELDS}}{{/FIELDS}}", summaryHtml.toString())
-            } ?: run {
-                result = result.replace("{{#BILL_SUMMARY}}", "<!--")
-                    .replace("{{/BILL_SUMMARY}}", "-->")
+                // Add relevant summary fields
+                if (billSummary.containsKey("total_bills")) {
+                    fields.add(new KeyValuePair("Total Bills", billSummary.get("total_bills").toString()));
+                }
+                if (billSummary.containsKey("latest_bill_date")) {
+                    fields.add(new KeyValuePair("Latest Bill Date", billSummary.get("latest_bill_date").toString()));
+                }
+                if (billSummary.containsKey("latest_total_amount")) {
+                    fields.add(new KeyValuePair("Latest Amount", "৳" + billSummary.get("latest_total_amount")));
+                }
+                if (billSummary.containsKey("recent_consumption")) {
+                    fields.add(new KeyValuePair("Recent Consumption", billSummary.get("recent_consumption") + " kWh"));
+                }
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        return fields.isEmpty() ? null : new BillSummaryData(fields);
+    }
 
-            // Handle error
-            data.error?.let { error ->
-                result = result.replace("{{#ERROR}}", "")
-                    .replace("{{/ERROR}}", "")
-                result = result.replace("{{ERROR_MESSAGE}}", error.errorMessage)
-            } ?: run {
-                result = result.replace("{{#ERROR}}", "<!--")
-                    .replace("{{/ERROR}}", "-->")
+    // Extract error
+    private static ErrorData extractError(Map<String, Object> result) {
+        if (result.containsKey("error")) {
+            return new ErrorData(result.get("error").toString());
+        }
+        return null;
+    }
+
+    // Helper methods
+    private static boolean isValidValue(String value) {
+        if (value == null) return false;
+        String trimmedValue = value.trim();
+        return !trimmedValue.isEmpty() &&
+                !trimmedValue.equals("N/A") &&
+                !trimmedValue.equals("null") &&
+                !trimmedValue.equals("{}") &&
+                !trimmedValue.equals("undefined");
+    }
+
+    private static String getSafeString(Object value) {
+        if (value == null) return "N/A";
+        String stringValue = value.toString();
+        return (stringValue.equals("null") || stringValue.isEmpty()) ? "N/A" : stringValue;
+    }
+
+    private static String formatDate(String dateString) {
+        if (dateString == null || dateString.isEmpty()) {
+            return "N/A";
+        }
+        try {
+            if (dateString.contains("T")) {
+                return dateString.split("T")[0];
             }
+            return dateString;
+        } catch (Exception e) {
+            return dateString;
+        }
+    }
 
-            return result
+    private static String formatBillMonth(String dateStr) {
+        if (dateStr == null || dateStr.isEmpty() || dateStr.equals("null")) {
+            return "N/A";
         }
 
-        private fun replacePrepaidPlaceholders(template: String, data: PrepaidData): String {
-            var result = template.replace("{{METER_NUMBER}}", data.meterNumber)
-                .replace("{{CONSUMER_NUMBER}}", data.consumerNumber)
+        try {
+            String[] parts = dateStr.substring(0, 10).split("-");
+            if (parts.length >= 2) {
+                int month = Integer.parseInt(parts[1]);
+                String[] monthNames = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
-            // Handle prepaid customer info
-            data.prepaidCustomerInfo?.let { prepaidInfo ->
-                result = result.replace("{{#PREPAID_CUSTOMER_INFO}}", "")
-                    .replace("{{/PREPAID_CUSTOMER_INFO}}", "")
-                
-                val prepaidHtml = StringBuilder()
-                prepaidInfo.fields.forEach { field ->
-                    prepaidHtml.append("""
-                        <div class="field">
-                            <span><strong>${field.key}:</strong></span>
-                            <span>${field.value}</span>
-                        </div>
-                    """)
+                if (month >= 1 && month <= 12) {
+                    return monthNames[month - 1] + "-" + parts[0];
                 }
-                
-                result = result.replace("{{#FIELDS}}{{/FIELDS}}", prepaidHtml.toString())
-            } ?: run {
-                result = result.replace("{{#PREPAID_CUSTOMER_INFO}}", "<!--")
-                    .replace("{{/PREPAID_CUSTOMER_INFO}}", "-->")
             }
-
-            // Handle tokens
-            data.tokens?.let { tokens ->
-                result = result.replace("{{#TOKENS}}", "")
-                    .replace("{{/TOKENS}}", "")
-                
-                val tokensHtml = StringBuilder()
-                tokens.tokenList.forEach { token ->
-                    tokensHtml.append("""
-                        <div class="token">
-                            <strong>Order ${token.index}:</strong><br>
-                            <strong>Token:</strong> ${token.token}<br>
-                            <strong>Date:</strong> ${token.date}<br>
-                            <strong>Amount:</strong> ${token.amount}<br>
-                            <strong>Operator:</strong> ${token.operator}<br>
-                            <strong>Sequence:</strong> ${token.sequence}
-                        </div>
-                    """)
-                }
-                
-                result = result.replace("{{#TOKEN_LIST}}{{/TOKEN_LIST}}", tokensHtml.toString())
-            } ?: run {
-                result = result.replace("{{#TOKENS}}", "<!--")
-                    .replace("{{/TOKENS}}", "-->")
-            }
-
-            // Handle postpaid customer info
-            data.postpaidCustomerInfo?.let { postpaidInfo ->
-                result = result.replace("{{#POSTPAID_CUSTOMER_INFO}}", "")
-                    .replace("{{/POSTPAID_CUSTOMER_INFO}}", "")
-                
-                val postpaidHtml = StringBuilder()
-                postpaidInfo.fields.forEach { field ->
-                    postpaidHtml.append("""
-                        <div class="field">
-                            <span><strong>${field.key}:</strong></span>
-                            <span>${field.value}</span>
-                        </div>
-                    """)
-                }
-                
-                result = result.replace("{{#FIELDS}}{{/FIELDS}}", postpaidHtml.toString())
-            } ?: run {
-                result = result.replace("{{#POSTPAID_CUSTOMER_INFO}}", "<!--")
-                    .replace("{{/POSTPAID_CUSTOMER_INFO}}", "-->")
-            }
-
-            // Handle bill info, balance info, bill summary, and error (same as postpaid)
-            data.billInfo?.let { billInfo ->
-                result = result.replace("{{#BILL_INFO}}", "")
-                    .replace("{{/BILL_INFO}}", "")
-                
-                val billsHtml = StringBuilder()
-                billInfo.bills.forEach { bill ->
-                    billsHtml.append("""
-                        <tr>
-                            <td>${bill.billMonth}</td>
-                            <td>${bill.billNo}</td>
-                            <td>${bill.consumption}</td>
-                            <td>${bill.currentBill}</td>
-                            <td>${bill.dueDate}</td>
-                            <td>${bill.paidAmt}</td>
-                            <td>${bill.receiptDate}</td>
-                            <td>${bill.balance}</td>
-                        </tr>
-                    """)
-                }
-                
-                result = result.replace("{{#BILLS}}{{/BILLS}}", billsHtml.toString())
-            } ?: run {
-                result = result.replace("{{#BILL_INFO}}", "<!--")
-                    .replace("{{/BILL_INFO}}", "-->")
-            }
-
-            data.balanceInfo?.let { balanceInfo ->
-                result = result.replace("{{#BALANCE_INFO}}", "")
-                    .replace("{{/BALANCE_INFO}}", "")
-                
-                val balanceHtml = StringBuilder()
-                balanceInfo.fields.forEach { field ->
-                    balanceHtml.append("""
-                        <div class="field">
-                            <span><strong>${field.key}:</strong></span>
-                            <span>${field.value}</span>
-                        </div>
-                    """)
-                }
-                
-                result = result.replace("{{#FIELDS}}{{/FIELDS}}", balanceHtml.toString())
-            } ?: run {
-                result = result.replace("{{#BALANCE_INFO}}", "<!--")
-                    .replace("{{/BALANCE_INFO}}", "-->")
-            }
-
-            data.billSummary?.let { billSummary ->
-                result = result.replace("{{#BILL_SUMMARY}}", "")
-                    .replace("{{/BILL_SUMMARY}}", "")
-                
-                val summaryHtml = StringBuilder()
-                billSummary.fields.forEach { field ->
-                    summaryHtml.append("""
-                        <div class="field">
-                            <span><strong>${field.key}:</strong></span>
-                            <span>${field.value}</span>
-                        </div>
-                    """)
-                }
-                
-                result = result.replace("{{#FIELDS}}{{/FIELDS}}", summaryHtml.toString())
-            } ?: run {
-                result = result.replace("{{#BILL_SUMMARY}}", "<!--")
-                    .replace("{{/BILL_SUMMARY}}", "-->")
-            }
-
-            data.error?.let { error ->
-                result = result.replace("{{#ERROR}}", "")
-                    .replace("{{/ERROR}}", "")
-                result = result.replace("{{ERROR_MESSAGE}}", error.errorMessage)
-            } ?: run {
-                result = result.replace("{{#ERROR}}", "<!--")
-                    .replace("{{/ERROR}}", "-->")
-            }
-
-            return result
+            return dateStr.substring(0, 7); // Fallback to YYYY-MM
+        } catch (Exception e) {
+            return dateStr.length() >= 7 ? dateStr.substring(0, 7) : dateStr;
         }
+    }
+
+    // Template rendering methods
+    public static String renderPostpaidTemplate(Context context, PostpaidData data) {
+        String template = loadTemplate(context, TEMPLATE_POSTPAID);
+        return replacePostpaidPlaceholders(template, data);
+    }
+
+    public static String renderPrepaidTemplate(Context context, PrepaidData data) {
+        String template = loadTemplate(context, TEMPLATE_PREPAID);
+        return replacePrepaidPlaceholders(template, data);
+    }
+
+    private static String loadTemplate(Context context, String templateName) {
+        try {
+            java.io.InputStream inputStream = context.getAssets().open(templateName);
+            int size = inputStream.available();
+            byte[] buffer = new byte[size];
+            inputStream.read(buffer);
+            inputStream.close();
+            return new String(buffer, "UTF-8");
+        } catch (Exception e) {
+            return "<html><body><h1>Error loading template: " + e.getMessage() + "</h1></body></html>";
+        }
+    }
+
+    private static String replacePostpaidPlaceholders(String template, PostpaidData data) {
+        String result = template.replace("{{CUSTOMER_NUMBER}}", data.customerNumber);
+
+        // Handle multiple customers
+        if (data.multipleCustomers != null) {
+            result = result.replace("{{#MULTIPLE_CUSTOMERS}}", "")
+                          .replace("{{/MULTIPLE_CUSTOMERS}}", "");
+            
+            result = result.replace("{{CUSTOMER_COUNT}}", String.valueOf(data.multipleCustomers.customerCount));
+            
+            StringBuilder customersHtml = new StringBuilder();
+            for (CustomerData customer : data.multipleCustomers.customers) {
+                StringBuilder customerHtml = new StringBuilder();
+                customerHtml.append("<div class=\"customer-card\">")
+                           .append("<h4>👤 Customer ").append(customer.index).append(": ").append(customer.customerNumber).append("</h4>");
+                
+                for (KeyValuePair info : customer.customerInfo) {
+                    customerHtml.append("<div class=\"field\">")
+                               .append("<span><strong>").append(info.key).append(":</strong></span>")
+                               .append("<span>").append(info.value).append("</span>")
+                               .append("</div>");
+                }
+                
+                customerHtml.append("</div>");
+                customersHtml.append(customerHtml.toString());
+            }
+            
+            result = result.replace("{{#CUSTOMERS}}{{/CUSTOMERS}}", customersHtml.toString());
+        } else {
+            result = result.replace("{{#MULTIPLE_CUSTOMERS}}", "<!--")
+                          .replace("{{/MULTIPLE_CUSTOMERS}}", "-->");
+        }
+
+        // Handle single customer
+        if (data.singleCustomer != null) {
+            result = result.replace("{{#SINGLE_CUSTOMER}}", "")
+                          .replace("{{/SINGLE_CUSTOMER}}", "");
+            
+            StringBuilder customerInfoHtml = new StringBuilder();
+            for (KeyValuePair info : data.singleCustomer.customerInfo) {
+                customerInfoHtml.append("<div class=\"field\">")
+                               .append("<span><strong>").append(info.key).append(":</strong></span>")
+                               .append("<span>").append(info.value).append("</span>")
+                               .append("</div>");
+            }
+            
+            result = result.replace("{{#CUSTOMER_INFO}}{{/CUSTOMER_INFO}}", customerInfoHtml.toString());
+        } else {
+            result = result.replace("{{#SINGLE_CUSTOMER}}", "<!--")
+                          .replace("{{/SINGLE_CUSTOMER}}", "-->");
+        }
+
+        // Handle bill info
+        if (data.billInfo != null) {
+            result = result.replace("{{#BILL_INFO}}", "")
+                          .replace("{{/BILL_INFO}}", "");
+            
+            StringBuilder billsHtml = new StringBuilder();
+            for (BillData bill : data.billInfo.bills) {
+                billsHtml.append("<tr>")
+                        .append("<td>").append(bill.billMonth).append("</td>")
+                        .append("<td>").append(bill.billNo).append("</td>")
+                        .append("<td>").append(bill.consumption).append("</td>")
+                        .append("<td>").append(bill.currentBill).append("</td>")
+                        .append("<td>").append(bill.dueDate).append("</td>")
+                        .append("<td>").append(bill.paidAmt).append("</td>")
+                        .append("<td>").append(bill.receiptDate).append("</td>")
+                        .append("<td>").append(bill.balance).append("</td>")
+                        .append("</tr>");
+            }
+            
+            result = result.replace("{{#BILLS}}{{/BILLS}}", billsHtml.toString());
+        } else {
+            result = result.replace("{{#BILL_INFO}}", "<!--")
+                          .replace("{{/BILL_INFO}}", "-->");
+        }
+
+        // Handle balance info
+        if (data.balanceInfo != null) {
+            result = result.replace("{{#BALANCE_INFO}}", "")
+                          .replace("{{/BALANCE_INFO}}", "");
+            
+            StringBuilder balanceHtml = new StringBuilder();
+            for (KeyValuePair field : data.balanceInfo.fields) {
+                balanceHtml.append("<div class=\"field\">")
+                          .append("<span><strong>").append(field.key).append(":</strong></span>")
+                          .append("<span>").append(field.value).append("</span>")
+                          .append("</div>");
+            }
+            
+            result = result.replace("{{#FIELDS}}{{/FIELDS}}", balanceHtml.toString());
+        } else {
+            result = result.replace("{{#BALANCE_INFO}}", "<!--")
+                          .replace("{{/BALANCE_INFO}}", "-->");
+        }
+
+        // Handle bill summary
+        if (data.billSummary != null) {
+            result = result.replace("{{#BILL_SUMMARY}}", "")
+                          .replace("{{/BILL_SUMMARY}}", "");
+            
+            StringBuilder summaryHtml = new StringBuilder();
+            for (KeyValuePair field : data.billSummary.fields) {
+                summaryHtml.append("<div class=\"field\">")
+                          .append("<span><strong>").append(field.key).append(":</strong></span>")
+                          .append("<span>").append(field.value).append("</span>")
+                          .append("</div>");
+            }
+            
+            result = result.replace("{{#FIELDS}}{{/FIELDS}}", summaryHtml.toString());
+        } else {
+            result = result.replace("{{#BILL_SUMMARY}}", "<!--")
+                          .replace("{{/BILL_SUMMARY}}", "-->");
+        }
+
+        // Handle error
+        if (data.error != null) {
+            result = result.replace("{{#ERROR}}", "")
+                          .replace("{{/ERROR}}", "")
+                          .replace("{{ERROR_MESSAGE}}", data.error.errorMessage);
+        } else {
+            result = result.replace("{{#ERROR}}", "<!--")
+                          .replace("{{/ERROR}}", "-->");
+        }
+
+        return result;
+    }
+
+    private static String replacePrepaidPlaceholders(String template, PrepaidData data) {
+        String result = template.replace("{{METER_NUMBER}}", data.meterNumber)
+                               .replace("{{CONSUMER_NUMBER}}", data.consumerNumber);
+
+        // Handle prepaid customer info
+        if (data.prepaidCustomerInfo != null) {
+            result = result.replace("{{#PREPAID_CUSTOMER_INFO}}", "")
+                          .replace("{{/PREPAID_CUSTOMER_INFO}}", "");
+            
+            StringBuilder prepaidHtml = new StringBuilder();
+            for (KeyValuePair field : data.prepaidCustomerInfo.fields) {
+                prepaidHtml.append("<div class=\"field\">")
+                          .append("<span><strong>").append(field.key).append(":</strong></span>")
+                          .append("<span>").append(field.value).append("</span>")
+                          .append("</div>");
+            }
+            
+            result = result.replace("{{#FIELDS}}{{/FIELDS}}", prepaidHtml.toString());
+        } else {
+            result = result.replace("{{#PREPAID_CUSTOMER_INFO}}", "<!--")
+                          .replace("{{/PREPAID_CUSTOMER_INFO}}", "-->");
+        }
+
+        // Handle tokens
+        if (data.tokens != null) {
+            result = result.replace("{{#TOKENS}}", "")
+                          .replace("{{/TOKENS}}", "");
+            
+            StringBuilder tokensHtml = new StringBuilder();
+            for (TokenData token : data.tokens.tokenList) {
+                tokensHtml.append("<div class=\"token\">")
+                         .append("<strong>Order ").append(token.index).append(":</strong><br>")
+                         .append("<strong>Token:</strong> ").append(token.token).append("<br>")
+                         .append("<strong>Date:</strong> ").append(token.date).append("<br>")
+                         .append("<strong>Amount:</strong> ").append(token.amount).append("<br>")
+                         .append("<strong>Operator:</strong> ").append(token.operator).append("<br>")
+                         .append("<strong>Sequence:</strong> ").append(token.sequence)
+                         .append("</div>");
+            }
+            
+            result = result.replace("{{#TOKEN_LIST}}{{/TOKEN_LIST}}", tokensHtml.toString());
+        } else {
+            result = result.replace("{{#TOKENS}}", "<!--")
+                          .replace("{{/TOKENS}}", "-->");
+        }
+
+        // Handle postpaid customer info
+        if (data.postpaidCustomerInfo != null) {
+            result = result.replace("{{#POSTPAID_CUSTOMER_INFO}}", "")
+                          .replace("{{/POSTPAID_CUSTOMER_INFO}}", "");
+            
+            StringBuilder postpaidHtml = new StringBuilder();
+            for (KeyValuePair field : data.postpaidCustomerInfo.fields) {
+                postpaidHtml.append("<div class=\"field\">")
+                           .append("<span><strong>").append(field.key).append(":</strong></span>")
+                           .append("<span>").append(field.value).append("</span>")
+                           .append("</div>");
+            }
+            
+            result = result.replace("{{#FIELDS}}{{/FIELDS}}", postpaidHtml.toString());
+        } else {
+            result = result.replace("{{#POSTPAID_CUSTOMER_INFO}}", "<!--")
+                          .replace("{{/POSTPAID_CUSTOMER_INFO}}", "-->");
+        }
+
+        // Handle bill info, balance info, bill summary, and error (same as postpaid)
+        if (data.billInfo != null) {
+            result = result.replace("{{#BILL_INFO}}", "")
+                          .replace("{{/BILL_INFO}}", "");
+            
+            StringBuilder billsHtml = new StringBuilder();
+            for (BillData bill : data.billInfo.bills) {
+                billsHtml.append("<tr>")
+                        .append("<td>").append(bill.billMonth).append("</td>")
+                        .append("<td>").append(bill.billNo).append("</td>")
+                        .append("<td>").append(bill.consumption).append("</td>")
+                        .append("<td>").append(bill.currentBill).append("</td>")
+                        .append("<td>").append(bill.dueDate).append("</td>")
+                        .append("<td>").append(bill.paidAmt).append("</td>")
+                        .append("<td>").append(bill.receiptDate).append("</td>")
+                        .append("<td>").append(bill.balance).append("</td>")
+                        .append("</tr>");
+            }
+            
+            result = result.replace("{{#BILLS}}{{/BILLS}}", billsHtml.toString());
+        } else {
+            result = result.replace("{{#BILL_INFO}}", "<!--")
+                          .replace("{{/BILL_INFO}}", "-->");
+        }
+
+        if (data.balanceInfo != null) {
+            result = result.replace("{{#BALANCE_INFO}}", "")
+                          .replace("{{/BALANCE_INFO}}", "");
+            
+            StringBuilder balanceHtml = new StringBuilder();
+            for (KeyValuePair field : data.balanceInfo.fields) {
+                balanceHtml.append("<div class=\"field\">")
+                          .append("<span><strong>").append(field.key).append(":</strong></span>")
+                          .append("<span>").append(field.value).append("</span>")
+                          .append("</div>");
+            }
+            
+            result = result.replace("{{#FIELDS}}{{/FIELDS}}", balanceHtml.toString());
+        } else {
+            result = result.replace("{{#BALANCE_INFO}}", "<!--")
+                          .replace("{{/BALANCE_INFO}}", "-->");
+        }
+
+        if (data.billSummary != null) {
+            result = result.replace("{{#BILL_SUMMARY}}", "")
+                          .replace("{{/BILL_SUMMARY}}", "");
+            
+            StringBuilder summaryHtml = new StringBuilder();
+            for (KeyValuePair field : data.billSummary.fields) {
+                summaryHtml.append("<div class=\"field\">")
+                          .append("<span><strong>").append(field.key).append(":</strong></span>")
+                          .append("<span>").append(field.value).append("</span>")
+                          .append("</div>");
+            }
+            
+            result = result.replace("{{#FIELDS}}{{/FIELDS}}", summaryHtml.toString());
+        } else {
+            result = result.replace("{{#BILL_SUMMARY}}", "<!--")
+                          .replace("{{/BILL_SUMMARY}}", "-->");
+        }
+
+        if (data.error != null) {
+            result = result.replace("{{#ERROR}}", "")
+                          .replace("{{/ERROR}}", "")
+                          .replace("{{ERROR_MESSAGE}}", data.error.errorMessage);
+        } else {
+            result = result.replace("{{#ERROR}}", "<!--")
+                          .replace("{{/ERROR}}", "-->");
+        }
+
+        return result;
     }
 }
