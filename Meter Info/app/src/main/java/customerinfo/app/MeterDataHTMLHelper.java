@@ -3,6 +3,7 @@ package customerinfo.app;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.util.*;
+import android.util.Log;
 
 public class MeterDataHTMLHelper {
 
@@ -15,7 +16,7 @@ public class MeterDataHTMLHelper {
      */
     public Map<String, Object> processDataForHTMLDisplay(Map<String, Object> rawData, String inputNumber, String type, String subType) {
         Map<String, Object> result = new HashMap<>();
-        
+
         try {
             System.out.println("🔍 HTML HELPER: Processing " + type + " data for HTML display");
 
@@ -46,127 +47,49 @@ public class MeterDataHTMLHelper {
     /**
      * Process prepaid data for HTML (no API calls)
      */
- /**
- * Process prepaid data for HTML (no API calls)
- */
-private void processPrepaidForHTML(Map<String, Object> rawData, Map<String, Object> result, String meterNumber) {
-    try {
-        // Check if we have an error from the main fetch
-        if (rawData.containsKey("error")) {
-            result.put("error", rawData.get("error"));
-            return;
-        }
-
-        // Extract from raw data (already fetched by MainActivity)
-        Object server1DataObj = rawData.get("SERVER1_data");
-        Object server3DataObj = rawData.get("SERVER3_data");
-        Object server2DataObj = rawData.get("SERVER2_data");
-
-        String consumerNumber = (String) rawData.get("consumer_number");
-
-        // If no consumer number but we have SERVER1 data, try to extract it
-        if (consumerNumber == null && server1DataObj instanceof String) {
-            consumerNumber = extractConsumerNumberFromSERVER1((String) server1DataObj);
-        }
-
-        if (consumerNumber == null) {
-            result.put("error", "No consumer number found - SERVER1 lookup may have failed");
-            return;
-        }
-
-        // Process customer info
-        Map<String, String> customerInfo = new HashMap<>();
-
-        // From SERVER1
-        if (server1DataObj instanceof String) {
-            extractCustomerInfoFromSERVER1((String) server1DataObj, customerInfo);
-        }
-
-        // From SERVER3
-        if (server3DataObj instanceof JSONObject) {
-            supplementWithSERVER3Data((JSONObject) server3DataObj, customerInfo);
-        }
-
-        // From SERVER2
-        if (server2DataObj instanceof JSONObject) {
-            supplementWithSERVER2Data((JSONObject) server2DataObj, customerInfo);
-        }
-
-        customerInfo.put("meter_number", meterNumber);
-        customerInfo.put("consumer_number", consumerNumber);
-        result.put("customer_info", customerInfo);
-
-        // Process balance info
-        Map<String, String> balanceInfo = new HashMap<>();
-        if (server2DataObj instanceof JSONObject) {
-            extractBalanceFromSERVER2((JSONObject) server2DataObj, balanceInfo);
-        }
-        if (balanceInfo.isEmpty() && server3DataObj instanceof JSONObject) {
-            JSONObject server3Data = (JSONObject) server3DataObj;
-            if (server3Data.has("arrearAmount")) {
-                String arrear = server3Data.optString("arrearAmount");
-                if (isValidValue(arrear)) {
-                    balanceInfo.put("arrear_amount", arrear);
-                    balanceInfo.put("total_balance", arrear);
-                }
+    private void processPrepaidForHTML(Map<String, Object> rawData, Map<String, Object> result, String meterNumber) {
+        try {
+            // Check if we have an error from the main fetch
+            if (rawData.containsKey("error")) {
+                result.put("error", rawData.get("error"));
+                return;
             }
-        }
-        result.put("balance_info", balanceInfo);
 
-        // Process transactions
-        if (server1DataObj instanceof String) {
-            List<Map<String, String>> transactions = extractRechargeTransactions((String) server1DataObj);
-            result.put("transactions", transactions);
-            result.put("transaction_count", transactions.size());
-        }
+            // Extract from raw data (already fetched by MainActivity)
+            Object server1DataObj = rawData.get("SERVER1_data");
+            Object server3DataObj = rawData.get("SERVER3_data");
+            Object server2DataObj = rawData.get("SERVER2_data");
 
-        Log.d("HTML_HELPER", "✅ Prepaid HTML processing completed successfully");
+            String consumerNumber = (String) rawData.get("consumer_number");
 
-    } catch (Exception e) {
-        System.out.println("❌ Error processing prepaid for HTML: " + e.getMessage());
-        result.put("error", "Prepaid HTML processing failed: " + e.getMessage());
-    }
-}
-
-/**
- * Extract consumer number from SERVER1 response as fallback
- */
-private String extractConsumerNumberFromSERVER1(String responseBody) {
-    try {
-        String jsonPart = extractActualJson(responseBody);
-        JSONObject SERVER1Data = new JSONObject(jsonPart);
-
-        if (SERVER1Data.has("mCustomerData")) {
-            JSONObject mCustomerData = SERVER1Data.getJSONObject("mCustomerData");
-            if (mCustomerData.has("result")) {
-                JSONObject result = mCustomerData.getJSONObject("result");
-                return extractDirectValue(result, "customerAccountNo");
+            // If no consumer number but we have SERVER1 data, try to extract it
+            if (consumerNumber == null && server1DataObj instanceof String) {
+                consumerNumber = extractConsumerNumberFromSERVER1((String) server1DataObj);
             }
-        }
-    } catch (Exception e) {
-        System.out.println("❌ Error extracting consumer number from SERVER1: " + e.getMessage());
-    }
-    return null;
-}
+
+            if (consumerNumber == null) {
+                result.put("error", "No consumer number found - SERVER1 lookup may have failed");
+                return;
+            }
 
             // Process customer info
             Map<String, String> customerInfo = new HashMap<>();
-            
+
             // From SERVER1
             if (server1DataObj instanceof String) {
                 extractCustomerInfoFromSERVER1((String) server1DataObj, customerInfo);
             }
-            
+
             // From SERVER3
             if (server3DataObj instanceof JSONObject) {
                 supplementWithSERVER3Data((JSONObject) server3DataObj, customerInfo);
             }
-            
+
             // From SERVER2
             if (server2DataObj instanceof JSONObject) {
                 supplementWithSERVER2Data((JSONObject) server2DataObj, customerInfo);
             }
-            
+
             customerInfo.put("meter_number", meterNumber);
             customerInfo.put("consumer_number", consumerNumber);
             result.put("customer_info", customerInfo);
@@ -194,6 +117,8 @@ private String extractConsumerNumberFromSERVER1(String responseBody) {
                 result.put("transactions", transactions);
                 result.put("transaction_count", transactions.size());
             }
+
+            Log.d("HTML_HELPER", "✅ Prepaid HTML processing completed successfully");
 
         } catch (Exception e) {
             System.out.println("❌ Error processing prepaid for HTML: " + e.getMessage());
@@ -229,7 +154,7 @@ private String extractConsumerNumberFromSERVER1(String responseBody) {
 
             // Process customer info
             Map<String, String> customerInfo = new HashMap<>();
-            
+
             if (server3DataObj instanceof JSONObject) {
                 JSONObject server3Data = (JSONObject) server3DataObj;
                 customerInfo.put("customer_name", server3Data.optString("customerName", ""));
@@ -288,18 +213,18 @@ private String extractConsumerNumberFromSERVER1(String responseBody) {
         try {
             List<String> customerNumbers = (List<String>) rawData.get("customer_numbers");
             List<Map<String, Object>> customerResults = (List<Map<String, Object>>) rawData.get("customer_results");
-            
+
             List<Map<String, Object>> htmlCustomers = new ArrayList<>();
-            
+
             for (int i = 0; i < customerResults.size(); i++) {
                 Map<String, Object> customerResult = customerResults.get(i);
                 Map<String, Object> htmlCustomer = new HashMap<>();
-                
+
                 // Process each customer's data
                 processSingleCustomerPostpaid(customerResult, htmlCustomer, customerNumbers.get(i));
                 htmlCustomers.add(htmlCustomer);
             }
-            
+
             result.put("meter_number", meterNumber);
             result.put("customer_count", customerNumbers.size());
             result.put("customers", htmlCustomers);
@@ -311,6 +236,27 @@ private String extractConsumerNumberFromSERVER1(String responseBody) {
     }
 
     // ==================== EXISTING HELPER METHODS ====================
+
+    /**
+     * Extract consumer number from SERVER1 response as fallback
+     */
+    private String extractConsumerNumberFromSERVER1(String responseBody) {
+        try {
+            String jsonPart = extractActualJson(responseBody);
+            JSONObject SERVER1Data = new JSONObject(jsonPart);
+
+            if (SERVER1Data.has("mCustomerData")) {
+                JSONObject mCustomerData = SERVER1Data.getJSONObject("mCustomerData");
+                if (mCustomerData.has("result")) {
+                    JSONObject result = mCustomerData.getJSONObject("result");
+                    return extractDirectValue(result, "customerAccountNo");
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("❌ Error extracting consumer number from SERVER1: " + e.getMessage());
+        }
+        return null;
+    }
 
     /**
      * Extract customer info from SERVER1 response
@@ -333,7 +279,7 @@ private String extractConsumerNumberFromSERVER1(String responseBody) {
                     customerInfo.put("sanctioned_load", extractDirectValue(result, "sanctionLoad"));
                     customerInfo.put("division", extractDirectValue(result, "division"));
                     customerInfo.put("sub_division", extractDirectValue(result, "sndDivision"));
-                    
+
                     System.out.println("✅ SERVER1: Extracted customer info");
                 }
             }
@@ -399,7 +345,7 @@ private String extractConsumerNumberFromSERVER1(String responseBody) {
                         customerInfo.put("connection_date", formatDate(firstCustomer.optString("METER_CONNECT_DATE")));
                         customerInfo.put("usage_type", firstCustomer.optString("USAGE_TYPE", ""));
                         customerInfo.put("description", firstCustomer.optString("DESCR", ""));
-                        
+
                         System.out.println("✅ SERVER2: Supplemented customer info");
                     }
                 }
@@ -483,7 +429,7 @@ private String extractConsumerNumberFromSERVER1(String responseBody) {
                     Map<String, Object> billSummary = createBillSummary(bills);
                     result.put("bill_summary", billSummary);
                 }
-                
+
                 System.out.println("✅ POSTPAID: Extracted " + bills.size() + " bills");
             }
 
