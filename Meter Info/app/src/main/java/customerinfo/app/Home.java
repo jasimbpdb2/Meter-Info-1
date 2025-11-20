@@ -9,14 +9,14 @@ public class Home extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.home);
-        
+
         Button lookupBtn = findViewById(R.id.lookupBtn);
-        Button applicationBtn = findViewById(R.id.applicationBtn); // CHANGED FROM htmlBtn
-        
+        Button applicationBtn = findViewById(R.id.applicationBtn);
+
         lookupBtn.setOnClickListener(v -> {
-            startActivity(new Intent(Home.this, MainActivity.class));
+            startActivity(new Intent(Home.this, LookupHtmlActivity.class));
         });
-        
+
         applicationBtn.setOnClickListener(v -> {
             startActivity(new Intent(Home.this, HtmlActivity.class));
         });
