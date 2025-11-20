@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>মিটার তথ্য</title>
+
+    <style>
+        body {
+            font-family: "Shonar Bangla", "SolaimanLipi", serif;
+            margin: 0;
+            padding: 15px 20px;
+            font-size: 16px;
+            line-height: 1.6;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+
+        /* Search Section */
+        .search-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .type-selector {
+            display: flex;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .type-btn {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            background: #f8f9fa;
+            border: none;
+            font-size: 16px;
+            font-family: inherit;
+        }
+
+        .type-btn.active {
+            background: #007bff;
+            color: white;
+            font-weight: bold;
+        }
+
+        .search-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+        }
+
+        .search-btn {
+            padding: 12px 24px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-family: inherit;
+        }
+
+        .search-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: none;
+            color: #007bff;
+            text-align: center;
+            padding: 10px;
+        }
+
+        .error {
+            display: none;
+            color: #dc3545;
+            background: #f8d7da;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+        /* Data Display Section */
+        .data-section {
+            display: none;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .info-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+
+        .info-item {
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .info-label {
+            font-weight: bold;
+            color: #34495e;
+            min-width: 140px;
+        }
+
+        .info-value {
+            color: #2c3e50;
+            text-align: right;
+            flex: 1;
+            font-weight: bold;
+        }
+
+        .balance-highlight {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+        }
+
+        .arrear-highlight {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+            font-weight: bold;
+        }
+
+        .recharge-highlight {
+            background: #d1ecf1;
+            border-left-color: #17a2b8;
+        }
+
+        /* Tables */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 14px;
+        }
+
+        .data-table th {
+            background: #34495e;
+            color: white;
+            padding: 12px 8px;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        .data-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .data-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .data-table tr:hover {
+            background: #e9ecef;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-family: inherit;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .btn-print {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-pdf {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-new-search {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-close {
+            background: #dc3545;
+            color: white;
+        }
+
+        /* Type Badges */
+        .type-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .badge-prepaid {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-postpaid {
+            background: #cce7ff;
+            color: #004085;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .search-row {
+                flex-direction: column;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+
+        /* Print Styles */
+        @media print {
+            .search-section,
+            .action-buttons {
+                display: none !important;
+            }
+            
+            body {
+                background: white;
+                padding: 0;
+                margin: 0;
+            }
+            
+            .data-section {
+                display: block !important;
+                box-shadow: none;
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Search Section -->
+        <div class="search-section" id="searchSection">
+            <h2 style="margin-bottom: 20px; color: #2c3e50; text-align: center;">গ্রাহক তথ্য খুঁজুন</h2>
+
+            <div class="type-selector">
+                <button class="type-btn active" id="prepaidBtn" onclick="selectType('prepaid')">প্রিপেইড মিটার</button>
+                <button class="type-btn" id="postpaidBtn" onclick="selectType('postpaid')">পোস্টপেইড মিটার</button>
+            </div>
+
+            <div class="search-row">
+                <input type="text" id="searchInput" class="search-input" 
+                       placeholder="১২ ডিজিটের মিটার নং লিখুন" autofocus>
+                <button onclick="fetchData()" id="searchBtn" class="search-btn">খুঁজুন</button>
+            </div>
+
+            <div class="loading" id="loading">
+                ⏳ ডেটা লোড হচ্ছে...
+            </div>
+
+            <div class="error" id="error"></div>
+        </div>
+
+        <!-- Data Display Section -->
+        <div class="data-section" id="dataSection">
+            <!-- Header with Type Badge -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h1 class="section-title" id="pageTitle">মিটার তথ্য</h1>
+                <span class="type-badge" id="typeBadge"></span>
+            </div>
+
+            <!-- Basic Information -->
+            <div class="info-card">
+                <h3 style="margin-bottom: 15px; color: #2c3e50;">📋 মৌলিক তথ্য</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">গ্রাহকের নাম:</span>
+                        <span class="info-value" id="customerName">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">পিতা/স্বামীর নাম:</span>
+                        <span class="info-value" id="fatherName">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">ঠিকানা:</span>
+                        <span class="info-value" id="address">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">মোবাইল নং:</span>
+                        <span class="info-value" id="mobileNo">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">মিটার নং:</span>
+                        <span class="info-value" id="meterNo">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">গ্রাহক নং:</span>
+                        <span class="info-value" id="consumerNo">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Balance Information -->
+            <div class="info-card balance-highlight" id="balanceSection">
+                <h3 style="margin-bottom: 15px; color: #2c3e50;">💰 আর্থিক তথ্য</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">মোট বকেয়া:</span>
+                        <span class="info-value" id="totalBalance">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">বর্তমান বিল:</span>
+                        <span class="info-value" id="currentBill">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">জরিমানা (LPS):</span>
+                        <span class="info-value" id="lpsAmount">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">মোট পরিশোধ:</span>
+                        <span class="info-value" id="paidAmount">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Information -->
+            <div class="info-card" id="additionalInfoSection">
+                <h3 style="margin-bottom: 15px; color: #2c3e50;">⚙️ অতিরিক্ত তথ্য</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">ট্যারিফ:</span>
+                        <span class="info-value" id="tariff">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">স্যানশন লোড:</span>
+                        <span class="info-value" id="sanctionedLoad">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">লোকেশন কোড:</span>
+                        <span class="info-value" id="locationCode">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">বিল গ্রুপ:</span>
+                        <span class="info-value" id="billGroup">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prepaid Specific Section -->
+            <div class="info-card recharge-highlight" id="prepaidSection">
+                <h3 style="margin-bottom: 15px; color: #2c3e50;">🔋 প্রিপেইড তথ্য</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">শেষ রিচার্জ:</span>
+                        <span class="info-value" id="lastRecharge">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">ইনস্টলেশন তারিখ:</span>
+                        <span class="info-value" id="installationDate">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">মিটার স্ট্যাটাস:</span>
+                        <span class="info-value" id="meterStatus">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">মোট রিচার্জ:</span>
+                        <span class="info-value" id="totalRecharges">-</span>
+                    </div>
+                </div>
+
+                <!-- Recharge History Table -->
+                <div id="rechargeTableSection" style="margin-top: 20px;">
+                    <h4 style="margin-bottom: 15px; color: #2c3e50;">🕐 সর্বশেষ রিচার্জের তথ্য</h4>
+                    <table class="data-table" id="rechargeTable">
+                        <thead>
+                            <tr>
+                                <th>তারিখ</th>
+                                <th>অর্ডার নং</th>
+                                <th>পরিমাণ</th>
+                                <th>টোকেন</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rechargeTableBody">
+                            <!-- Filled by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Postpaid Specific Section -->
+            <div class="info-card" id="postpaidSection">
+                <h3 style="margin-bottom: 15px; color: #2c3e50;">📊 বিল হিস্ট্রি</h3>
+                
+                <!-- Bill Summary -->
+                <div class="info-grid" style="margin-bottom: 20px;">
+                    <div class="info-item">
+                        <span class="info-label">মোট বিল:</span>
+                        <span class="info-value" id="totalBills">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">শেষ বিল:</span>
+                        <span class="info-value" id="lastBill">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">সর্বশেষ রিডিং:</span>
+                        <span class="info-value" id="lastReading">-</span>
+                    </div>
+                </div>
+
+                <!-- Bill History Table -->
+                <table class="data-table" id="billTable">
+                    <thead>
+                        <tr>
+                            <th>বিল মাস</th>
+                            <th>বিল নং</th>
+                            <th>ইউনিট</th>
+                            <th>মোট টাকা</th>
+                            <th>পরিশোধ</th>
+                            <th>ব্যালেন্স</th>
+                        </tr>
+                    </thead>
+                    <tbody id="billTableBody">
+                        <!-- Filled by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button class="btn btn-print" onclick="window.print()">🖨️ প্রিন্ট</button>
+                <button class="btn btn-pdf" onclick="saveAsPDF()">📄 PDF সেভ</button>
+                <button class="btn btn-new-search" onclick="showSearchSection()">🔄 নতুন খোঁজ</button>
+                <button class="btn btn-close" onclick="closeLookup()">✕ বন্ধ</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedType = 'prepaid';
+        let currentData = null;
+
+        function debugLog(msg) {
+            console.log(msg);
+        }
+
+        function selectType(type) {
+            selectedType = type;
+            
+            // Update UI
+            document.getElementById('prepaidBtn').classList.toggle('active', type === 'prepaid');
+            document.getElementById('postpaidBtn').classList.toggle('active', type === 'postpaid');
+            
+            // Update placeholder
+            const input = document.getElementById('searchInput');
+            if (type === 'prepaid') {
+                input.placeholder = '১২ ডিজিটের মিটার নং লিখুন';
+            } else {
+                input.placeholder = 'গ্রাহক নং লিখুন';
+            }
+        }
+
+        function fetchData() {
+            const input = document.getElementById('searchInput').value.trim();
+            if (!input) {
+                showError('দয়া করে মিটার নং বা গ্রাহক নং লিখুন!');
+                return;
+            }
+
+            showLoading();
+
+            if (window.AndroidInterface) {
+                try {
+                    const result = AndroidInterface.fetchLookupData(input, selectedType);
+                    const data = JSON.parse(result);
+                    displayData(data);
+                } catch (err) {
+                    showError('App error: ' + err);
+                }
+            } else {
+                showError('AndroidInterface not available');
+            }
+        }
+
+        function displayData(data) {
+            hideLoading();
+            
+            if (data.error) {
+                showError(data.error);
+                return;
+            }
+
+            currentData = data;
+            
+            // Show data section
+            document.getElementById('searchSection').style.display = 'none';
+            document.getElementById('dataSection').style.display = 'block';
+
+            // Set type badge
+            const typeBadge = document.getElementById('typeBadge');
+            if (selectedType === 'prepaid') {
+                typeBadge.textContent = 'প্রিপেইড';
+                typeBadge.className = 'type-badge badge-prepaid';
+                document.getElementById('pageTitle').textContent = 'প্রিপেইড মিটার তথ্য';
+            } else {
+                typeBadge.textContent = 'পোস্টপেইড';
+                typeBadge.className = 'type-badge badge-postpaid';
+                document.getElementById('pageTitle').textContent = 'পোস্টপেইড মিটার তথ্য';
+            }
+
+            // Fill basic information
+            document.getElementById('customerName').textContent = data.customer_name || '-';
+            document.getElementById('fatherName').textContent = data.father_name || '-';
+            document.getElementById('address').textContent = data.address || '-';
+            document.getElementById('mobileNo').textContent = data.mobile_no || '-';
+            document.getElementById('meterNo').textContent = data.meter_no || '-';
+            document.getElementById('consumerNo').textContent = data.consumer_no || '-';
+
+            // Fill balance information
+            const balanceInfo = data.balance_info || {};
+            document.getElementById('totalBalance').textContent = balanceInfo.total_balance ? '৳' + balanceInfo.total_balance : '-';
+            document.getElementById('currentBill').textContent = balanceInfo.current_bill ? '৳' + balanceInfo.current_bill : '-';
+            document.getElementById('lpsAmount').textContent = balanceInfo.lps ? '৳' + balanceInfo.lps : '-';
+            document.getElementById('paidAmount').textContent = balanceInfo.paid_amount ? '৳' + balanceInfo.paid_amount : '-';
+
+            // Fill additional information
+            document.getElementById('tariff').textContent = data.tariff || '-';
+            document.getElementById('sanctionedLoad').textContent = data.sanctioned_load || '-';
+            document.getElementById('locationCode').textContent = data.location_code || '-';
+            document.getElementById('billGroup').textContent = data.bill_group || '-';
+
+            // Handle type-specific sections
+            if (selectedType === 'prepaid') {
+                showPrepaidSection(data);
+                hidePostpaidSection();
+            } else {
+                showPostpaidSection(data);
+                hidePrepaidSection();
+            }
+        }
+
+        function showPrepaidSection(data) {
+            document.getElementById('prepaidSection').style.display = 'block';
+            
+            // Fill prepaid specific info
+            document.getElementById('lastRecharge').textContent = data.last_recharge_amount ? '৳' + data.last_recharge_amount + ' (' + (data.last_recharge_time || '-') + ')' : '-';
+            document.getElementById('installationDate').textContent = data.installation_date || '-';
+            document.getElementById('meterStatus').textContent = data.lock_status || '-';
+            document.getElementById('totalRecharges').textContent = data.total_recharges || '0';
+
+            // Fill recharge table
+            const rechargeTableBody = document.getElementById('rechargeTableBody');
+            rechargeTableBody.innerHTML = '';
+
+            const recharges = data.recharge_history || [];
+            if (recharges.length === 0) {
+                rechargeTableBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">কোন রিচার্জ তথ্য পাওয়া যায়নি</td></tr>';
+            } else {
+                recharges.forEach(recharge => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${recharge.date || '-'}</td>
+                        <td>${recharge.order_no || '-'}</td>
+                        <td>${recharge.amount ? '৳' + recharge.amount : '-'}</td>
+                        <td style="font-family: monospace;">${recharge.tokens || '-'}</td>
+                    `;
+                    rechargeTableBody.appendChild(row);
+                });
+            }
+        }
+
+        function showPostpaidSection(data) {
+            document.getElementById('postpaidSection').style.display = 'block';
+            
+            // Fill postpaid specific info
+            document.getElementById('totalBills').textContent = data.total_bills || '0';
+            
+            const meterInfo = data.meter_info || {};
+            document.getElementById('lastReading').textContent = meterInfo.last_reading_sr || '-';
+            document.getElementById('lastBill').textContent = '-'; // You can calculate this from bill history
+
+            // Fill bill table
+            const billTableBody = document.getElementById('billTableBody');
+            billTableBody.innerHTML = '';
+
+            const bills = data.bill_history || [];
+            if (bills.length === 0) {
+                billTableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">কোন বিল তথ্য পাওয়া যায়নি</td></tr>';
+            } else {
+                bills.forEach(bill => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${bill.bill_month || '-'}</td>
+                        <td>${bill.bill_number || '-'}</td>
+                        <td>${bill.consumption || '-'}</td>
+                        <td>${bill.total_amount ? '৳' + bill.total_amount : '-'}</td>
+                        <td>${bill.paid_amount ? '৳' + bill.paid_amount : '-'}</td>
+                        <td>${bill.balance ? '৳' + bill.balance : '-'}</td>
+                    `;
+                    billTableBody.appendChild(row);
+                });
+            }
+        }
+
+        function hidePrepaidSection() {
+            document.getElementById('prepaidSection').style.display = 'none';
+        }
+
+        function hidePostpaidSection() {
+            document.getElementById('postpaidSection').style.display = 'none';
+        }
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('searchBtn').disabled = true;
+            document.getElementById('searchBtn').textContent = 'খুঁজছি...';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('searchBtn').disabled = false;
+            document.getElementById('searchBtn').textContent = 'খুঁজুন';
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            hideLoading();
+        }
+
+        function showSearchSection() {
+            document.getElementById('dataSection').style.display = 'none';
+            document.getElementById('searchSection').style.display = 'block';
+            document.getElementById('searchInput').value = '';
+            document.getElementById('searchInput').focus();
+        }
+
+        function saveAsPDF() {
+            if (window.AndroidInterface && AndroidInterface.saveAsPDF) {
+                AndroidInterface.saveAsPDF();
+            } else {
+                alert('PDF সেভ করার জন্য প্রিন্ট অপশন ব্যবহার করুন');
+                window.print();
+            }
+        }
+
+        function closeLookup() {
+            if (window.AndroidInterface && AndroidInterface.closeLookup) {
+                AndroidInterface.closeLookup();
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            selectType('prepaid');
+            
+            // Allow Enter key to search
+            document.getElementById('searchInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    fetchData();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
