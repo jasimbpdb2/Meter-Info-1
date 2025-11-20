@@ -1845,6 +1845,71 @@ public class MainActivity extends AppCompatActivity {
         runOnUiThread(() -> resultView.setText(message));
     }
 
+   // Add this in MainActivity.java - exact data structure for HTML
+public static Map<String, Object> getLookupData(Map<String, Object> rawData, String type) {
+    Map<String, Object> result = new HashMap<>();
+    
+    // Basic info that shows in your display
+    result.put("type", type);
+    result.put("meter_number", rawData.get("meter_number"));
+    result.put("consumer_number", rawData.get("consumer_number"));
+    
+    // Customer info section
+    if (rawData.containsKey("customer_info")) {
+        result.put("customer_info", rawData.get("customer_info"));
+    }
+    
+    // Balance info section  
+    if (rawData.containsKey("balance_info")) {
+        result.put("balance_info", rawData.get("balance_info"));
+    }
+    
+    // Bill info with tables
+    if (rawData.containsKey("bill_info_raw")) {
+        result.put("bill_info", rawData.get("bill_info_raw"));
+    }
+    
+    // Bill summary
+    if (rawData.containsKey("bill_summary")) {
+        result.put("bill_summary", rawData.get("bill_summary"));
+    }
+    
+    // Meter readings
+    if (rawData.containsKey("customer_info")) {
+        Map<String, String> customerInfo = (Map<String, String>) rawData.get("customer_info");
+        Map<String, String> meterReadings = new HashMap<>();
+        
+        // Extract meter readings from customer info
+        if (customerInfo.containsKey("Current Reading SR")) {
+            meterReadings.put("Current Reading SR", customerInfo.get("Current Reading SR"));
+        }
+        if (customerInfo.containsKey("Last Bill Reading SR")) {
+            meterReadings.put("Last Bill Reading SR", customerInfo.get("Last Bill Reading SR"));
+        }
+        if (customerInfo.containsKey("Last Bill Reading OF PK")) {
+            meterReadings.put("Last Bill Reading OF PK", customerInfo.get("Last Bill Reading OF PK"));
+        }
+        if (customerInfo.containsKey("Last Bill Reading PK")) {
+            meterReadings.put("Last Bill Reading PK", customerInfo.get("Last Bill Reading PK"));
+        }
+        
+        result.put("meter_readings", meterReadings);
+    }
+    
+    // Prepaid recharge history
+    if ("prepaid".equals(type) && rawData.containsKey("recent_transactions")) {
+        result.put("recharge_history", rawData.get("recent_transactions"));
+        result.put("total_recharges", ((List) rawData.get("recent_transactions")).size());
+    }
+    
+    // Postpaid multiple customers
+    if ("postpaid".equals(type) && rawData.containsKey("customer_results")) {
+        result.put("customer_results", rawData.get("customer_results"));
+    }
+    
+    return result;
+}
+
     // Storage permission methods
     private void checkStoragePermission() {
         if (isStoragePermissionGranted()) {
