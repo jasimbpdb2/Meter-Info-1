@@ -301,6 +301,9 @@ findViewById(R.id.backBtn).setOnClickListener(v -> {
     finish();
 });
 
+}
+
+
     // NEW METHOD: Properly fetch and process data for HTML view
     private Map<String, Object> fetchAndProcessDataForHTML(String inputNumber) {
         try {
