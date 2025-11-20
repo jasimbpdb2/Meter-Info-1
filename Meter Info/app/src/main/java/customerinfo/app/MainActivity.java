@@ -180,8 +180,7 @@ public class MainActivity extends AppCompatActivity {
             fetchData(inputNumber);
         });
 
-       // ✅ FIXED HTML VIEW BUTTON - COMPLETE VERSION
-htmlViewBtn.setOnClickListener(v -> {
+       htmlViewBtn.setOnClickListener(v -> {
     String inputNumber = meterInput.getText().toString().trim();
     if (inputNumber.isEmpty()) {
         showResult("❌ Please enter number first");
@@ -192,65 +191,56 @@ htmlViewBtn.setOnClickListener(v -> {
 
     new Thread(() -> {
         try {
-            // Fetch fresh data with proper processing
             Map<String, Object> result = fetchAndProcessDataForHTML(inputNumber);
             Log.d("HTML_DEBUG", "📊 Result keys for HTML: " + result.keySet());
-            
-            // Check if we have valid data
+
             if (result == null || result.isEmpty() || result.containsKey("error")) {
-                String errorMsg = result != null && result.containsKey("error") ? 
-                    result.get("error").toString() : "No data available";
+                String errorMsg = result != null && result.containsKey("error")
+                        ? result.get("error").toString()
+                        : "No data available";
                 runOnUiThread(() -> showResult("❌ " + errorMsg));
                 return;
             }
 
             String htmlContent;
+
+            // ---------- PREPAID ----------
             if (selectedType.equals("prepaid")) {
-                Log.d("HTML_DEBUG", "🔋 Generating prepaid HTML for: " + inputNumber);
-                
-                // Get merged data using MainActivity's method
+
                 Map<String, Object> mergedData = mergeSERVERData(result);
-                Log.d("HTML_DEBUG", "🔋 Merged data keys: " + (mergedData != null ? mergedData.keySet() : "null"));
-                
-                // Get SERVER1 cleaned data
                 Map<String, Object> cleanedSERVER1 = cleanSERVER1Data(result.get("SERVER1_data"));
-                Log.d("HTML_DEBUG", "🔋 SERVER1 data keys: " + cleanedSERVER1.keySet());
 
-                // Create a combined result with ALL data
                 Map<String, Object> combinedResult = new HashMap<>();
-                combinedResult.putAll(result); // Original result
-                if (mergedData != null) {
-                    combinedResult.putAll(mergedData); // Merged SERVER2+SERVER3 data
-                }
-                combinedResult.putAll(cleanedSERVER1); // SERVER1 tokens and customer info
+                combinedResult.putAll(result);
+                if (mergedData != null) combinedResult.putAll(mergedData);
+                combinedResult.putAll(cleanedSERVER1);
 
-                Log.d("HTML_DEBUG", "🔋 Combined result keys: " + combinedResult.keySet());
-
-                TemplateHelper.PrepaidData prepaidData = TemplateHelper.convertToPrepaidData(combinedResult);
-                Log.d("HTML_DEBUG", "🔋 Prepaid data converted: " + (prepaidData != null));
+                // ✔ FIX: use MeterDataHTMLHelper instead of TemplateHelper
+                MeterDataHTMLHelper.PrepaidData prepaidData =
+                        MeterDataHTMLHelper.convertToPrepaidData(combinedResult);
 
                 if (prepaidData != null) {
-                    htmlContent = TemplateHelper.renderPrepaidTemplate(MainActivity.this, prepaidData);
-                    Log.d("HTML_DEBUG", "🔋 Prepaid HTML generated, length: " + htmlContent.length());
+                    htmlContent =
+                            MeterDataHTMLHelper.renderPrepaidHTML(MainActivity.this, prepaidData);
                 } else {
-                    throw new Exception("Failed to convert prepaid data to template format");
+                    throw new Exception("Failed to convert prepaid data for HTML");
                 }
-            } else {
-                Log.d("HTML_DEBUG", "💡 Generating postpaid HTML for: " + inputNumber);
+
+            } 
+            // ---------- POSTPAID ----------
+            else {
 
                 Map<String, Object> finalResult = result;
-                
-                // Handle multiple customers from meter lookup
+
                 if (result.containsKey("customer_results")) {
-                    List<Map<String, Object>> customerResults = (List<Map<String, Object>>) result.get("customer_results");
+                    List<Map<String, Object>> customerResults =
+                            (List<Map<String, Object>>) result.get("customer_results");
+
                     for (Map<String, Object> customerResult : customerResults) {
                         Map<String, Object> mergedData = mergeSERVERData(customerResult);
-                        if (mergedData != null) {
-                            customerResult.putAll(mergedData);
-                        }
+                        if (mergedData != null) customerResult.putAll(mergedData);
                     }
                 } else {
-                    // Single customer - ensure merged data
                     Map<String, Object> mergedData = mergeSERVERData(result);
                     if (mergedData != null) {
                         finalResult = new HashMap<>(result);
@@ -258,27 +248,22 @@ htmlViewBtn.setOnClickListener(v -> {
                     }
                 }
 
-                Log.d("HTML_DEBUG", "💡 Final result keys for postpaid: " + finalResult.keySet());
-
-                TemplateHelper.PostpaidData postpaidData = TemplateHelper.convertToPostpaidData(finalResult);
-                Log.d("HTML_DEBUG", "💡 Postpaid data converted: " + (postpaidData != null));
+                // ✔ FIX: use MeterDataHTMLHelper instead of TemplateHelper
+                MeterDataHTMLHelper.PostpaidData postpaidData =
+                        MeterDataHTMLHelper.convertToPostpaidData(finalResult);
 
                 if (postpaidData != null) {
-                    htmlContent = TemplateHelper.renderPostpaidTemplate(MainActivity.this, postpaidData);
-                    Log.d("HTML_DEBUG", "💡 Postpaid HTML generated, length: " + htmlContent.length());
+                    htmlContent =
+                            MeterDataHTMLHelper.renderPostpaidHTML(MainActivity.this, postpaidData);
                 } else {
-                    throw new Exception("Failed to convert postpaid data to template format");
+                    throw new Exception("Failed to convert postpaid data for HTML");
                 }
             }
 
-            // Check if HTML content is valid
-            if (htmlContent == null || htmlContent.isEmpty() || htmlContent.contains("No Data")) {
-                throw new Exception("Generated HTML is empty or shows 'No Data'");
+            if (htmlContent == null || htmlContent.isEmpty()) {
+                throw new Exception("Generated HTML is empty");
             }
 
-            Log.d("HTML_DEBUG", "✅ HTML generation successful, opening viewer...");
-
-            // Open HTML activity
             runOnUiThread(() -> {
                 Intent intent = new Intent(MainActivity.this, MeterDataDisplayActivity.class);
                 intent.putExtra("HTML_CONTENT", htmlContent);
@@ -289,11 +274,10 @@ htmlViewBtn.setOnClickListener(v -> {
 
         } catch (Exception e) {
             Log.e("HTML_DEBUG", "❌ HTML Generation Error: " + e.getMessage(), e);
-            runOnUiThread(() -> showResult("❌ HTML Error: " + e.getMessage() + "\n\nTry searching first, then click HTML view."));
+            runOnUiThread(() -> showResult("❌ HTML Error: " + e.getMessage()));
         }
     }).start();
-});
-
+    }
 // ✅ CORRECT PLACE: Add back button listener HERE
 findViewById(R.id.backBtn).setOnClickListener(v -> {
     Intent intent = new Intent(MainActivity.this, Home.class);
