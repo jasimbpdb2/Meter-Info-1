@@ -277,7 +277,7 @@ public class MainActivity extends AppCompatActivity {
             runOnUiThread(() -> showResult("❌ HTML Error: " + e.getMessage()));
         }
     }).start();
-    }
+    
 // ✅ CORRECT PLACE: Add back button listener HERE
 findViewById(R.id.backBtn).setOnClickListener(v -> {
     Intent intent = new Intent(MainActivity.this, Home.class);
