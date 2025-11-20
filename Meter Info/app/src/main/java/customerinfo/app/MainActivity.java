@@ -133,7 +133,7 @@ public class MainActivity extends AppCompatActivity {
         updateInputHint();
     }
 
-   private void setupClickListeners() {
+private void setupClickListeners() {
     prepaidBtn.setOnClickListener(v -> {
         selectedType = "prepaid";
         postpaidOptionsLayout.setVisibility(View.GONE);
@@ -180,26 +180,43 @@ public class MainActivity extends AppCompatActivity {
         fetchData(inputNumber);
     });
 
-    // ✅ HTML VIEW BUTTON - ADD THIS
+    // ✅ FIXED HTML VIEW BUTTON
     htmlViewBtn.setOnClickListener(v -> {
         String inputNumber = meterInput.getText().toString().trim();
         if (inputNumber.isEmpty()) {
             showResult("❌ Please enter number first");
             return;
         }
+
+        showResult("🔄 Generating HTML view...");
         
-        // Use the SAME data fetching logic as submit button
         new Thread(() -> {
             try {
                 Map<String, Object> result = fetchDataBasedOnType(inputNumber);
+                Log.d("HTML_DEBUG", "📊 Result keys for HTML: " + result.keySet());
                 
-                // Convert to JSON and open HTML activity
-                JSONObject jsonData = new JSONObject(result);
-                Intent intent = new Intent(MainActivity.this, MeterDataDisplayActivity.class);
-                intent.putExtra("METER_DATA", jsonData.toString());
-                startActivity(intent);
+                String htmlContent;
+                if (selectedType.equals("prepaid")) {
+                    Log.d("HTML_DEBUG", "🔋 Generating prepaid HTML");
+                    TemplateHelper.PrepaidData prepaidData = TemplateHelper.convertToPrepaidData(result);
+                    htmlContent = TemplateHelper.renderPrepaidTemplate(MainActivity.this, prepaidData);
+                } else {
+                    Log.d("HTML_DEBUG", "💡 Generating postpaid HTML");
+                    TemplateHelper.PostpaidData postpaidData = TemplateHelper.convertToPostpaidData(result);
+                    htmlContent = TemplateHelper.renderPostpaidTemplate(MainActivity.this, postpaidData);
+                }
+
+                Log.d("HTML_DEBUG", "📄 HTML content length: " + htmlContent.length());
                 
+                // Open HTML activity
+                runOnUiThread(() -> {
+                    Intent intent = new Intent(MainActivity.this, MeterDataDisplayActivity.class);
+                    intent.putExtra("HTML_CONTENT", htmlContent);
+                    startActivity(intent);
+                });
+
             } catch (Exception e) {
+                Log.e("HTML_DEBUG", "❌ HTML Error: " + e.getMessage(), e);
                 runOnUiThread(() -> showResult("❌ HTML Error: " + e.getMessage()));
             }
         }).start();
