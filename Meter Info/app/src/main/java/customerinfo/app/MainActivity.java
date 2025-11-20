@@ -35,7 +35,7 @@ import android.provider.Settings;
 public class MainActivity extends AppCompatActivity {
 
     private EditText meterInput;
-    private Button submitBtn,htmlViewBtn;
+    private Button submitBtn, htmlViewBtn;
     private TextView resultView;
     private RadioButton prepaidBtn, postpaidBtn, consumerNoOption, meterNoOption;
     private RadioGroup mainRadioGroup, postpaidRadioGroup;
@@ -180,113 +180,112 @@ public class MainActivity extends AppCompatActivity {
             fetchData(inputNumber);
         });
 
-       htmlViewBtn.setOnClickListener(v -> {
-    String inputNumber = meterInput.getText().toString().trim();
-    if (inputNumber.isEmpty()) {
-        showResult("❌ Please enter number first");
-        return;
-    }
-
-    showResult("🔄 Generating HTML view...");
-
-    new Thread(() -> {
-        try {
-            Map<String, Object> result = fetchAndProcessDataForHTML(inputNumber);
-            Log.d("HTML_DEBUG", "📊 Result keys for HTML: " + result.keySet());
-
-            if (result == null || result.isEmpty() || result.containsKey("error")) {
-                String errorMsg = result != null && result.containsKey("error")
-                        ? result.get("error").toString()
-                        : "No data available";
-                runOnUiThread(() -> showResult("❌ " + errorMsg));
+        htmlViewBtn.setOnClickListener(v -> {
+            String inputNumber = meterInput.getText().toString().trim();
+            if (inputNumber.isEmpty()) {
+                showResult("❌ Please enter number first");
                 return;
             }
 
-            String htmlContent;
+            showResult("🔄 Generating HTML view...");
 
-            // ---------- PREPAID ----------
-            if (selectedType.equals("prepaid")) {
+            new Thread(() -> {
+                try {
+                    Map<String, Object> result = fetchAndProcessDataForHTML(inputNumber);
+                    Log.d("HTML_DEBUG", "📊 Result keys for HTML: " + result.keySet());
 
-                Map<String, Object> mergedData = mergeSERVERData(result);
-                Map<String, Object> cleanedSERVER1 = cleanSERVER1Data(result.get("SERVER1_data"));
-
-                Map<String, Object> combinedResult = new HashMap<>();
-                combinedResult.putAll(result);
-                if (mergedData != null) combinedResult.putAll(mergedData);
-                combinedResult.putAll(cleanedSERVER1);
-
-                // ✔ FIX: use MeterDataHTMLHelper instead of TemplateHelper
-                MeterDataHTMLHelper.PrepaidData prepaidData =
-                        MeterDataHTMLHelper.convertToPrepaidData(combinedResult);
-
-                if (prepaidData != null) {
-                    htmlContent =
-                            MeterDataHTMLHelper.renderPrepaidHTML(MainActivity.this, prepaidData);
-                } else {
-                    throw new Exception("Failed to convert prepaid data for HTML");
-                }
-
-            } 
-            // ---------- POSTPAID ----------
-            else {
-
-                Map<String, Object> finalResult = result;
-
-                if (result.containsKey("customer_results")) {
-                    List<Map<String, Object>> customerResults =
-                            (List<Map<String, Object>>) result.get("customer_results");
-
-                    for (Map<String, Object> customerResult : customerResults) {
-                        Map<String, Object> mergedData = mergeSERVERData(customerResult);
-                        if (mergedData != null) customerResult.putAll(mergedData);
+                    if (result == null || result.isEmpty() || result.containsKey("error")) {
+                        String errorMsg = result != null && result.containsKey("error")
+                                ? result.get("error").toString()
+                                : "No data available";
+                        runOnUiThread(() -> showResult("❌ " + errorMsg));
+                        return;
                     }
-                } else {
-                    Map<String, Object> mergedData = mergeSERVERData(result);
-                    if (mergedData != null) {
-                        finalResult = new HashMap<>(result);
-                        finalResult.putAll(mergedData);
+
+                    String htmlContent;
+
+                    // ---------- PREPAID ----------
+                    if (selectedType.equals("prepaid")) {
+
+                        Map<String, Object> mergedData = mergeSERVERData(result);
+                        Map<String, Object> cleanedSERVER1 = cleanSERVER1Data(result.get("SERVER1_data"));
+
+                        Map<String, Object> combinedResult = new HashMap<>();
+                        combinedResult.putAll(result);
+                        if (mergedData != null) combinedResult.putAll(mergedData);
+                        combinedResult.putAll(cleanedSERVER1);
+
+                        // ✔ FIX: use MeterDataHTMLHelper instead of TemplateHelper
+                        MeterDataHTMLHelper.PrepaidData prepaidData =
+                                MeterDataHTMLHelper.convertToPrepaidData(combinedResult);
+
+                        if (prepaidData != null) {
+                            htmlContent =
+                                    MeterDataHTMLHelper.renderPrepaidHTML(MainActivity.this, prepaidData);
+                        } else {
+                            throw new Exception("Failed to convert prepaid data for HTML");
+                        }
+
+                    } 
+                    // ---------- POSTPAID ----------
+                    else {
+
+                        Map<String, Object> finalResult = result;
+
+                        if (result.containsKey("customer_results")) {
+                            List<Map<String, Object>> customerResults =
+                                    (List<Map<String, Object>>) result.get("customer_results");
+
+                            for (Map<String, Object> customerResult : customerResults) {
+                                Map<String, Object> mergedData = mergeSERVERData(customerResult);
+                                if (mergedData != null) customerResult.putAll(mergedData);
+                            }
+                        } else {
+                            Map<String, Object> mergedData = mergeSERVERData(result);
+                            if (mergedData != null) {
+                                finalResult = new HashMap<>(result);
+                                finalResult.putAll(mergedData);
+                            }
+                        }
+
+                        // ✔ FIX: use MeterDataHTMLHelper instead of TemplateHelper
+                        MeterDataHTMLHelper.PostpaidData postpaidData =
+                                MeterDataHTMLHelper.convertToPostpaidData(finalResult);
+
+                        if (postpaidData != null) {
+                            htmlContent =
+                                    MeterDataHTMLHelper.renderPostpaidHTML(MainActivity.this, postpaidData);
+                        } else {
+                            throw new Exception("Failed to convert postpaid data for HTML");
+                        }
                     }
+
+                    if (htmlContent == null || htmlContent.isEmpty()) {
+                        throw new Exception("Generated HTML is empty");
+                    }
+
+                    runOnUiThread(() -> {
+                        Intent intent = new Intent(MainActivity.this, MeterDataDisplayActivity.class);
+                        intent.putExtra("HTML_CONTENT", htmlContent);
+                        intent.putExtra("INPUT_NUMBER", inputNumber);
+                        intent.putExtra("ACCOUNT_TYPE", selectedType);
+                        startActivity(intent);
+                    });
+
+                } catch (Exception e) {
+                    Log.e("HTML_DEBUG", "❌ HTML Generation Error: " + e.getMessage(), e);
+                    runOnUiThread(() -> showResult("❌ HTML Error: " + e.getMessage()));
                 }
+            }).start();
+        });
 
-                // ✔ FIX: use MeterDataHTMLHelper instead of TemplateHelper
-                MeterDataHTMLHelper.PostpaidData postpaidData =
-                        MeterDataHTMLHelper.convertToPostpaidData(finalResult);
-
-                if (postpaidData != null) {
-                    htmlContent =
-                            MeterDataHTMLHelper.renderPostpaidHTML(MainActivity.this, postpaidData);
-                } else {
-                    throw new Exception("Failed to convert postpaid data for HTML");
-                }
-            }
-
-            if (htmlContent == null || htmlContent.isEmpty()) {
-                throw new Exception("Generated HTML is empty");
-            }
-
-            runOnUiThread(() -> {
-                Intent intent = new Intent(MainActivity.this, MeterDataDisplayActivity.class);
-                intent.putExtra("HTML_CONTENT", htmlContent);
-                intent.putExtra("INPUT_NUMBER", inputNumber);
-                intent.putExtra("ACCOUNT_TYPE", selectedType);
-                startActivity(intent);
-            });
-
-        } catch (Exception e) {
-            Log.e("HTML_DEBUG", "❌ HTML Generation Error: " + e.getMessage(), e);
-            runOnUiThread(() -> showResult("❌ HTML Error: " + e.getMessage()));
-        }
-    }).start();
-    
-// ✅ CORRECT PLACE: Add back button listener HERE
-findViewById(R.id.backBtn).setOnClickListener(v -> {
-    Intent intent = new Intent(MainActivity.this, Home.class);
-    startActivity(intent);
-    finish();
-});
-
-}
-
+        // ✅ CORRECT PLACE: Add back button listener HERE
+        findViewById(R.id.backBtn).setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, Home.class);
+            startActivity(intent);
+            finish();
+        });
+    }
 
     // NEW METHOD: Properly fetch and process data for HTML view
     private Map<String, Object> fetchAndProcessDataForHTML(String inputNumber) {
@@ -331,7 +330,7 @@ findViewById(R.id.backBtn).setOnClickListener(v -> {
         return errorResult;
     }
 
-    // ... [THE REST OF YOUR EXISTING CODE FOLLOWS HERE]
+    // ... [CONTINUE WITH THE REST OF YOUR METHODS]
 
 
 
