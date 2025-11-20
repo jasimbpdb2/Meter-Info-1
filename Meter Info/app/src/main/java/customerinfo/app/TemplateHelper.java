@@ -1,15 +1,12 @@
 package customerinfo.app;
 
 import android.content.Context;
-import android.util.Log;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.util.*;
 
 public class TemplateHelper {
 
-    private static final String TAG = "TemplateHelper";
-    
     public static final String TEMPLATE_POSTPAID = "postpaid_template.html";
     public static final String TEMPLATE_PREPAID = "prepaid_template.html";
 
@@ -199,55 +196,47 @@ public class TemplateHelper {
         }
     }
 
-    // MAIN CONVERSION METHODS
+    // UPDATED: Convert MainActivity result to PostpaidData - FIXED
     public static PostpaidData convertToPostpaidData(Map<String, Object> result) {
-        Log.d(TAG, "🔄 convertToPostpaidData called");
-        Log.d(TAG, "📊 Result keys: " + result.keySet());
-        
         try {
-            String customerNumber = getSafeString(result.get("customer_number"));
-            Log.d(TAG, "👤 Customer Number: " + customerNumber);
-
+            String customerNumber = extractCustomerNumber(result);
+            
             // Check if it's multiple customers (meter lookup)
             if (result.containsKey("customer_results")) {
-                Log.d(TAG, "📋 Multiple customers found");
                 List<String> customerNumbers = (List<String>) result.get("customer_numbers");
                 List<Map<String, Object>> customerResults = (List<Map<String, Object>>) result.get("customer_results");
 
                 List<CustomerData> customers = new ArrayList<>();
                 for (int i = 0; i < customerResults.size(); i++) {
                     Map<String, Object> customerResult = customerResults.get(i);
-                    List<KeyValuePair> customerInfo = extractBasicInfo(customerResult);
+                    List<KeyValuePair> customerInfo = extractCustomerInfoFromMergedData(customerResult);
                     String custNumber = i < customerNumbers.size() ? customerNumbers.get(i) : "N/A";
                     customers.add(new CustomerData(i + 1, custNumber, customerInfo));
-                    Log.d(TAG, "✅ Added customer " + (i+1) + ": " + custNumber);
                 }
 
                 return new PostpaidData(
                     customerNumber,
                     new MultipleCustomersData(customers.size(), customers),
                     null,
-                    extractSimpleBillInfo(result),
-                    extractSimpleBalanceInfo(result),
-                    extractSimpleBillSummary(result),
+                    extractBillInfoFromMergedData(result),
+                    extractBalanceInfoFromMergedData(result),
+                    extractBillSummaryFromMergedData(result),
                     extractError(result)
                 );
             } else {
-                // Single customer
-                Log.d(TAG, "📋 Single customer mode");
-                List<KeyValuePair> customerInfo = extractBasicInfo(result);
+                // Single customer - use the merged data structure
+                List<KeyValuePair> customerInfo = extractCustomerInfoFromMergedData(result);
                 return new PostpaidData(
                     customerNumber,
                     null,
                     new SingleCustomerData(customerInfo),
-                    extractSimpleBillInfo(result),
-                    extractSimpleBalanceInfo(result),
-                    extractSimpleBillSummary(result),
+                    extractBillInfoFromMergedData(result),
+                    extractBalanceInfoFromMergedData(result),
+                    extractBillSummaryFromMergedData(result),
                     extractError(result)
                 );
             }
         } catch (Exception e) {
-            Log.e(TAG, "❌ Error in convertToPostpaidData: " + e.getMessage());
             e.printStackTrace();
             return new PostpaidData(
                 "N/A",
@@ -257,29 +246,24 @@ public class TemplateHelper {
         }
     }
 
+    // UPDATED: Convert MainActivity result to PrepaidData - FIXED
     public static PrepaidData convertToPrepaidData(Map<String, Object> result) {
-        Log.d(TAG, "🔄 convertToPrepaidData called");
-        Log.d(TAG, "📊 Result keys: " + result.keySet());
-        
         try {
-            String meterNumber = getSafeString(result.get("meter_number"));
-            String consumerNumber = getSafeString(result.get("consumer_number"));
-            
-            Log.d(TAG, "🔢 Meter: " + meterNumber + ", Consumer: " + consumerNumber);
+            String meterNumber = extractMeterNumber(result);
+            String consumerNumber = extractConsumerNumber(result);
 
             return new PrepaidData(
                 meterNumber,
                 consumerNumber,
                 extractPrepaidCustomerInfo(result),
-                extractTokens(result),
-                extractCustomerInfoData(result),
-                extractSimpleBillInfo(result),
-                extractSimpleBalanceInfo(result),
-                extractSimpleBillSummary(result),
+                extractTokensFromMergedData(result),
+                extractCustomerInfoFromMergedDataAsCustomerInfoData(result),
+                extractBillInfoFromMergedData(result),
+                extractBalanceInfoFromMergedData(result),
+                extractBillSummaryFromMergedData(result),
                 extractError(result)
             );
         } catch (Exception e) {
-            Log.e(TAG, "❌ Error in convertToPrepaidData: " + e.getMessage());
             e.printStackTrace();
             return new PrepaidData(
                 "N/A", "N/A", null, null, null, null, null, null,
@@ -288,375 +272,404 @@ public class TemplateHelper {
         }
     }
 
-    // SIMPLE DATA EXTRACTION METHODS
-    private static List<KeyValuePair> extractBasicInfo(Map<String, Object> result) {
+    // NEW: Extract customer info from MainActivity's merged data structure
+    private static List<KeyValuePair> extractCustomerInfoFromMergedData(Map<String, Object> result) {
         List<KeyValuePair> fields = new ArrayList<>();
         if (result == null) return fields;
 
         try {
-            Log.d(TAG, "🔍 Extracting basic info from result");
+            // First try to get data from merged structure (MainActivity's mergeSERVERData)
+            Map<String, Object> mergedData = getMergedData(result);
             
-            // Extract basic fields directly
-            addIfValid(fields, "Customer Number", getSafeString(result.get("customer_number")));
-            addIfValid(fields, "Meter Number", getSafeString(result.get("meter_number")));
-            addIfValid(fields, "Consumer Number", getSafeString(result.get("consumer_number")));
-            
-            // Try to extract from merged data if available
-            if (result.containsKey("SERVER2_data") || result.containsKey("SERVER3_data")) {
-                Log.d(TAG, "📡 Found SERVER data, extracting merged info");
-                
-                // Extract from SERVER2
-                if (result.containsKey("SERVER2_data")) {
-                    Object server2Data = result.get("SERVER2_data");
-                    if (server2Data instanceof JSONObject) {
-                        extractFromSERVER2Data((JSONObject) server2Data, fields);
-                    }
-                }
-                
-                // Extract from SERVER3
-                if (result.containsKey("SERVER3_data")) {
-                    Object server3Data = result.get("SERVER3_data");
-                    if (server3Data instanceof JSONObject) {
-                        extractFromSERVER3Data((JSONObject) server3Data, fields);
+            if (mergedData != null && mergedData.containsKey("customer_info")) {
+                Map<String, String> customerInfo = (Map<String, String>) mergedData.get("customer_info");
+                for (Map.Entry<String, String> entry : customerInfo.entrySet()) {
+                    if (isValidValue(entry.getValue())) {
+                        fields.add(new KeyValuePair(entry.getKey(), entry.getValue()));
                     }
                 }
             }
-            
-            // If still no data, add at least the source info
+
+            // If no merged data, try direct extraction
             if (fields.isEmpty()) {
-                fields.add(new KeyValuePair("Status", "Data available but no specific info extracted"));
-                fields.add(new KeyValuePair("Data Source", getDataSources(result)));
+                fields = extractBasicCustomerInfoDirect(result);
             }
-            
-            Log.d(TAG, "✅ Extracted " + fields.size() + " basic info fields");
+
+            // Always add basic identifiers
+            addIfValid(fields, "Customer Number", extractCustomerNumber(result));
+            addIfValid(fields, "Consumer Number", extractConsumerNumber(result));
+            addIfValid(fields, "Meter Number", extractMeterNumber(result));
 
         } catch (Exception e) {
-            Log.e(TAG, "❌ Error extracting basic info: " + e.getMessage());
-            fields.add(new KeyValuePair("Error", "Failed to extract info: " + e.getMessage()));
+            e.printStackTrace();
+            fields.add(new KeyValuePair("Error", "Failed to extract customer info: " + e.getMessage()));
         }
-
         return fields;
     }
 
+    // NEW: Extract bill info from MainActivity's merged data structure
+    private static BillInfoData extractBillInfoFromMergedData(Map<String, Object> result) {
+        List<BillData> bills = new ArrayList<>();
+
+        try {
+            Map<String, Object> mergedData = getMergedData(result);
+            if (mergedData != null && mergedData.containsKey("bill_info_raw")) {
+                JSONArray billInfo = (JSONArray) mergedData.get("bill_info_raw");
+                for (int i = 0; i < billInfo.length() && i < 10; i++) { // Limit to 10 bills
+                    JSONObject bill = billInfo.getJSONObject(i);
+                    bills.add(new BillData(
+                        formatBillMonth(bill.optString("BILL_MONTH")),
+                        bill.optString("BILL_NO"),
+                        bill.optString("CONS_KWH_SR"),
+                        formatCurrency(bill.optString("TOTAL_BILL")),
+                        formatDate(bill.optString("INVOICE_DUE_DATE")),
+                        formatCurrency(bill.optString("PAID_AMT")),
+                        formatDate(bill.optString("RECEIPT_DATE")),
+                        formatCurrency(bill.optString("BALANCE"))
+                    ));
+                }
+            }
+
+            // If no bills found, check for bill summary
+            if (bills.isEmpty() && mergedData != null && mergedData.containsKey("bill_summary")) {
+                Map<String, Object> billSummary = (Map<String, Object>) mergedData.get("bill_summary");
+                if (billSummary.containsKey("all_bills")) {
+                    List<Map<String, Object>> allBills = (List<Map<String, Object>>) billSummary.get("all_bills");
+                    for (Map<String, Object> bill : allBills) {
+                        bills.add(new BillData(
+                            getSafeString(bill.get("bill_month")),
+                            getSafeString(bill.get("bill_number")),
+                            getSafeString(bill.get("consumption")),
+                            formatCurrency(getSafeString(bill.get("total_amount"))),
+                            getSafeString(bill.get("due_date")),
+                            "৳0", // paid amount
+                            "N/A", // receipt date
+                            formatCurrency(getSafeString(bill.get("balance")))
+                        ));
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return bills.isEmpty() ? null : new BillInfoData(bills);
+    }
+
+    // NEW: Extract balance info from MainActivity's merged data structure
+    private static BalanceInfoData extractBalanceInfoFromMergedData(Map<String, Object> result) {
+        List<KeyValuePair> fields = new ArrayList<>();
+
+        try {
+            Map<String, Object> mergedData = getMergedData(result);
+            if (mergedData != null && mergedData.containsKey("balance_info")) {
+                Map<String, String> balanceInfo = (Map<String, String>) mergedData.get("balance_info");
+                for (Map.Entry<String, String> entry : balanceInfo.entrySet()) {
+                    if (isValidValue(entry.getValue())) {
+                        fields.add(new KeyValuePair(entry.getKey(), formatCurrency(entry.getValue())));
+                    }
+                }
+            }
+
+            // If no balance info, add default
+            if (fields.isEmpty()) {
+                fields.add(new KeyValuePair("Total Balance", "৳0"));
+                fields.add(new KeyValuePair("Arrear Amount", "৳0"));
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return fields.isEmpty() ? null : new BalanceInfoData(fields);
+    }
+
+    // NEW: Extract bill summary from MainActivity's merged data structure
+    private static BillSummaryData extractBillSummaryFromMergedData(Map<String, Object> result) {
+        List<KeyValuePair> fields = new ArrayList<>();
+
+        try {
+            Map<String, Object> mergedData = getMergedData(result);
+            if (mergedData != null && mergedData.containsKey("bill_summary")) {
+                Map<String, Object> billSummary = (Map<String, Object>) mergedData.get("bill_summary");
+                
+                addIfValid(fields, "Total Bills", getSafeString(billSummary.get("total_bills")));
+                addIfValid(fields, "Latest Bill Date", getSafeString(billSummary.get("latest_bill_date")));
+                addIfValid(fields, "Latest Bill Amount", formatCurrency(getSafeString(billSummary.get("latest_total_amount"))));
+                addIfValid(fields, "Latest Consumption", getSafeString(billSummary.get("latest_consumption")) + " kWh");
+                addIfValid(fields, "Recent Consumption (3 months)", getSafeString(billSummary.get("recent_consumption")) + " kWh");
+                addIfValid(fields, "Recent Amount (3 months)", formatCurrency(getSafeString(billSummary.get("recent_amount"))));
+            }
+
+            // If no bill summary, create basic one
+            if (fields.isEmpty()) {
+                BillInfoData billInfo = extractBillInfoFromMergedData(result);
+                if (billInfo != null && !billInfo.bills.isEmpty()) {
+                    BillData latestBill = billInfo.bills.get(0);
+                    fields.add(new KeyValuePair("Total Bills", String.valueOf(billInfo.bills.size())));
+                    fields.add(new KeyValuePair("Latest Bill Date", latestBill.billMonth));
+                    fields.add(new KeyValuePair("Latest Amount", latestBill.currentBill));
+                    fields.add(new KeyValuePair("Latest Consumption", latestBill.consumption + " kWh"));
+                } else {
+                    fields.add(new KeyValuePair("Total Bills", "0"));
+                    fields.add(new KeyValuePair("Latest Bill Date", "N/A"));
+                    fields.add(new KeyValuePair("Latest Amount", "৳0"));
+                    fields.add(new KeyValuePair("Status", "No bill history available"));
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return fields.isEmpty() ? null : new BillSummaryData(fields);
+    }
+
+    // NEW: Extract prepaid customer info from MainActivity's cleaned SERVER1 data
     private static PrepaidCustomerInfoData extractPrepaidCustomerInfo(Map<String, Object> result) {
         List<KeyValuePair> fields = new ArrayList<>();
 
         try {
-            Log.d(TAG, "🔍 Extracting prepaid customer info");
-            
-            // Add basic info
-            addIfValid(fields, "Meter Number", getSafeString(result.get("meter_number")));
-            addIfValid(fields, "Consumer Number", getSafeString(result.get("consumer_number")));
-
-            // Try to extract from SERVER1_data
+            // Try to get prepaid-specific data from SERVER1_data
             if (result.containsKey("SERVER1_data")) {
                 Object server1Data = result.get("SERVER1_data");
-                Log.d(TAG, "📡 Found SERVER1_data, type: " + (server1Data != null ? server1Data.getClass().getSimpleName() : "null"));
+                Map<String, Object> cleanedData = cleanSERVER1DataForTemplate(server1Data);
                 
-                if (server1Data instanceof String) {
-                    extractPrepaidInfoFromResponse((String) server1Data, fields);
+                if (cleanedData.containsKey("customer_info")) {
+                    Map<String, String> customerInfo = (Map<String, String>) cleanedData.get("customer_info");
+                    for (Map.Entry<String, String> entry : customerInfo.entrySet()) {
+                        if (isValidValue(entry.getValue())) {
+                            fields.add(new KeyValuePair(entry.getKey(), entry.getValue()));
+                        }
+                    }
                 }
             }
 
-            // Also extract basic customer info
-            List<KeyValuePair> basicInfo = extractBasicInfo(result);
-            for (KeyValuePair field : basicInfo) {
+            // Add basic identifiers
+            addIfValid(fields, "Meter Number", extractMeterNumber(result));
+            addIfValid(fields, "Consumer Number", extractConsumerNumber(result));
+
+            // Supplement with merged data if available
+            List<KeyValuePair> mergedInfo = extractCustomerInfoFromMergedData(result);
+            for (KeyValuePair field : mergedInfo) {
                 // Avoid duplicates
-                if (!field.key.equals("Meter Number") && !field.key.equals("Consumer Number")) {
+                boolean exists = false;
+                for (KeyValuePair existing : fields) {
+                    if (existing.key.equals(field.key)) {
+                        exists = true;
+                        break;
+                    }
+                }
+                if (!exists && isValidValue(field.value)) {
                     fields.add(field);
                 }
             }
-            
-            Log.d(TAG, "✅ Extracted " + fields.size() + " prepaid info fields");
 
         } catch (Exception e) {
-            Log.e(TAG, "❌ Error extracting prepaid info: " + e.getMessage());
+            e.printStackTrace();
             fields.add(new KeyValuePair("Error", "Failed to extract prepaid info: " + e.getMessage()));
         }
 
         return new PrepaidCustomerInfoData(fields);
     }
 
-    private static TokensData extractTokens(Map<String, Object> result) {
+    // NEW: Extract tokens from MainActivity's cleaned SERVER1 data
+    private static TokensData extractTokensFromMergedData(Map<String, Object> result) {
         List<TokenData> tokenList = new ArrayList<>();
 
         try {
-            Log.d(TAG, "🔍 Extracting tokens");
-            
             if (result.containsKey("SERVER1_data")) {
                 Object server1Data = result.get("SERVER1_data");
-                if (server1Data instanceof String) {
-                    extractTokensFromResponse((String) server1Data, tokenList);
+                Map<String, Object> cleanedData = cleanSERVER1DataForTemplate(server1Data);
+                
+                if (cleanedData.containsKey("recent_transactions")) {
+                    List<Map<String, String>> transactions = (List<Map<String, String>>) cleanedData.get("recent_transactions");
+                    for (int i = 0; i < transactions.size() && i < 3; i++) {
+                        Map<String, String> transaction = transactions.get(i);
+                        tokenList.add(new TokenData(
+                            i + 1,
+                            transaction.get("Tokens"),
+                            transaction.get("Date"),
+                            transaction.get("Amount"),
+                            transaction.get("Operator"),
+                            transaction.get("Sequence")
+                        ));
+                    }
                 }
             }
 
-            // Add sample tokens if none found (for testing)
-            if (tokenList.isEmpty()) {
-                Log.d(TAG, "⚠️ No tokens found, adding sample data");
-                tokenList.add(new TokenData(1, "1234-5678-9012-3456", "2024-01-15", "৳500", "Operator1", "001"));
-                tokenList.add(new TokenData(2, "2345-6789-0123-4567", "2024-01-10", "৳300", "Operator2", "002"));
-            }
-            
-            Log.d(TAG, "✅ Extracted " + tokenList.size() + " tokens");
-
         } catch (Exception e) {
-            Log.e(TAG, "❌ Error extracting tokens: " + e.getMessage());
+            e.printStackTrace();
         }
 
         return tokenList.isEmpty() ? null : new TokensData(tokenList);
     }
 
-    private static CustomerInfoData extractCustomerInfoData(Map<String, Object> result) {
-        return new CustomerInfoData(extractBasicInfo(result));
-    }
-
-    // SIMPLE EXTRACTION METHODS (Fallback)
-    private static BillInfoData extractSimpleBillInfo(Map<String, Object> result) {
-        List<BillData> bills = new ArrayList<>();
-
+    // NEW: Helper to get merged data from MainActivity result
+    private static Map<String, Object> getMergedData(Map<String, Object> result) {
         try {
-            Log.d(TAG, "🔍 Extracting simple bill info");
-            
-            // Try to extract from SERVER2_data
-            if (result.containsKey("SERVER2_data")) {
-                Object server2Data = result.get("SERVER2_data");
-                if (server2Data instanceof JSONObject) {
-                    JSONObject server2Json = (JSONObject) server2Data;
-                    if (server2Json.has("billInfo")) {
-                        Object billInfoObj = server2Json.get("billInfo");
-                        if (billInfoObj instanceof JSONArray) {
-                            JSONArray billInfoArray = (JSONArray) billInfoObj;
-                            for (int i = 0; i < Math.min(billInfoArray.length(), 5); i++) { // Limit to 5 bills
-                                JSONObject bill = billInfoArray.getJSONObject(i);
-                                bills.add(new BillData(
-                                    formatBillMonth(bill.optString("BILL_MONTH")),
-                                    bill.optString("BILL_NO"),
-                                    bill.optString("CONS_KWH_SR"),
-                                    formatCurrency(bill.optString("TOTAL_BILL")),
-                                    formatDate(bill.optString("INVOICE_DUE_DATE")),
-                                    formatCurrency(bill.optString("PAID_AMT")),
-                                    formatDate(bill.optString("RECEIPT_DATE")),
-                                    formatCurrency(bill.optString("BALANCE"))
-                                ));
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Add sample data if no bills found
-            if (bills.isEmpty()) {
-                Log.d(TAG, "⚠️ No bill info found, adding sample data");
-                bills.add(new BillData("Jan-2024", "B001", "150", "৳1200", "2024-02-05", "৳1200", "2024-02-01", "৳0"));
-                bills.add(new BillData("Dec-2023", "B002", "140", "৳1100", "2024-01-05", "৳1100", "2024-01-01", "৳0"));
+            // Check if result already contains merged data (from MainActivity's mergeSERVERData)
+            if (result.containsKey("customer_info") || result.containsKey("balance_info") || 
+                result.containsKey("bill_info_raw") || result.containsKey("bill_summary")) {
+                return result;
             }
             
-            Log.d(TAG, "✅ Extracted " + bills.size() + " bills");
-
+            // Try to extract from unique_analysis or other merged structures
+            if (result.containsKey("unique_analysis")) {
+                return result;
+            }
+            
         } catch (Exception e) {
-            Log.e(TAG, "❌ Error extracting bill info: " + e.getMessage());
+            e.printStackTrace();
         }
-
-        return bills.isEmpty() ? null : new BillInfoData(bills);
+        return result;
     }
 
-    private static BalanceInfoData extractSimpleBalanceInfo(Map<String, Object> result) {
-        List<KeyValuePair> fields = new ArrayList<>();
+    // NEW: Clean SERVER1 data for template (simplified version of MainActivity's method)
+    private static Map<String, Object> cleanSERVER1DataForTemplate(Object SERVER1DataObj) {
+        Map<String, Object> cleaned = new HashMap<>();
 
         try {
-            Log.d(TAG, "🔍 Extracting simple balance info");
-            
-            // Try to extract from SERVER2_data
-            if (result.containsKey("SERVER2_data")) {
-                Object server2Data = result.get("SERVER2_data");
-                if (server2Data instanceof JSONObject) {
-                    JSONObject server2Json = (JSONObject) server2Data;
-                    
-                    // Check finalBalanceInfo
-                    if (server2Json.has("finalBalanceInfo")) {
-                        String balance = server2Json.optString("finalBalanceInfo");
-                        if (isValidValue(balance)) {
-                            fields.add(new KeyValuePair("Total Balance", formatCurrency(balance)));
-                            fields.add(new KeyValuePair("Arrear Amount", formatCurrency(balance)));
-                        }
-                    }
-                    
-                    // Check balanceInfo
-                    if (server2Json.has("balanceInfo")) {
-                        Object balanceInfoObj = server2Json.get("balanceInfo");
-                        if (balanceInfoObj instanceof JSONObject) {
-                            JSONObject balanceInfo = (JSONObject) balanceInfoObj;
-                            if (balanceInfo.has("Result") && balanceInfo.getJSONArray("Result").length() > 0) {
-                                JSONObject firstBalance = balanceInfo.getJSONArray("Result").getJSONObject(0);
-                                double totalBalance = firstBalance.optDouble("BALANCE", 0);
-                                if (totalBalance > 0) {
-                                    fields.add(new KeyValuePair("Total Balance", formatCurrency(String.valueOf(totalBalance))));
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Add sample data if no balance info found
-            if (fields.isEmpty()) {
-                Log.d(TAG, "⚠️ No balance info found, adding sample data");
-                fields.add(new KeyValuePair("Total Balance", "৳0"));
-                fields.add(new KeyValuePair("Arrear Amount", "৳0"));
-                fields.add(new KeyValuePair("Current Bill", "৳0"));
-            }
-            
-            Log.d(TAG, "✅ Extracted " + fields.size() + " balance fields");
-
-        } catch (Exception e) {
-            Log.e(TAG, "❌ Error extracting balance info: " + e.getMessage());
-        }
-
-        return fields.isEmpty() ? null : new BalanceInfoData(fields);
-    }
-
-    private static BillSummaryData extractSimpleBillSummary(Map<String, Object> result) {
-        List<KeyValuePair> fields = new ArrayList<>();
-
-        try {
-            Log.d(TAG, "🔍 Extracting simple bill summary");
-            
-            BillInfoData billInfo = extractSimpleBillInfo(result);
-            if (billInfo != null && !billInfo.bills.isEmpty()) {
-                int totalBills = billInfo.bills.size();
-                BillData latestBill = billInfo.bills.get(0);
-
-                fields.add(new KeyValuePair("Total Bills", String.valueOf(totalBills)));
-                fields.add(new KeyValuePair("Latest Bill Date", latestBill.billMonth));
-                fields.add(new KeyValuePair("Latest Amount", latestBill.currentBill));
-                fields.add(new KeyValuePair("Latest Consumption", latestBill.consumption + " kWh"));
+            String responseBody;
+            if (SERVER1DataObj instanceof String) {
+                responseBody = (String) SERVER1DataObj;
             } else {
-                // Sample data
-                fields.add(new KeyValuePair("Total Bills", "12"));
-                fields.add(new KeyValuePair("Latest Bill Date", "Jan-2024"));
-                fields.add(new KeyValuePair("Latest Amount", "৳1200"));
-                fields.add(new KeyValuePair("Recent Consumption", "150 kWh"));
+                responseBody = SERVER1DataObj.toString();
             }
+
+            // Extract customer info
+            Map<String, String> customerInfo = new HashMap<>();
             
-            Log.d(TAG, "✅ Extracted " + fields.size() + " bill summary fields");
+            // Simple pattern matching for key fields
+            extractIfContains(responseBody, "customerName", "Name", customerInfo);
+            extractIfContains(responseBody, "customerAddress", "Address", customerInfo);
+            extractIfContains(responseBody, "customerPhone", "Phone", customerInfo);
+            extractIfContains(responseBody, "tariffCategory", "Tariff Category", customerInfo);
+            extractIfContains(responseBody, "sanctionLoad", "Sanctioned Load", customerInfo);
+            extractIfContains(responseBody, "meterType", "Meter Type", customerInfo);
+            extractIfContains(responseBody, "accountType", "Account Type", customerInfo);
+            extractIfContains(responseBody, "lastRechargeAmount", "Last Recharge Amount", customerInfo);
+            extractIfContains(responseBody, "lastRechargeTime", "Last Recharge Time", customerInfo);
+
+            if (!customerInfo.isEmpty()) {
+                cleaned.put("customer_info", customerInfo);
+            }
+
+            // Extract tokens using simple pattern
+            List<Map<String, String>> transactions = extractTokensWithSimplePattern(responseBody);
+            if (!transactions.isEmpty()) {
+                cleaned.put("recent_transactions", transactions);
+            }
 
         } catch (Exception e) {
-            Log.e(TAG, "❌ Error extracting bill summary: " + e.getMessage());
+            e.printStackTrace();
         }
 
-        return fields.isEmpty() ? null : new BillSummaryData(fields);
+        return cleaned;
+    }
+
+    // Helper methods
+    private static void extractIfContains(String response, String jsonKey, String displayKey, Map<String, String> target) {
+        try {
+            String pattern = "\"" + jsonKey + "\":\"(.*?)\"";
+            java.util.regex.Pattern r = java.util.regex.Pattern.compile(pattern);
+            java.util.regex.Matcher m = r.matcher(response);
+            if (m.find()) {
+                String value = m.group(1);
+                if (isValidValue(value)) {
+                    target.put(displayKey, value);
+                }
+            }
+        } catch (Exception e) {
+            // Ignore
+        }
+    }
+
+    private static List<Map<String, String>> extractTokensWithSimplePattern(String response) {
+        List<Map<String, String>> transactions = new ArrayList<>();
+        
+        try {
+            // Look for token patterns
+            String tokenPattern = "\"tokens\":\"(\\d{4}-\\d{4}-\\d{4}-\\d{4}-\\d{4})\"";
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(tokenPattern);
+            java.util.regex.Matcher matcher = pattern.matcher(response);
+            
+            int count = 0;
+            while (matcher.find() && count < 3) {
+                Map<String, String> transaction = new HashMap<>();
+                transaction.put("Tokens", matcher.group(1));
+                transaction.put("Date", "Recent");
+                transaction.put("Amount", "৳Unknown");
+                transaction.put("Operator", "System");
+                transaction.put("Sequence", String.valueOf(count + 1));
+                
+                transactions.add(transaction);
+                count++;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        return transactions;
+    }
+
+    // Basic extraction methods
+    private static List<KeyValuePair> extractBasicCustomerInfoDirect(Map<String, Object> result) {
+        List<KeyValuePair> fields = new ArrayList<>();
+        
+        addIfValid(fields, "Customer Number", extractCustomerNumber(result));
+        addIfValid(fields, "Consumer Number", extractConsumerNumber(result));
+        addIfValid(fields, "Meter Number", extractMeterNumber(result));
+        
+        return fields;
+    }
+
+    private static CustomerInfoData extractCustomerInfoFromMergedDataAsCustomerInfoData(Map<String, Object> result) {
+        return new CustomerInfoData(extractCustomerInfoFromMergedData(result));
+    }
+
+    private static String extractCustomerNumber(Map<String, Object> result) {
+        String[] keys = {"customer_number", "customerNumber", "CUSTOMER_NUMBER"};
+        for (String key : keys) {
+            if (result.containsKey(key)) {
+                String value = getSafeString(result.get(key));
+                if (!value.equals("N/A")) return value;
+            }
+        }
+        return "N/A";
+    }
+
+    private static String extractConsumerNumber(Map<String, Object> result) {
+        String[] keys = {"consumer_number", "consumerNumber", "customerAccountNo"};
+        for (String key : keys) {
+            if (result.containsKey(key)) {
+                String value = getSafeString(result.get(key));
+                if (!value.equals("N/A")) return value;
+            }
+        }
+        return "N/A";
+    }
+
+    private static String extractMeterNumber(Map<String, Object> result) {
+        String[] keys = {"meter_number", "meterNumber", "METER_NUM"};
+        for (String key : keys) {
+            if (result.containsKey(key)) {
+                String value = getSafeString(result.get(key));
+                if (!value.equals("N/A")) return value;
+            }
+        }
+        return "N/A";
     }
 
     private static ErrorData extractError(Map<String, Object> result) {
         if (result.containsKey("error")) {
-            String error = result.get("error").toString();
-            Log.d(TAG, "❌ Found error: " + error);
-            return new ErrorData(error);
+            return new ErrorData(getSafeString(result.get("error")));
         }
         return null;
     }
 
-    // SERVER DATA EXTRACTION METHODS
-    private static void extractFromSERVER2Data(JSONObject server2Data, List<KeyValuePair> fields) {
-        try {
-            Log.d(TAG, "🔍 Extracting from SERVER2 data");
-            
-            if (server2Data.has("customerInfo")) {
-                Object customerInfoObj = server2Data.get("customerInfo");
-                if (customerInfoObj instanceof JSONArray) {
-                    JSONArray customerInfoArray = (JSONArray) customerInfoObj;
-                    if (customerInfoArray.length() > 0) {
-                        Object firstElement = customerInfoArray.get(0);
-                        if (firstElement instanceof JSONArray) {
-                            JSONArray innerArray = (JSONArray) firstElement;
-                            if (innerArray.length() > 0) {
-                                Object customerObj = innerArray.get(0);
-                                if (customerObj instanceof JSONObject) {
-                                    JSONObject firstCustomer = (JSONObject) customerObj;
-                                    extractSERVER2CustomerInfo(firstCustomer, fields);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "❌ Error extracting SERVER2 data: " + e.getMessage());
-        }
-    }
-
-    private static void extractSERVER2CustomerInfo(JSONObject customer, List<KeyValuePair> fields) {
-        addIfValid(fields, "Customer Name", customer.optString("CUSTOMER_NAME"));
-        addIfValid(fields, "Address", customer.optString("ADDRESS"));
-        addIfValid(fields, "Tariff", customer.optString("TARIFF"));
-        addIfValid(fields, "Meter Number", customer.optString("METER_NUM"));
-        addIfValid(fields, "Meter Status", getMeterStatus(customer.optString("METER_STATUS")));
-        addIfValid(fields, "Location Code", customer.optString("LOCATION_CODE"));
-        addIfValid(fields, "Bill Group", customer.optString("BILL_GROUP"));
-    }
-
-    private static void extractFromSERVER3Data(JSONObject server3Data, List<KeyValuePair> fields) {
-        try {
-            Log.d(TAG, "🔍 Extracting from SERVER3 data");
-            
-            addIfValid(fields, "Customer Name", server3Data.optString("customerName"));
-            addIfValid(fields, "Customer Address", server3Data.optString("customerAddr"));
-            addIfValid(fields, "Father Name", server3Data.optString("fatherName"));
-            addIfValid(fields, "Meter Number", server3Data.optString("meterNum"));
-            addIfValid(fields, "Tariff Description", server3Data.optString("tariffDesc"));
-            addIfValid(fields, "Sanctioned Load", server3Data.optString("sanctionedLoad"));
-            addIfValid(fields, "Location Code", server3Data.optString("locationCode"));
-            addIfValid(fields, "Area Code", server3Data.optString("areaCode"));
-            addIfValid(fields, "Book Number", server3Data.optString("bookNumber"));
-            addIfValid(fields, "Bill Group", server3Data.optString("billGroup"));
-        } catch (Exception e) {
-            Log.e(TAG, "❌ Error extracting SERVER3 data: " + e.getMessage());
-        }
-    }
-
-    private static void extractPrepaidInfoFromResponse(String response, List<KeyValuePair> fields) {
-        try {
-            Log.d(TAG, "🔍 Extracting prepaid info from response");
-            
-            // Simple pattern matching for key fields
-            if (response.contains("\"customerName\"")) {
-                String customerName = extractJsonValue(response, "customerName");
-                addIfValid(fields, "Customer Name", customerName);
-            }
-            if (response.contains("\"customerAddress\"")) {
-                String address = extractJsonValue(response, "customerAddress");
-                addIfValid(fields, "Address", address);
-            }
-            if (response.contains("\"tariffCategory\"")) {
-                String tariff = extractJsonValue(response, "tariffCategory");
-                addIfValid(fields, "Tariff Category", tariff);
-            }
-            if (response.contains("\"sanctionLoad\"")) {
-                String load = extractJsonValue(response, "sanctionLoad");
-                addIfValid(fields, "Sanctioned Load", load);
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "❌ Error extracting prepaid info from response: " + e.getMessage());
-        }
-    }
-
-    private static void extractTokensFromResponse(String response, List<TokenData> tokenList) {
-        try {
-            Log.d(TAG, "🔍 Extracting tokens from response");
-            
-            // Simple token extraction
-            if (response.contains("\"tokens\"")) {
-                String token = extractJsonValue(response, "tokens");
-                if (isValidValue(token) && !token.equals("N/A")) {
-                    tokenList.add(new TokenData(1, token, "Recent", "৳Unknown", "System", "001"));
-                }
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "❌ Error extracting tokens from response: " + e.getMessage());
-        }
-    }
-
-    // HELPER METHODS
+    // Utility methods
     private static boolean isValidValue(String value) {
         if (value == null) return false;
         String trimmedValue = value.trim();
@@ -679,16 +692,8 @@ public class TemplateHelper {
         }
     }
 
-    private static String getMeterStatus(String statusCode) {
-        Map<String, String> statusMap = new HashMap<>();
-        statusMap.put("1", "Active");
-        statusMap.put("2", "Inactive");
-        statusMap.put("3", "Disconnected");
-        return statusMap.getOrDefault(statusCode, "Unknown (" + statusCode + ")");
-    }
-
     private static String formatDate(String dateString) {
-        if (dateString == null || dateString.isEmpty()) {
+        if (dateString == null || dateString.isEmpty() || dateString.equals("N/A")) {
             return "N/A";
         }
         try {
@@ -705,14 +710,12 @@ public class TemplateHelper {
         if (dateStr == null || dateStr.isEmpty() || dateStr.equals("null")) {
             return "N/A";
         }
-
         try {
             String[] parts = dateStr.substring(0, 10).split("-");
             if (parts.length >= 2) {
                 int month = Integer.parseInt(parts[1]);
                 String[] monthNames = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
                     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
-
                 if (month >= 1 && month <= 12) {
                     return monthNames[month - 1] + "-" + parts[0];
                 }
@@ -723,83 +726,57 @@ public class TemplateHelper {
         }
     }
 
-    private static String formatCurrency(String value) {
-        if (value == null || value.isEmpty() || value.equals("N/A")) {
-            return "N/A";
+    private static String formatCurrency(String amount) {
+        if (amount == null || amount.isEmpty() || amount.equals("N/A")) {
+            return "৳0";
         }
         try {
-            double amount = Double.parseDouble(value);
-            return String.format("৳%.2f", amount);
-        } catch (NumberFormatException e) {
-            return value;
-        }
-    }
-
-    private static String extractJsonValue(String response, String key) {
-        try {
-            String pattern = "\"" + key + "\":\"(.*?)\"";
-            java.util.regex.Pattern r = java.util.regex.Pattern.compile(pattern);
-            java.util.regex.Matcher m = r.matcher(response);
-            if (m.find()) {
-                return m.group(1);
+            // Remove any existing currency symbols and trim
+            String cleanAmount = amount.replace("৳", "").trim();
+            if (cleanAmount.isEmpty() || cleanAmount.equals("0") || cleanAmount.equals("0.00")) {
+                return "৳0";
             }
+            // Try to parse as double to format consistently
+            double value = Double.parseDouble(cleanAmount);
+            return String.format("৳%.2f", value);
         } catch (Exception e) {
-            Log.e(TAG, "❌ Error extracting JSON value: " + e.getMessage());
+            return "৳" + amount;
         }
-        return "N/A";
     }
 
-    private static String getDataSources(Map<String, Object> result) {
-        List<String> sources = new ArrayList<>();
-        if (result.containsKey("SERVER2_data")) sources.add("SERVER2");
-        if (result.containsKey("SERVER3_data")) sources.add("SERVER3");
-        if (result.containsKey("SERVER1_data")) sources.add("SERVER1");
-        if (result.containsKey("data_source")) sources.add(getSafeString(result.get("data_source")));
-        return sources.isEmpty() ? "Unknown" : String.join(", ", sources);
-    }
-
-    // TEMPLATE RENDERING METHODS
+    // Template rendering methods (keep your existing ones)
     public static String renderPostpaidTemplate(Context context, PostpaidData data) {
-        Log.d(TAG, "🎨 Rendering postpaid template");
         String template = loadTemplate(context, TEMPLATE_POSTPAID);
-        String result = replacePostpaidPlaceholders(template, data);
-        Log.d(TAG, "✅ Postpaid template rendered, length: " + result.length());
-        return result;
+        return replacePostpaidPlaceholders(template, data);
     }
 
     public static String renderPrepaidTemplate(Context context, PrepaidData data) {
-        Log.d(TAG, "🎨 Rendering prepaid template");
         String template = loadTemplate(context, TEMPLATE_PREPAID);
-        String result = replacePrepaidPlaceholders(template, data);
-        Log.d(TAG, "✅ Prepaid template rendered, length: " + result.length());
-        return result;
+        return replacePrepaidPlaceholders(template, data);
     }
 
     private static String loadTemplate(Context context, String templateName) {
         try {
-            Log.d(TAG, "📁 Loading template: " + templateName);
             java.io.InputStream inputStream = context.getAssets().open(templateName);
             int size = inputStream.available();
             byte[] buffer = new byte[size];
             inputStream.read(buffer);
             inputStream.close();
-            String template = new String(buffer, "UTF-8");
-            Log.d(TAG, "✅ Template loaded, size: " + template.length() + " chars");
-            return template;
+            return new String(buffer, "UTF-8");
         } catch (Exception e) {
-            Log.e(TAG, "❌ Error loading template: " + e.getMessage());
-            return "<html><body><h1>Error loading template: " + e.getMessage() + "</h1><p>Template: " + templateName + "</p></body></html>";
+            return "<html><body><h1>Error loading template: " + e.getMessage() + "</h1></body></html>";
         }
     }
 
+    // Keep your existing replacePostpaidPlaceholders and replacePrepaidPlaceholders methods
+    // They should work fine with the corrected data structures
+
     private static String replacePostpaidPlaceholders(String template, PostpaidData data) {
-        Log.d(TAG, "🔧 Replacing postpaid placeholders");
-        
-        String result = template.replace("{{CUSTOMER_NUMBER}}", data.customerNumber != null ? data.customerNumber : "N/A");
+        // Your existing implementation here
+        String result = template.replace("{{CUSTOMER_NUMBER}}", data.customerNumber);
 
         // Handle multiple customers
         if (data.multipleCustomers != null) {
-            Log.d(TAG, "👥 Processing multiple customers: " + data.multipleCustomers.customerCount);
             result = result.replace("{{#MULTIPLE_CUSTOMERS}}", "")
                           .replace("{{/MULTIPLE_CUSTOMERS}}", "");
 
@@ -830,7 +807,6 @@ public class TemplateHelper {
 
         // Handle single customer
         if (data.singleCustomer != null) {
-            Log.d(TAG, "👤 Processing single customer");
             result = result.replace("{{#SINGLE_CUSTOMER}}", "")
                           .replace("{{/SINGLE_CUSTOMER}}", "");
 
@@ -850,7 +826,6 @@ public class TemplateHelper {
 
         // Handle bill info
         if (data.billInfo != null) {
-            Log.d(TAG, "📊 Processing bill info: " + data.billInfo.bills.size() + " bills");
             result = result.replace("{{#BILL_INFO}}", "")
                           .replace("{{/BILL_INFO}}", "");
 
@@ -876,7 +851,6 @@ public class TemplateHelper {
 
         // Handle balance info
         if (data.balanceInfo != null) {
-            Log.d(TAG, "💰 Processing balance info: " + data.balanceInfo.fields.size() + " fields");
             result = result.replace("{{#BALANCE_INFO}}", "")
                           .replace("{{/BALANCE_INFO}}", "");
 
@@ -896,7 +870,6 @@ public class TemplateHelper {
 
         // Handle bill summary
         if (data.billSummary != null) {
-            Log.d(TAG, "📈 Processing bill summary: " + data.billSummary.fields.size() + " fields");
             result = result.replace("{{#BILL_SUMMARY}}", "")
                           .replace("{{/BILL_SUMMARY}}", "");
 
@@ -916,7 +889,6 @@ public class TemplateHelper {
 
         // Handle error
         if (data.error != null) {
-            Log.d(TAG, "❌ Processing error: " + data.error.errorMessage);
             result = result.replace("{{#ERROR}}", "")
                           .replace("{{/ERROR}}", "")
                           .replace("{{ERROR_MESSAGE}}", data.error.errorMessage);
@@ -925,19 +897,16 @@ public class TemplateHelper {
                           .replace("{{/ERROR}}", "-->");
         }
 
-        Log.d(TAG, "✅ Postpaid placeholders replaced");
         return result;
     }
 
     private static String replacePrepaidPlaceholders(String template, PrepaidData data) {
-        Log.d(TAG, "🔧 Replacing prepaid placeholders");
-        
-        String result = template.replace("{{METER_NUMBER}}", data.meterNumber != null ? data.meterNumber : "N/A")
-                               .replace("{{CONSUMER_NUMBER}}", data.consumerNumber != null ? data.consumerNumber : "N/A");
+        // Your existing implementation here
+        String result = template.replace("{{METER_NUMBER}}", data.meterNumber)
+                               .replace("{{CONSUMER_NUMBER}}", data.consumerNumber);
 
         // Handle prepaid customer info
         if (data.prepaidCustomerInfo != null) {
-            Log.d(TAG, "👤 Processing prepaid customer info: " + data.prepaidCustomerInfo.fields.size() + " fields");
             result = result.replace("{{#PREPAID_CUSTOMER_INFO}}", "")
                           .replace("{{/PREPAID_CUSTOMER_INFO}}", "");
 
@@ -957,7 +926,6 @@ public class TemplateHelper {
 
         // Handle tokens
         if (data.tokens != null) {
-            Log.d(TAG, "🔑 Processing tokens: " + data.tokens.tokenList.size() + " tokens");
             result = result.replace("{{#TOKENS}}", "")
                           .replace("{{/TOKENS}}", "");
 
@@ -981,7 +949,6 @@ public class TemplateHelper {
 
         // Handle postpaid customer info
         if (data.postpaidCustomerInfo != null) {
-            Log.d(TAG, "📋 Processing postpaid customer info: " + data.postpaidCustomerInfo.fields.size() + " fields");
             result = result.replace("{{#POSTPAID_CUSTOMER_INFO}}", "")
                           .replace("{{/POSTPAID_CUSTOMER_INFO}}", "");
 
@@ -1001,7 +968,6 @@ public class TemplateHelper {
 
         // Handle bill info
         if (data.billInfo != null) {
-            Log.d(TAG, "📊 Processing bill info: " + data.billInfo.bills.size() + " bills");
             result = result.replace("{{#BILL_INFO}}", "")
                           .replace("{{/BILL_INFO}}", "");
 
@@ -1027,7 +993,6 @@ public class TemplateHelper {
 
         // Handle balance info
         if (data.balanceInfo != null) {
-            Log.d(TAG, "💰 Processing balance info: " + data.balanceInfo.fields.size() + " fields");
             result = result.replace("{{#BALANCE_INFO}}", "")
                           .replace("{{/BALANCE_INFO}}", "");
 
@@ -1047,7 +1012,6 @@ public class TemplateHelper {
 
         // Handle bill summary
         if (data.billSummary != null) {
-            Log.d(TAG, "📈 Processing bill summary: " + data.billSummary.fields.size() + " fields");
             result = result.replace("{{#BILL_SUMMARY}}", "")
                           .replace("{{/BILL_SUMMARY}}", "");
 
@@ -1067,7 +1031,6 @@ public class TemplateHelper {
 
         // Handle error
         if (data.error != null) {
-            Log.d(TAG, "❌ Processing error: " + data.error.errorMessage);
             result = result.replace("{{#ERROR}}", "")
                           .replace("{{/ERROR}}", "")
                           .replace("{{ERROR_MESSAGE}}", data.error.errorMessage);
@@ -1076,7 +1039,6 @@ public class TemplateHelper {
                           .replace("{{/ERROR}}", "-->");
         }
 
-        Log.d(TAG, "✅ Prepaid placeholders replaced");
         return result;
     }
 }
