@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Meter Data</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial; padding:16px; line-height:1.4; color:#222; background:#f7f9fb; }
+    .card { background:#fff; border-radius:10px; padding:14px; box-shadow:0 6px 18px rgba(0,0,0,0.06); margin-bottom:12px; }
+    h1,h2,h3 { margin:6px 0; }
+    .muted { color:#606770; }
+    .label { font-weight:600; width:40%; display:inline-block; }
+    .row { display:flex; flex-wrap:wrap; padding:6px 0; border-bottom:1px dashed #efefef; }
+    .two { width:50%; box-sizing:border-box; padding-right:8px; }
+    pre.token { background:#0f1723; color:#fff; padding:8px; border-radius:6px; overflow-x:auto; letter-spacing:2px; font-weight:700; }
+    table { width:100%; border-collapse:collapse; margin-top:8px; }
+    table th, table td { padding:6px 8px; border:1px solid #eee; text-align:left; font-size:13px; }
+    .small { font-size:12px; color:#444; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>📊 PREPAID METER INFO</h1>
+    <div class="row"><div class="label">🔢 Meter Number:</div><div>{{METER_NUMBER}}</div></div>
+    <div class="row"><div class="label">👤 Consumer Number:</div><div>{{CONSUMER_NUMBER}}</div></div>
+  </div>
+
+  <div class="card">
+    <h2>📋 PREPAID CUSTOMER DETAILS</h2>
+    <div id="customer-info">
+      <!-- PERSONAL -->
+      <h3>📋 PERSONAL INFORMATION</h3>
+      <div id="personal"></div>
+
+      <!-- METER -->
+      <h3>🔧 METER INFORMATION</h3>
+      <div id="meter"></div>
+
+      <!-- BILLING -->
+      <h3>💳 BILLING INFORMATION</h3>
+      <div id="billing"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🔑 LAST 3 RECHARGE TOKENS</h2>
+    <div id="tokens"></div>
+  </div>
+
+  <div class="card">
+    <h2>📊 BILL SUMMARY</h2>
+    <div id="bill-summary"></div>
+    <div id="bill-table"></div>
+  </div>
+
+  <script>
+    // The helper will inject a JSON object named __METER_DATA__
+    (function(){
+      try {
+        var data = window.__METER_DATA__ || {};
+        document.querySelector('[data-placeholder="METER_NUMBER"]')?.remove?.();
+
+        // replace simple placeholders
+        document.body.innerHTML = document.body.innerHTML.replace('{{METER_NUMBER}}', data.meter_number || 'N/A')
+                                                         .replace('{{CONSUMER_NUMBER}}', data.consumer_number || (data.customer_number||'N/A'));
+
+        // fill customer info
+        function renderKeyValueMap(containerId, map) {
+          var container = document.getElementById(containerId);
+          if (!map || Object.keys(map).length===0) {
+            container.innerHTML = "<div class='small muted'>No data</div>";
+            return;
+          }
+          var html = '';
+          for (var k in map) {
+            if (!map[k] || map[k]==="N/A") continue;
+            html += "<div class='row'><div class='label'>" + k + ":</div><div>" + map[k] + "</div></div>";
+          }
+          container.innerHTML = html;
+        }
+
+        renderKeyValueMap('personal', data.customer_info ? {
+          'Customer Name': data.customer_info['Customer Name'] || data.customer_info['Customer Name'] || data.customer_info['Customer Name'],
+          'Father Name': data.customer_info['Father Name'],
+          'Customer Address': data.customer_info['Customer Address']
+        } : {});
+
+        renderKeyValueMap('meter', {
+          'Meter Number': data.customer_info ? (data.customer_info['Meter Number'] || 'N/A') : 'N/A',
+          'Meter Status': data.customer_info ? (data.customer_info['Meter Status'] || 'N/A') : 'N/A',
+          'Connection Date': data.customer_info ? (data.customer_info['Connection Date'] || 'N/A') : 'N/A'
+        });
+
+        renderKeyValueMap('billing', data.balance_info || data.bill_summary || {});
+
+        // tokens
+        var tokensDiv = document.getElementById('tokens');
+        var tx = data.recent_transactions || data.recentTransactions || [];
+        if (tx.length === 0) {
+          tokensDiv.innerHTML = "<div class='small muted'>No recent tokens</div>";
+        } else {
+          var html = '';
+          for (var i=0;i<tx.length;i++){
+            var t = tx[i];
+            html += "<div style='margin-bottom:10px;'><strong>Order "+(i+1)+"</strong><div class='small'>Date: "+(t['Date']||'N/A')+" — Order: "+(t['Order Number']||'N/A')+"</div><pre class='token'>"+(t['Tokens']||t['Tokens']||'N/A')+"</pre></div>";
+          }
+          tokensDiv.innerHTML = html;
+        }
+
+        // bill table if available (bill_info_raw expected as array)
+        var billTable = document.getElementById('bill-table');
+        var bills = data.bill_info_raw || data.billInfo || [];
+        if (Array.isArray(bills) && bills.length>0){
+          var th = '<tr><th>Period</th><th>Bill No</th><th>Consumption</th><th>Total</th><th>Paid</th><th>Balance</th></tr>';
+          var rows = '';
+          for (var i=0;i<bills.length;i++){
+            var b = bills[i];
+            var period = b.BILL_MONTH ? b.BILL_MONTH : (b.bill_month||'N/A');
+            var no = b.BILL_NO || b.bill_number || '-';
+            var cons = b.CONS_KWH_SR || b.consumption || '-';
+            var tot = b.TOTAL_BILL || b.total_amount || (b.CURRENT_BILL||'-');
+            var paid = b.PAID_AMT || b.paid_amount || '-';
+            var bal = b.BALANCE || b.balance || '-';
+            rows += '<tr><td>'+period+'</td><td>'+no+'</td><td>'+cons+'</td><td>'+tot+'</td><td>'+paid+'</td><td>'+bal+'</td></tr>';
+          }
+          billTable.innerHTML = '<table>'+th+rows+'</table>';
+        } else {
+          billTable.innerHTML = "<div class='small muted'>No bill table available</div>";
+        }
+
+      } catch(e) {
+        console.error('Render error', e);
+        document.body.innerHTML = "<pre style='color:red'>Error rendering data: "+e+"</pre>";
+      }
+    })();
+  </script>
+</body>
+</html>
