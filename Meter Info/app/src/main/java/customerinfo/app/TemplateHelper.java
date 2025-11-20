@@ -576,225 +576,224 @@ public class TemplateHelper {
     }
 
     private static String getCommonCSS() {
-        return """
-            * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-            }
-            body {
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                line-height: 1.6;
-                color: #333;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                min-height: 100vh;
-                padding: 20px;
-            }
-            .header {
-                background: white;
-                padding: 25px;
-                border-radius: 15px;
-                box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-                margin-bottom: 25px;
-                text-align: center;
-                border-left: 5px solid #3498db;
-            }
-            .header h1 {
-                color: #2c3e50;
-                margin-bottom: 10px;
-                font-size: 24px;
-            }
-            .search-info {
-                color: #7f8c8d;
-                font-size: 14px;
-            }
-            .card {
-                background: white;
-                padding: 25px;
-                border-radius: 15px;
-                box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-                margin-bottom: 25px;
-                border-left: 5px solid #2ecc71;
-            }
-            .card h2 {
-                color: #2c3e50;
-                margin-bottom: 20px;
-                padding-bottom: 10px;
-                border-bottom: 2px solid #ecf0f1;
-                font-size: 20px;
-            }
-            .card h3 {
-                color: #34495e;
-                margin: 20px 0 15px 0;
-                font-size: 16px;
-            }
-            .info-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-                gap: 15px;
-                margin-bottom: 15px;
-            }
-            .info-grid div {
-                padding: 12px;
-                background: #f8f9fa;
-                border-radius: 8px;
-                border-left: 3px solid #3498db;
-            }
-            .info-list {
-                display: flex;
-                flex-direction: column;
-                gap: 8px;
-            }
-            .info-item {
-                padding: 10px 15px;
-                background: #f8f9fa;
-                border-radius: 8px;
-                border-left: 3px solid #27ae60;
-                margin-bottom: 5px;
-            }
-            .section {
-                margin-bottom: 25px;
-            }
-            .section:last-child {
-                margin-bottom: 0;
-            }
-            .tokens-container {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-                gap: 20px;
-                margin-top: 20px;
-            }
-            .token-card {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                padding: 20px;
-                border-radius: 12px;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            }
-            .token-card h3 {
-                color: white;
-                margin-bottom: 15px;
-                text-align: center;
-                border-bottom: 1px solid rgba(255,255,255,0.3);
-                padding-bottom: 10px;
-            }
-            .token-details p {
-                margin-bottom: 8px;
-                display: flex;
-                align-items: center;
-            }
-            .emoji {
-                margin-right: 8px;
-                font-size: 16px;
-            }
-            .token {
-                background: rgba(255,255,255,0.2);
-                padding: 5px 10px;
-                border-radius: 6px;
-                font-family: monospace;
-                font-weight: bold;
-            }
-            .bill-summary {
-                background: #f8f9fa;
-                padding: 20px;
-                border-radius: 10px;
-                border: 1px solid #e9ecef;
-            }
-            .summary-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                gap: 15px;
-            }
-            .summary-grid div {
-                padding: 12px;
-                background: white;
-                border-radius: 8px;
-                text-align: center;
-                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            }
-            .balance-details {
-                background: #f8f9fa;
-                padding: 20px;
-                border-radius: 10px;
-                border: 1px solid #e9ecef;
-            }
-            .balance-item {
-                padding: 10px 15px;
-                background: white;
-                border-radius: 8px;
-                margin-bottom: 8px;
-                border-left: 3px solid #e74c3c;
-            }
-            .customer-section {
-                background: #f8f9fa;
-                padding: 20px;
-                border-radius: 10px;
-                margin-bottom: 20px;
-                border: 1px solid #e9ecef;
-            }
-            .customer-header {
-                color: #2c3e50;
-                margin-bottom: 15px;
-                padding-bottom: 10px;
-                border-bottom: 2px solid #bdc3c7;
-            }
-            .table-container {
-                overflow-x: auto;
-                margin-top: 15px;
-            }
-            .bill-table {
-                width: 100%;
-                border-collapse: collapse;
-                background: white;
-                border-radius: 8px;
-                overflow: hidden;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            }
-            .bill-table th {
-                background: #34495e;
-                color: white;
-                padding: 12px 15px;
-                text-align: left;
-                font-weight: 600;
-            }
-            .bill-table td {
-                padding: 12px 15px;
-                border-bottom: 1px solid #ecf0f1;
-            }
-            .bill-table tr:nth-child(even) {
-                background: #f8f9fa;
-            }
-            .bill-table tr:hover {
-                background: #e3f2fd;
-            }
-            @media (max-width: 768px) {
-                body {
-                    padding: 10px;
-                }
-                .card {
-                    padding: 15px;
-                }
-                .info-grid {
-                    grid-template-columns: 1fr;
-                }
-                .summary-grid {
-                    grid-template-columns: 1fr;
-                }
-                .tokens-container {
-                    grid-template-columns: 1fr;
-                }
-                .bill-table {
-                    font-size: 14px;
-                }
-                .bill-table th,
-                .bill-table td {
-                    padding: 8px 10px;
-                }
-            }
-            """;
+        return 
+            "* {" +
+            "    margin: 0;" +
+            "    padding: 0;" +
+            "    box-sizing: border-box;" +
+            "}" +
+            "body {" +
+            "    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;" +
+            "    line-height: 1.6;" +
+            "    color: #333;" +
+            "    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);" +
+            "    min-height: 100vh;" +
+            "    padding: 20px;" +
+            "}" +
+            ".header {" +
+            "    background: white;" +
+            "    padding: 25px;" +
+            "    border-radius: 15px;" +
+            "    box-shadow: 0 8px 25px rgba(0,0,0,0.1);" +
+            "    margin-bottom: 25px;" +
+            "    text-align: center;" +
+            "    border-left: 5px solid #3498db;" +
+            "}" +
+            ".header h1 {" +
+            "    color: #2c3e50;" +
+            "    margin-bottom: 10px;" +
+            "    font-size: 24px;" +
+            "}" +
+            ".search-info {" +
+            "    color: #7f8c8d;" +
+            "    font-size: 14px;" +
+            "}" +
+            ".card {" +
+            "    background: white;" +
+            "    padding: 25px;" +
+            "    border-radius: 15px;" +
+            "    box-shadow: 0 8px 25px rgba(0,0,0,0.1);" +
+            "    margin-bottom: 25px;" +
+            "    border-left: 5px solid #2ecc71;" +
+            "}" +
+            ".card h2 {" +
+            "    color: #2c3e50;" +
+            "    margin-bottom: 20px;" +
+            "    padding-bottom: 10px;" +
+            "    border-bottom: 2px solid #ecf0f1;" +
+            "    font-size: 20px;" +
+            "}" +
+            ".card h3 {" +
+            "    color: #34495e;" +
+            "    margin: 20px 0 15px 0;" +
+            "    font-size: 16px;" +
+            "}" +
+            ".info-grid {" +
+            "    display: grid;" +
+            "    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));" +
+            "    gap: 15px;" +
+            "    margin-bottom: 15px;" +
+            "}" +
+            ".info-grid div {" +
+            "    padding: 12px;" +
+            "    background: #f8f9fa;" +
+            "    border-radius: 8px;" +
+            "    border-left: 3px solid #3498db;" +
+            "}" +
+            ".info-list {" +
+            "    display: flex;" +
+            "    flex-direction: column;" +
+            "    gap: 8px;" +
+            "}" +
+            ".info-item {" +
+            "    padding: 10px 15px;" +
+            "    background: #f8f9fa;" +
+            "    border-radius: 8px;" +
+            "    border-left: 3px solid #27ae60;" +
+            "    margin-bottom: 5px;" +
+            "}" +
+            ".section {" +
+            "    margin-bottom: 25px;" +
+            "}" +
+            ".section:last-child {" +
+            "    margin-bottom: 0;" +
+            "}" +
+            ".tokens-container {" +
+            "    display: grid;" +
+            "    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));" +
+            "    gap: 20px;" +
+            "    margin-top: 20px;" +
+            "}" +
+            ".token-card {" +
+            "    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);" +
+            "    color: white;" +
+            "    padding: 20px;" +
+            "    border-radius: 12px;" +
+            "    box-shadow: 0 4px 15px rgba(0,0,0,0.2);" +
+            "}" +
+            ".token-card h3 {" +
+            "    color: white;" +
+            "    margin-bottom: 15px;" +
+            "    text-align: center;" +
+            "    border-bottom: 1px solid rgba(255,255,255,0.3);" +
+            "    padding-bottom: 10px;" +
+            "}" +
+            ".token-details p {" +
+            "    margin-bottom: 8px;" +
+            "    display: flex;" +
+            "    align-items: center;" +
+            "}" +
+            ".emoji {" +
+            "    margin-right: 8px;" +
+            "    font-size: 16px;" +
+            "}" +
+            ".token {" +
+            "    background: rgba(255,255,255,0.2);" +
+            "    padding: 5px 10px;" +
+            "    border-radius: 6px;" +
+            "    font-family: monospace;" +
+            "    font-weight: bold;" +
+            "}" +
+            ".bill-summary {" +
+            "    background: #f8f9fa;" +
+            "    padding: 20px;" +
+            "    border-radius: 10px;" +
+            "    border: 1px solid #e9ecef;" +
+            "}" +
+            ".summary-grid {" +
+            "    display: grid;" +
+            "    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));" +
+            "    gap: 15px;" +
+            "}" +
+            ".summary-grid div {" +
+            "    padding: 12px;" +
+            "    background: white;" +
+            "    border-radius: 8px;" +
+            "    text-align: center;" +
+            "    box-shadow: 0 2px 5px rgba(0,0,0,0.1);" +
+            "}" +
+            ".balance-details {" +
+            "    background: #f8f9fa;" +
+            "    padding: 20px;" +
+            "    border-radius: 10px;" +
+            "    border: 1px solid #e9ecef;" +
+            "}" +
+            ".balance-item {" +
+            "    padding: 10px 15px;" +
+            "    background: white;" +
+            "    border-radius: 8px;" +
+            "    margin-bottom: 8px;" +
+            "    border-left: 3px solid #e74c3c;" +
+            "}" +
+            ".customer-section {" +
+            "    background: #f8f9fa;" +
+            "    padding: 20px;" +
+            "    border-radius: 10px;" +
+            "    margin-bottom: 20px;" +
+            "    border: 1px solid #e9ecef;" +
+            "}" +
+            ".customer-header {" +
+            "    color: #2c3e50;" +
+            "    margin-bottom: 15px;" +
+            "    padding-bottom: 10px;" +
+            "    border-bottom: 2px solid #bdc3c7;" +
+            "}" +
+            ".table-container {" +
+            "    overflow-x: auto;" +
+            "    margin-top: 15px;" +
+            "}" +
+            ".bill-table {" +
+            "    width: 100%;" +
+            "    border-collapse: collapse;" +
+            "    background: white;" +
+            "    border-radius: 8px;" +
+            "    overflow: hidden;" +
+            "    box-shadow: 0 2px 10px rgba(0,0,0,0.1);" +
+            "}" +
+            ".bill-table th {" +
+            "    background: #34495e;" +
+            "    color: white;" +
+            "    padding: 12px 15px;" +
+            "    text-align: left;" +
+            "    font-weight: 600;" +
+            "}" +
+            ".bill-table td {" +
+            "    padding: 12px 15px;" +
+            "    border-bottom: 1px solid #ecf0f1;" +
+            "}" +
+            ".bill-table tr:nth-child(even) {" +
+            "    background: #f8f9fa;" +
+            "}" +
+            ".bill-table tr:hover {" +
+            "    background: #e3f2fd;" +
+            "}" +
+            "@media (max-width: 768px) {" +
+            "    body {" +
+            "        padding: 10px;" +
+            "    }" +
+            "    .card {" +
+            "        padding: 15px;" +
+            "    }" +
+            "    .info-grid {" +
+            "        grid-template-columns: 1fr;" +
+            "    }" +
+            "    .summary-grid {" +
+            "        grid-template-columns: 1fr;" +
+            "    }" +
+            "    .tokens-container {" +
+            "        grid-template-columns: 1fr;" +
+            "    }" +
+            "    .bill-table {" +
+            "        font-size: 14px;" +
+            "    }" +
+            "    .bill-table th," +
+            "    .bill-table td {" +
+            "        padding: 8px 10px;" +
+            "    }" +
+            "}";
     }
 
-    // Utility methods (you'll need to implement these or copy from MainActivity)
+    // Utility methods
     private static String escapeHtml(String text) {
         if (text == null) return "";
         return text.replace("&", "&amp;")
@@ -830,19 +829,20 @@ public class TemplateHelper {
         return section;
     }
 
-    // These methods should be copied from your MainActivity:
+    // These methods should be implemented or copied from MainActivity
     private static Map<String, Object> mergeSERVERData(Map<String, Object> result) {
-        // Copy this method from your MainActivity
-        return MainActivity.mergeSERVERData(result);
+        // This should call MainActivity's method
+        // For now, return empty map - you'll need to implement this
+        return new HashMap<>();
     }
 
     private static Map<String, Object> cleanSERVER1Data(Object SERVER1DataObj) {
-        // Copy this method from your MainActivity  
-        return MainActivity.cleanSERVER1Data(SERVER1DataObj);
+        // This should call MainActivity's method  
+        // For now, return empty map - you'll need to implement this
+        return new HashMap<>();
     }
 
     private static String formatBillMonth(String dateStr) {
-        // Copy from MainActivity
         try {
             if (dateStr == null || dateStr.equals("null")) return "—";
             String[] parts = dateStr.substring(0, 10).split("-");
