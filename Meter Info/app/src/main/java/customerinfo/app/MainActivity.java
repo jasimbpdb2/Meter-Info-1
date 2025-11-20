@@ -93,7 +93,7 @@ public class MainActivity extends AppCompatActivity {
 
         // THEN setup click listeners
         setupClickListeners();
-        
+
         // Initialize ExcelHelper only if permission already granted
         if (isStoragePermissionGranted()) {
             excelHelper = new ExcelHelper(this);
@@ -133,102 +133,204 @@ public class MainActivity extends AppCompatActivity {
         updateInputHint();
     }
 
-private void setupClickListeners() {
-    prepaidBtn.setOnClickListener(v -> {
-        selectedType = "prepaid";
-        postpaidOptionsLayout.setVisibility(View.GONE);
-        updateButtonStates();
-        updateInputHint();
-        showResult("📱 Prepaid selected - Enter 12-digit meter number");
-    });
-
-    postpaidBtn.setOnClickListener(v -> {
-        selectedType = "postpaid";
-        postpaidOptionsLayout.setVisibility(View.VISIBLE);
-        updateButtonStates();
-        updateInputHint();
-        showResult("💡 Postpaid selected - Choose input type");
-    });
-
-    // Postpaid sub-options listeners
-    postpaidRadioGroup.setOnCheckedChangeListener((group, checkedId) -> {
-        if (checkedId == R.id.consumerNoOption) {
-            postpaidSubType = "consumer_no";
-            updatePostpaidSubOptions();
+    private void setupClickListeners() {
+        prepaidBtn.setOnClickListener(v -> {
+            selectedType = "prepaid";
+            postpaidOptionsLayout.setVisibility(View.GONE);
+            updateButtonStates();
             updateInputHint();
-            showResult("👤 Consumer No selected - Enter consumer number");
-        } else if (checkedId == R.id.meterNoOption) {
-            postpaidSubType = "meter_no";
-            updatePostpaidSubOptions();
+            showResult("📱 Prepaid selected - Enter 12-digit meter number");
+        });
+
+        postpaidBtn.setOnClickListener(v -> {
+            selectedType = "postpaid";
+            postpaidOptionsLayout.setVisibility(View.VISIBLE);
+            updateButtonStates();
             updateInputHint();
-            showResult("🔢 Meter No selected - Enter meter number");
-        }
-    });
+            showResult("💡 Postpaid selected - Choose input type");
+        });
 
-    submitBtn.setOnClickListener(v -> {
-        String inputNumber = meterInput.getText().toString().trim();
-        if (inputNumber.isEmpty()) {
-            showResult("❌ Please enter number");
-            return;
-        }
-
-        if (selectedType.equals("prepaid") && inputNumber.length() != 12) {
-            showResult("❌ Prepaid meter must be 12 digits");
-            return;
-        }
-
-        fetchData(inputNumber);
-    });
-
-    // ✅ FIXED HTML VIEW BUTTON
-    htmlViewBtn.setOnClickListener(v -> {
-        String inputNumber = meterInput.getText().toString().trim();
-        if (inputNumber.isEmpty()) {
-            showResult("❌ Please enter number first");
-            return;
-        }
-
-        showResult("🔄 Generating HTML view...");
-        
-        new Thread(() -> {
-            try {
-                Map<String, Object> result = fetchDataBasedOnType(inputNumber);
-                Log.d("HTML_DEBUG", "📊 Result keys for HTML: " + result.keySet());
-                
-                String htmlContent;
-                if (selectedType.equals("prepaid")) {
-                    Log.d("HTML_DEBUG", "🔋 Generating prepaid HTML");
-                    TemplateHelper.PrepaidData prepaidData = TemplateHelper.convertToPrepaidData(result);
-                    htmlContent = TemplateHelper.renderPrepaidTemplate(MainActivity.this, prepaidData);
-                } else {
-                    Log.d("HTML_DEBUG", "💡 Generating postpaid HTML");
-                    TemplateHelper.PostpaidData postpaidData = TemplateHelper.convertToPostpaidData(result);
-                    htmlContent = TemplateHelper.renderPostpaidTemplate(MainActivity.this, postpaidData);
-                }
-
-                Log.d("HTML_DEBUG", "📄 HTML content length: " + htmlContent.length());
-                
-                // Open HTML activity
-                runOnUiThread(() -> {
-                    Intent intent = new Intent(MainActivity.this, MeterDataDisplayActivity.class);
-                    intent.putExtra("HTML_CONTENT", htmlContent);
-                    startActivity(intent);
-                });
-
-            } catch (Exception e) {
-                Log.e("HTML_DEBUG", "❌ HTML Error: " + e.getMessage(), e);
-                runOnUiThread(() -> showResult("❌ HTML Error: " + e.getMessage()));
+        // Postpaid sub-options listeners
+        postpaidRadioGroup.setOnCheckedChangeListener((group, checkedId) -> {
+            if (checkedId == R.id.consumerNoOption) {
+                postpaidSubType = "consumer_no";
+                updatePostpaidSubOptions();
+                updateInputHint();
+                showResult("👤 Consumer No selected - Enter consumer number");
+            } else if (checkedId == R.id.meterNoOption) {
+                postpaidSubType = "meter_no";
+                updatePostpaidSubOptions();
+                updateInputHint();
+                showResult("🔢 Meter No selected - Enter meter number");
             }
-        }).start();
-    });
+        });
 
-    // ✅ CORRECT PLACE: Add back button listener HERE
-    findViewById(R.id.backBtn).setOnClickListener(v -> {
-        Intent intent = new Intent(MainActivity.this, Home.class);
-        startActivity(intent);
-        finish();
-    });
-}
+        submitBtn.setOnClickListener(v -> {
+            String inputNumber = meterInput.getText().toString().trim();
+            if (inputNumber.isEmpty()) {
+                showResult("❌ Please enter number");
+                return;
+            }
+
+            if (selectedType.equals("prepaid") && inputNumber.length() != 12) {
+                showResult("❌ Prepaid meter must be 12 digits");
+                return;
+            }
+
+            fetchData(inputNumber);
+        });
+
+        // ✅ FIXED HTML VIEW BUTTON - COMPLETE VERSION
+        htmlViewBtn.setOnClickListener(v -> {
+            String inputNumber = meterInput.getText().toString().trim();
+            if (inputNumber.isEmpty()) {
+                showResult("❌ Please enter number first");
+                return;
+            }
+
+            showResult("🔄 Generating HTML view...");
+
+            new Thread(() -> {
+                try {
+                    // Fetch fresh data with proper processing
+                    Map<String, Object> result = fetchAndProcessDataForHTML(inputNumber);
+                    Log.d("HTML_DEBUG", "📊 Result keys for HTML: " + result.keySet());
+                    
+                    // Check if we have valid data
+                    if (result == null || result.isEmpty() || result.containsKey("error")) {
+                        String errorMsg = result != null && result.containsKey("error") ? 
+                            result.get("error").toString() : "No data available";
+                        runOnUiThread(() -> showResult("❌ " + errorMsg));
+                        return;
+                    }
+
+                    String htmlContent;
+                    if (selectedType.equals("prepaid")) {
+                        Log.d("HTML_DEBUG", "🔋 Generating prepaid HTML for: " + inputNumber);
+                        
+                        // Ensure we have the merged data structure
+                        if (!result.containsKey("customer_info") && !result.containsKey("balance_info")) {
+                            Map<String, Object> mergedData = mergeSERVERData(result);
+                            if (mergedData != null) {
+                                result.putAll(mergedData);
+                            }
+                        }
+                        
+                        TemplateHelper.PrepaidData prepaidData = TemplateHelper.convertToPrepaidData(result);
+                        Log.d("HTML_DEBUG", "🔋 Prepaid data converted: " + (prepaidData != null));
+                        
+                        if (prepaidData != null) {
+                            htmlContent = TemplateHelper.renderPrepaidTemplate(MainActivity.this, prepaidData);
+                            Log.d("HTML_DEBUG", "🔋 Prepaid HTML generated, length: " + htmlContent.length());
+                        } else {
+                            throw new Exception("Failed to convert prepaid data to template format");
+                        }
+                    } else {
+                        Log.d("HTML_DEBUG", "💡 Generating postpaid HTML for: " + inputNumber);
+                        
+                        // Handle multiple customers from meter lookup
+                        if (result.containsKey("customer_results")) {
+                            List<Map<String, Object>> customerResults = (List<Map<String, Object>>) result.get("customer_results");
+                            for (Map<String, Object> customerResult : customerResults) {
+                                Map<String, Object> mergedData = mergeSERVERData(customerResult);
+                                if (mergedData != null) {
+                                    customerResult.putAll(mergedData);
+                                }
+                            }
+                        } else {
+                            // Single customer - ensure merged data
+                            Map<String, Object> mergedData = mergeSERVERData(result);
+                            if (mergedData != null) {
+                                result.putAll(mergedData);
+                            }
+                        }
+                        
+                        TemplateHelper.PostpaidData postpaidData = TemplateHelper.convertToPostpaidData(result);
+                        Log.d("HTML_DEBUG", "💡 Postpaid data converted: " + (postpaidData != null));
+                        
+                        if (postpaidData != null) {
+                            htmlContent = TemplateHelper.renderPostpaidTemplate(MainActivity.this, postpaidData);
+                            Log.d("HTML_DEBUG", "💡 Postpaid HTML generated, length: " + htmlContent.length());
+                        } else {
+                            throw new Exception("Failed to convert postpaid data to template format");
+                        }
+                    }
+
+                    // Check if HTML content is valid
+                    if (htmlContent == null || htmlContent.isEmpty() || htmlContent.contains("No Data")) {
+                        throw new Exception("Generated HTML is empty or shows 'No Data'");
+                    }
+
+                    Log.d("HTML_DEBUG", "✅ HTML generation successful, opening viewer...");
+
+                    // Open HTML activity
+                    runOnUiThread(() -> {
+                        Intent intent = new Intent(MainActivity.this, MeterDataDisplayActivity.class);
+                        intent.putExtra("HTML_CONTENT", htmlContent);
+                        intent.putExtra("INPUT_NUMBER", inputNumber);
+                        intent.putExtra("ACCOUNT_TYPE", selectedType);
+                        startActivity(intent);
+                    });
+
+                } catch (Exception e) {
+                    Log.e("HTML_DEBUG", "❌ HTML Generation Error: " + e.getMessage(), e);
+                    runOnUiThread(() -> showResult("❌ HTML Error: " + e.getMessage() + "\n\nTry searching first, then click HTML view."));
+                }
+            }).start();
+        });
+
+        // ✅ CORRECT PLACE: Add back button listener HERE
+        findViewById(R.id.backBtn).setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, Home.class);
+            startActivity(intent);
+            finish();
+        });
+    }
+
+    // NEW METHOD: Properly fetch and process data for HTML view
+    private Map<String, Object> fetchAndProcessDataForHTML(String inputNumber) {
+        try {
+            Log.d("HTML_DEBUG", "🔄 Fetching data for HTML: " + inputNumber);
+            
+            // Use the same method as submit button to ensure consistency
+            Map<String, Object> result = fetchDataBasedOnType(inputNumber);
+            
+            if (result == null) {
+                Log.e("HTML_DEBUG", "❌ fetchDataBasedOnType returned null");
+                return createErrorResult("Failed to fetch data");
+            }
+            
+            if (result.containsKey("error")) {
+                Log.e("HTML_DEBUG", "❌ fetchDataBasedOnType returned error: " + result.get("error"));
+                return result;
+            }
+            
+            // For prepaid, ensure we have consumer number
+            if (selectedType.equals("prepaid")) {
+                String consumerNumber = (String) result.get("consumer_number");
+                if (consumerNumber == null || consumerNumber.equals("N/A")) {
+                    Log.e("HTML_DEBUG", "❌ No consumer number found for prepaid meter");
+                    return createErrorResult("No consumer number found for prepaid meter");
+                }
+            }
+            
+            Log.d("HTML_DEBUG", "✅ Data fetched successfully, processing...");
+            return result;
+            
+        } catch (Exception e) {
+            Log.e("HTML_DEBUG", "❌ Error in fetchAndProcessDataForHTML: " + e.getMessage(), e);
+            return createErrorResult("Data processing error: " + e.getMessage());
+        }
+    }
+
+    // Helper method to create error result
+    private Map<String, Object> createErrorResult(String errorMessage) {
+        Map<String, Object> errorResult = new HashMap<>();
+        errorResult.put("error", errorMessage);
+        return errorResult;
+    }
+
+    // ... [THE REST OF YOUR EXISTING CODE FOLLOWS HERE]
 
 
 
