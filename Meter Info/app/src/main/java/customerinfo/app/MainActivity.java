@@ -1845,67 +1845,121 @@ public class MainActivity extends AppCompatActivity {
         runOnUiThread(() -> resultView.setText(message));
     }
 
-   // Add this in MainActivity.java - exact data structure for HTML
-public static Map<String, Object> getLookupData(Map<String, Object> rawData, String type) {
+ public static Map<String, Object> getLookupData(Map<String, Object> rawData, String type) {
     Map<String, Object> result = new HashMap<>();
     
-    // Basic info that shows in your display
+    System.out.println("🔍 [DEBUG] Raw data keys: " + rawData.keySet());
+    
+    // Copy basic info
     result.put("type", type);
     result.put("meter_number", rawData.get("meter_number"));
     result.put("consumer_number", rawData.get("consumer_number"));
     
-    // Customer info section
-    if (rawData.containsKey("customer_info")) {
-        result.put("customer_info", rawData.get("customer_info"));
+    // Check what data we actually have in rawData
+    for (String key : rawData.keySet()) {
+        System.out.println("🔍 [DEBUG] Raw data - " + key + ": " + rawData.get(key));
     }
     
-    // Balance info section  
-    if (rawData.containsKey("balance_info")) {
-        result.put("balance_info", rawData.get("balance_info"));
+    // Try to extract customer info from different possible locations
+    Map<String, String> customerInfo = new HashMap<>();
+    
+    // Look for customer info in different possible keys
+    if (rawData.containsKey("customer_info") && rawData.get("customer_info") instanceof Map) {
+        customerInfo.putAll((Map<String, String>) rawData.get("customer_info"));
     }
     
-    // Bill info with tables
-    if (rawData.containsKey("bill_info_raw")) {
-        result.put("bill_info", rawData.get("bill_info_raw"));
-    }
-    
-    // Bill summary
-    if (rawData.containsKey("bill_summary")) {
-        result.put("bill_summary", rawData.get("bill_summary"));
-    }
-    
-    // Meter readings
-    if (rawData.containsKey("customer_info")) {
-        Map<String, String> customerInfo = (Map<String, String>) rawData.get("customer_info");
-        Map<String, String> meterReadings = new HashMap<>();
-        
-        // Extract meter readings from customer info
-        if (customerInfo.containsKey("Current Reading SR")) {
-            meterReadings.put("Current Reading SR", customerInfo.get("Current Reading SR"));
+    // Look for SERVER3 data
+    if (rawData.containsKey("SERVER3_data")) {
+        try {
+            JSONObject server3Data = (JSONObject) rawData.get("SERVER3_data");
+            // Extract customer info from SERVER3
+            customerInfo.put("Customer Name", server3Data.optString("customerName", "N/A"));
+            customerInfo.put("Father Name", server3Data.optString("fatherName", "N/A"));
+            customerInfo.put("Customer Address", server3Data.optString("customerAddr", "N/A"));
+            customerInfo.put("Location Code", server3Data.optString("locationCode", "N/A"));
+            customerInfo.put("Area Code", server3Data.optString("areaCode", "N/A"));
+            customerInfo.put("Bill Group", server3Data.optString("billGroup", "N/A"));
+            customerInfo.put("Book Number", server3Data.optString("bookNumber", "N/A"));
+            customerInfo.put("Tariff Description", server3Data.optString("tariffDesc", "N/A"));
+            customerInfo.put("Sanctioned Load", server3Data.optString("sanctionedLoad", "N/A"));
+            customerInfo.put("Walk Order", server3Data.optString("walkOrder", "N/A"));
+        } catch (Exception e) {
+            System.out.println("❌ Error extracting SERVER3 data: " + e.getMessage());
         }
-        if (customerInfo.containsKey("Last Bill Reading SR")) {
-            meterReadings.put("Last Bill Reading SR", customerInfo.get("Last Bill Reading SR"));
-        }
-        if (customerInfo.containsKey("Last Bill Reading OF PK")) {
-            meterReadings.put("Last Bill Reading OF PK", customerInfo.get("Last Bill Reading OF PK"));
-        }
-        if (customerInfo.containsKey("Last Bill Reading PK")) {
-            meterReadings.put("Last Bill Reading PK", customerInfo.get("Last Bill Reading PK"));
-        }
-        
-        result.put("meter_readings", meterReadings);
     }
     
-    // Prepaid recharge history
-    if ("prepaid".equals(type) && rawData.containsKey("recent_transactions")) {
+    // Look for SERVER1 data (for prepaid)
+    if (rawData.containsKey("SERVER1_data")) {
+        try {
+            Object server1Data = rawData.get("SERVER1_data");
+            if (server1Data instanceof Map) {
+                Map<String, String> server1Map = (Map<String, String>) server1Data;
+                customerInfo.putAll(server1Map);
+            }
+        } catch (Exception e) {
+            System.out.println("❌ Error extracting SERVER1 data: " + e.getMessage());
+        }
+    }
+    
+    if (!customerInfo.isEmpty()) {
+        result.put("customer_info", customerInfo);
+    }
+    
+    // Extract balance info
+    Map<String, String> balanceInfo = new HashMap<>();
+    if (rawData.containsKey("balance_info") && rawData.get("balance_info") instanceof Map) {
+        balanceInfo.putAll((Map<String, String>) rawData.get("balance_info"));
+    }
+    
+    // Extract from SERVER3
+    if (rawData.containsKey("SERVER3_data")) {
+        try {
+            JSONObject server3Data = (JSONObject) rawData.get("SERVER3_data");
+            String arrearAmount = server3Data.optString("arrearAmount", "");
+            if (!arrearAmount.isEmpty() && !arrearAmount.equals("0") && !arrearAmount.equals("0.00")) {
+                balanceInfo.put("Total Balance", arrearAmount);
+                balanceInfo.put("Arrear Amount", arrearAmount);
+            }
+        } catch (Exception e) {
+            System.out.println("❌ Error extracting balance from SERVER3: " + e.getMessage());
+        }
+    }
+    
+    if (!balanceInfo.isEmpty()) {
+        result.put("balance_info", balanceInfo);
+    }
+    
+    // Extract bill info
+    List<Map<String, Object>> billInfo = new ArrayList<>();
+    if (rawData.containsKey("bill_info_raw") && rawData.get("bill_info_raw") instanceof JSONArray) {
+        JSONArray billArray = (JSONArray) rawData.get("bill_info_raw");
+        for (int i = 0; i < billArray.length(); i++) {
+            try {
+                JSONObject bill = billArray.getJSONObject(i);
+                Map<String, Object> billData = new HashMap<>();
+                
+                billData.put("BILL_MONTH", bill.optString("BILL_MONTH", "N/A"));
+                billData.put("BILL_NO", bill.optString("BILL_NO", "N/A"));
+                billData.put("CONS_KWH_SR", bill.optDouble("CONS_KWH_SR", 0));
+                billData.put("TOTAL_BILL", bill.optDouble("TOTAL_BILL", 0));
+                billData.put("PAID_AMT", bill.optDouble("PAID_AMT", 0));
+                billData.put("BALANCE", bill.optDouble("BALANCE", 0));
+                billData.put("INVOICE_DUE_DATE", bill.optString("INVOICE_DUE_DATE", "N/A"));
+                
+                billInfo.add(billData);
+            } catch (Exception e) {
+                System.out.println("❌ Error processing bill: " + e.getMessage());
+            }
+        }
+        result.put("bill_info", billInfo);
+    }
+    
+    // Extract recharge history for prepaid
+    if ("prepaid".equals(type) && rawData.containsKey("recent_transactions") && rawData.get("recent_transactions") instanceof List) {
         result.put("recharge_history", rawData.get("recent_transactions"));
-        result.put("total_recharges", ((List) rawData.get("recent_transactions")).size());
     }
     
-    // Postpaid multiple customers
-    if ("postpaid".equals(type) && rawData.containsKey("customer_results")) {
-        result.put("customer_results", rawData.get("customer_results"));
-    }
+    System.out.println("🔍 [DEBUG] Final result keys: " + result.keySet());
     
     return result;
 }
