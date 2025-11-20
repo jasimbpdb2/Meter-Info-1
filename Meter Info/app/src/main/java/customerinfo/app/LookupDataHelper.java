@@ -59,26 +59,18 @@ public class LookupDataHelper {
                 return result;
             }
 
-            // Combine all data directly without MainActivity methods
+            // Combine all data - FIX: Add ALL data from both servers
             Map<String, Object> combinedResult = new HashMap<>();
+            
+            // Add SERVER3 data first (main data)
             combinedResult.putAll(server3Result);
+            
+            // Add SERVER1 data (including SERVER1_data and other fields)
+            combinedResult.putAll(server1Result);
+            
+            // Ensure basic fields are set
             combinedResult.put("meter_number", meterNumber);
             combinedResult.put("consumer_number", consumerNumber);
-
-            // Add SERVER1 data if available - FIXED CAST
-            if (server1Result.containsKey("SERVER1_data")) {
-                Object server1Data = server1Result.get("SERVER1_data");
-                System.out.println("🔧 PREPAID: SERVER1_data type: " + (server1Data != null ? server1Data.getClass().getSimpleName() : "NULL"));
-                
-                if (server1Data instanceof Map) {
-                    combinedResult.putAll((Map) server1Data);
-                    System.out.println("✅ PREPAID: Added SERVER1_data Map to combined result");
-                } else {
-                    System.out.println("⚠️ PREPAID: SERVER1_data is not a Map, it's: " + (server1Data != null ? server1Data.getClass().getSimpleName() : "NULL"));
-                    // Try to handle it as string or other type
-                    combinedResult.put("SERVER1_data_raw", server1Data);
-                }
-            }
 
             debugData("PREPAID Combined Result", combinedResult);
             
