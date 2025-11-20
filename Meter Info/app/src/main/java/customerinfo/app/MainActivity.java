@@ -1120,7 +1120,7 @@ findViewById(R.id.backBtn).setOnClickListener(v -> {
     }
 
     // Clean SERVER1 data
-    public static Map<String, Object> cleanSERVER1Data(Object SERVER1DataObj) {
+    private Map<String, Object> cleanSERVER1Data(Object SERVER1DataObj) {
         System.out.println("=== DEBUG cleanSERVER1Data START ===");
 
         if (SERVER1DataObj == null) {
@@ -1323,7 +1323,7 @@ findViewById(R.id.backBtn).setOnClickListener(v -> {
     }
 
     // CORRECTED: mergeSERVERData with proper unique value handling
-    public static Map<String, Object> mergeSERVERData(Map<String, Object> result) {
+    private Map<String, Object> mergeSERVERData(Map<String, Object> result) {
         JSONObject SERVER3Data = (JSONObject) result.get("SERVER3_data");
         Object SERVER2DataObj = result.get("SERVER2_data");
         JSONObject SERVER2Data = null;
