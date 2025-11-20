@@ -1,18 +1,22 @@
 <!DOCTYPE html>
 <html lang="bn">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>মিটার তথ্য</title>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>মিটার তথ্য লুকআপ</title>
     <style>
-        body {
-            font-family: "Shonar Bangla", "SolaimanLipi", serif;
+        * {
             margin: 0;
-            padding: 15px 20px;
-            font-size: 16px;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #f0f2f5;
+            color: #333;
             line-height: 1.6;
-            background: #f5f5f5;
+            padding: 10px;
         }
 
         .container {
@@ -20,7 +24,21 @@
             margin: 0 auto;
         }
 
-        /* Search Section */
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
         .search-section {
             background: white;
             padding: 20px;
@@ -46,6 +64,7 @@
             border: none;
             font-size: 16px;
             font-family: inherit;
+            transition: all 0.3s ease;
         }
 
         .type-btn.active {
@@ -78,6 +97,11 @@
             cursor: pointer;
             font-size: 16px;
             font-family: inherit;
+            transition: background 0.3s ease;
+        }
+
+        .search-btn:hover {
+            background: #218838;
         }
 
         .search-btn:disabled {
@@ -87,107 +111,106 @@
 
         .loading {
             display: none;
-            color: #007bff;
             text-align: center;
+            color: #007bff;
             padding: 10px;
+            font-size: 16px;
         }
 
         .error {
             display: none;
             color: #dc3545;
             background: #f8d7da;
-            padding: 10px;
-            border-radius: 5px;
+            padding: 12px;
+            border-radius: 6px;
             margin-top: 10px;
+            border: 1px solid #f5c6cb;
         }
 
-        /* Data Display Section */
         .data-section {
             display: none;
             background: white;
             border-radius: 10px;
             padding: 20px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
         }
 
         .section-title {
-            color: #2c3e50;
-            border-bottom: 3px solid #3498db;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-            font-size: 22px;
+            background: #34495e;
+            color: white;
+            padding: 12px 15px;
+            margin: 20px 0 15px 0;
+            border-radius: 6px;
             font-weight: bold;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .subsection-title {
+            background: #ecf0f1;
+            color: #2c3e50;
+            padding: 10px 15px;
+            margin: 15px 0 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+            border-left: 4px solid #3498db;
         }
 
         .info-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-
-        .info-card {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 4px solid #3498db;
+            gap: 10px;
+            margin: 10px 0;
         }
 
         .info-item {
-            margin-bottom: 8px;
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
+            padding: 8px 12px;
+            border-bottom: 1px solid #eee;
         }
 
         .info-label {
             font-weight: bold;
-            color: #34495e;
-            min-width: 140px;
+            color: #2c3e50;
+            min-width: 200px;
         }
 
         .info-value {
-            color: #2c3e50;
+            color: #34495e;
             text-align: right;
             flex: 1;
-            font-weight: bold;
         }
 
-        .balance-highlight {
-            background: #fff3cd;
-            border-left-color: #ffc107;
+        .table-container {
+            overflow-x: auto;
+            margin: 15px 0;
+            border: 1px solid #ddd;
+            border-radius: 6px;
         }
 
-        .arrear-highlight {
-            background: #f8d7da;
-            border-left-color: #dc3545;
-            font-weight: bold;
-        }
-
-        .recharge-highlight {
-            background: #d1ecf1;
-            border-left-color: #17a2b8;
-        }
-
-        /* Tables */
         .data-table {
             width: 100%;
             border-collapse: collapse;
-            margin: 15px 0;
             font-size: 14px;
         }
 
         .data-table th {
-            background: #34495e;
+            background: #2c3e50;
             color: white;
             padding: 12px 8px;
             text-align: left;
             font-weight: bold;
+            border: 1px solid #34495e;
         }
 
         .data-table td {
             padding: 10px 8px;
-            border-bottom: 1px solid #ddd;
+            border: 1px solid #ddd;
+            text-align: left;
         }
 
         .data-table tr:nth-child(even) {
@@ -195,10 +218,19 @@
         }
 
         .data-table tr:hover {
-            background: #e9ecef;
+            background: #e3f2fd;
         }
 
-        /* Action Buttons */
+        .amount-positive {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .amount-negative {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
         .action-buttons {
             display: flex;
             gap: 10px;
@@ -215,6 +247,11 @@
             font-family: inherit;
             flex: 1;
             min-width: 120px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
         .btn-print {
@@ -222,9 +259,17 @@
             color: white;
         }
 
+        .btn-print:hover {
+            background: #138496;
+        }
+
         .btn-pdf {
             background: #28a745;
             color: white;
+        }
+
+        .btn-pdf:hover {
+            background: #218838;
         }
 
         .btn-new-search {
@@ -232,37 +277,55 @@
             color: white;
         }
 
+        .btn-new-search:hover {
+            background: #5a6268;
+        }
+
         .btn-close {
             background: #dc3545;
             color: white;
         }
 
-        /* Type Badges */
-        .type-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 14px;
+        .btn-close:hover {
+            background: #c82333;
+        }
+
+        .emoji {
+            font-size: 18px;
+        }
+
+        .summary-card {
+            background: #e8f4fd;
+            border: 1px solid #b3d9ff;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .summary-item {
+            text-align: center;
+            padding: 10px;
+        }
+
+        .summary-value {
+            font-size: 20px;
             font-weight: bold;
-            margin-left: 10px;
+            color: #007bff;
+            margin: 5px 0;
         }
 
-        .badge-prepaid {
-            background: #d4edda;
-            color: #155724;
+        .summary-label {
+            color: #666;
+            font-size: 14px;
         }
 
-        .badge-postpaid {
-            background: #cce7ff;
-            color: #004085;
-        }
-
-        /* Responsive */
         @media (max-width: 768px) {
-            .info-grid {
-                grid-template-columns: 1fr;
-            }
-            
             .search-row {
                 flex-direction: column;
             }
@@ -270,9 +333,26 @@
             .action-buttons {
                 flex-direction: column;
             }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .info-item {
+                flex-direction: column;
+                text-align: left;
+            }
+            
+            .info-value {
+                text-align: left;
+                margin-top: 5px;
+            }
+            
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
-        /* Print Styles */
         @media print {
             .search-section,
             .action-buttons {
@@ -290,29 +370,44 @@
                 box-shadow: none;
                 padding: 0;
             }
+            
+            .section-title {
+                background: #333 !important;
+                color: white !important;
+                -webkit-print-color-adjust: exact;
+            }
         }
     </style>
 </head>
-
 <body>
     <div class="container">
+        <!-- Header Section -->
+        <div class="header">
+            <h1>📊 মিটার তথ্য লুকআপ সিস্টেম</h1>
+            <p>গ্রাহকের সম্পূর্ণ তথ্য দেখুন</p>
+        </div>
+
         <!-- Search Section -->
         <div class="search-section" id="searchSection">
-            <h2 style="margin-bottom: 20px; color: #2c3e50; text-align: center;">গ্রাহক তথ্য খুঁজুন</h2>
-
             <div class="type-selector">
-                <button class="type-btn active" id="prepaidBtn" onclick="selectType('prepaid')">প্রিপেইড মিটার</button>
-                <button class="type-btn" id="postpaidBtn" onclick="selectType('postpaid')">পোস্টপেইড মিটার</button>
+                <button class="type-btn active" id="prepaidBtn" onclick="selectType('prepaid')">
+                    ⚡ প্রিপেইড মিটার
+                </button>
+                <button class="type-btn" id="postpaidBtn" onclick="selectType('postpaid')">
+                    💳 পোস্টপেইড মিটার
+                </button>
             </div>
 
             <div class="search-row">
                 <input type="text" id="searchInput" class="search-input" 
                        placeholder="১২ ডিজিটের মিটার নং লিখুন" autofocus>
-                <button onclick="fetchData()" id="searchBtn" class="search-btn">খুঁজুন</button>
+                <button onclick="fetchData()" id="searchBtn" class="search-btn">
+                    🔍 খুঁজুন
+                </button>
             </div>
 
             <div class="loading" id="loading">
-                ⏳ ডেটা লোড হচ্ছে...
+                ⏳ ডেটা লোড হচ্ছে, অনুগ্রহ করে অপেক্ষা করুন...
             </div>
 
             <div class="error" id="error"></div>
@@ -320,190 +415,35 @@
 
         <!-- Data Display Section -->
         <div class="data-section" id="dataSection">
-            <!-- Header with Type Badge -->
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h1 class="section-title" id="pageTitle">মিটার তথ্য</h1>
-                <span class="type-badge" id="typeBadge"></span>
-            </div>
-
-            <!-- Basic Information -->
-            <div class="info-card">
-                <h3 style="margin-bottom: 15px; color: #2c3e50;">📋 মৌলিক তথ্য</h3>
-                <div class="info-grid">
-                    <div class="info-item">
-                        <span class="info-label">গ্রাহকের নাম:</span>
-                        <span class="info-value" id="customerName">-</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">পিতা/স্বামীর নাম:</span>
-                        <span class="info-value" id="fatherName">-</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">ঠিকানা:</span>
-                        <span class="info-value" id="address">-</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">মোবাইল নং:</span>
-                        <span class="info-value" id="mobileNo">-</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">মিটার নং:</span>
-                        <span class="info-value" id="meterNo">-</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">গ্রাহক নং:</span>
-                        <span class="info-value" id="consumerNo">-</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Balance Information -->
-            <div class="info-card balance-highlight" id="balanceSection">
-                <h3 style="margin-bottom: 15px; color: #2c3e50;">💰 আর্থিক তথ্য</h3>
-                <div class="info-grid">
-                    <div class="info-item">
-                        <span class="info-label">মোট বকেয়া:</span>
-                        <span class="info-value" id="totalBalance">-</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">বর্তমান বিল:</span>
-                        <span class="info-value" id="currentBill">-</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">জরিমানা (LPS):</span>
-                        <span class="info-value" id="lpsAmount">-</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">মোট পরিশোধ:</span>
-                        <span class="info-value" id="paidAmount">-</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Additional Information -->
-            <div class="info-card" id="additionalInfoSection">
-                <h3 style="margin-bottom: 15px; color: #2c3e50;">⚙️ অতিরিক্ত তথ্য</h3>
-                <div class="info-grid">
-                    <div class="info-item">
-                        <span class="info-label">ট্যারিফ:</span>
-                        <span class="info-value" id="tariff">-</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">স্যানশন লোড:</span>
-                        <span class="info-value" id="sanctionedLoad">-</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">লোকেশন কোড:</span>
-                        <span class="info-value" id="locationCode">-</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">বিল গ্রুপ:</span>
-                        <span class="info-value" id="billGroup">-</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Prepaid Specific Section -->
-            <div class="info-card recharge-highlight" id="prepaidSection">
-                <h3 style="margin-bottom: 15px; color: #2c3e50;">🔋 প্রিপেইড তথ্য</h3>
-                <div class="info-grid">
-                    <div class="info-item">
-                        <span class="info-label">শেষ রিচার্জ:</span>
-                        <span class="info-value" id="lastRecharge">-</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">ইনস্টলেশন তারিখ:</span>
-                        <span class="info-value" id="installationDate">-</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">মিটার স্ট্যাটাস:</span>
-                        <span class="info-value" id="meterStatus">-</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">মোট রিচার্জ:</span>
-                        <span class="info-value" id="totalRecharges">-</span>
-                    </div>
-                </div>
-
-                <!-- Recharge History Table -->
-                <div id="rechargeTableSection" style="margin-top: 20px;">
-                    <h4 style="margin-bottom: 15px; color: #2c3e50;">🕐 সর্বশেষ রিচার্জের তথ্য</h4>
-                    <table class="data-table" id="rechargeTable">
-                        <thead>
-                            <tr>
-                                <th>তারিখ</th>
-                                <th>অর্ডার নং</th>
-                                <th>পরিমাণ</th>
-                                <th>টোকেন</th>
-                            </tr>
-                        </thead>
-                        <tbody id="rechargeTableBody">
-                            <!-- Filled by JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Postpaid Specific Section -->
-            <div class="info-card" id="postpaidSection">
-                <h3 style="margin-bottom: 15px; color: #2c3e50;">📊 বিল হিস্ট্রি</h3>
-                
-                <!-- Bill Summary -->
-                <div class="info-grid" style="margin-bottom: 20px;">
-                    <div class="info-item">
-                        <span class="info-label">মোট বিল:</span>
-                        <span class="info-value" id="totalBills">-</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">শেষ বিল:</span>
-                        <span class="info-value" id="lastBill">-</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">সর্বশেষ রিডিং:</span>
-                        <span class="info-value" id="lastReading">-</span>
-                    </div>
-                </div>
-
-                <!-- Bill History Table -->
-                <table class="data-table" id="billTable">
-                    <thead>
-                        <tr>
-                            <th>বিল মাস</th>
-                            <th>বিল নং</th>
-                            <th>ইউনিট</th>
-                            <th>মোট টাকা</th>
-                            <th>পরিশোধ</th>
-                            <th>ব্যালেন্স</th>
-                        </tr>
-                    </thead>
-                    <tbody id="billTableBody">
-                        <!-- Filled by JavaScript -->
-                    </tbody>
-                </table>
+            <div id="dataContent">
+                <!-- Data will be populated by JavaScript -->
             </div>
 
             <!-- Action Buttons -->
             <div class="action-buttons">
-                <button class="btn btn-print" onclick="window.print()">🖨️ প্রিন্ট</button>
-                <button class="btn btn-pdf" onclick="saveAsPDF()">📄 PDF সেভ</button>
-                <button class="btn btn-new-search" onclick="showSearchSection()">🔄 নতুন খোঁজ</button>
-                <button class="btn btn-close" onclick="closeLookup()">✕ বন্ধ</button>
+                <button class="btn btn-print" onclick="window.print()">
+                    🖨️ প্রিন্ট
+                </button>
+                <button class="btn btn-pdf" onclick="saveAsPDF()">
+                    📄 PDF সেভ
+                </button>
+                <button class="btn btn-new-search" onclick="showSearchSection()">
+                    🔄 নতুন খোঁজ
+                </button>
+                <button class="btn btn-close" onclick="closeLookup()">
+                    ✕ বন্ধ
+                </button>
             </div>
         </div>
     </div>
 
     <script>
-        let selectedType = 'prepaid';
-        let currentData = null;
-
-        function debugLog(msg) {
-            console.log(msg);
-        }
+        let currentType = 'prepaid';
 
         function selectType(type) {
-            selectedType = type;
+            currentType = type;
             
-            // Update UI
+            // Update button states
             document.getElementById('prepaidBtn').classList.toggle('active', type === 'prepaid');
             document.getElementById('postpaidBtn').classList.toggle('active', type === 'postpaid');
             
@@ -514,6 +454,9 @@
             } else {
                 input.placeholder = 'গ্রাহক নং লিখুন';
             }
+            
+            // Clear previous results
+            clearResults();
         }
 
         function fetchData() {
@@ -525,16 +468,17 @@
 
             showLoading();
 
+            // Call Android interface
             if (window.AndroidInterface) {
                 try {
-                    const result = AndroidInterface.fetchLookupData(input, selectedType);
+                    const result = AndroidInterface.fetchLookupData(input, currentType);
                     const data = JSON.parse(result);
                     displayData(data);
                 } catch (err) {
-                    showError('App error: ' + err);
+                    showError('ডেটা লোড করতে সমস্যা হয়েছে: ' + err.message);
                 }
             } else {
-                showError('AndroidInterface not available');
+                showError('AndroidInterface পাওয়া যায়নি');
             }
         }
 
@@ -546,179 +490,357 @@
                 return;
             }
 
-            currentData = data;
-            
-            // Show data section
+            // Show data section and hide search
             document.getElementById('searchSection').style.display = 'none';
             document.getElementById('dataSection').style.display = 'block';
 
-            // Set type badge
-            const typeBadge = document.getElementById('typeBadge');
-            if (selectedType === 'prepaid') {
-                typeBadge.textContent = 'প্রিপেইড';
-                typeBadge.className = 'type-badge badge-prepaid';
-                document.getElementById('pageTitle').textContent = 'প্রিপেইড মিটার তথ্য';
-            } else {
-                typeBadge.textContent = 'পোস্টপেইড';
-                typeBadge.className = 'type-badge badge-postpaid';
-                document.getElementById('pageTitle').textContent = 'পোস্টপেইড মিটার তথ্য';
-            }
-
-            // Fill basic information
-            document.getElementById('customerName').textContent = data.customer_name || '-';
-            document.getElementById('fatherName').textContent = data.father_name || '-';
-            document.getElementById('address').textContent = data.address || '-';
-            document.getElementById('mobileNo').textContent = data.mobile_no || '-';
-            document.getElementById('meterNo').textContent = data.meter_no || '-';
-            document.getElementById('consumerNo').textContent = data.consumer_no || '-';
-
-            // Fill balance information
-            const balanceInfo = data.balance_info || {};
-            document.getElementById('totalBalance').textContent = balanceInfo.total_balance ? '৳' + balanceInfo.total_balance : '-';
-            document.getElementById('currentBill').textContent = balanceInfo.current_bill ? '৳' + balanceInfo.current_bill : '-';
-            document.getElementById('lpsAmount').textContent = balanceInfo.lps ? '৳' + balanceInfo.lps : '-';
-            document.getElementById('paidAmount').textContent = balanceInfo.paid_amount ? '৳' + balanceInfo.paid_amount : '-';
-
-            // Fill additional information
-            document.getElementById('tariff').textContent = data.tariff || '-';
-            document.getElementById('sanctionedLoad').textContent = data.sanctioned_load || '-';
-            document.getElementById('locationCode').textContent = data.location_code || '-';
-            document.getElementById('billGroup').textContent = data.bill_group || '-';
-
-            // Handle type-specific sections
-            if (selectedType === 'prepaid') {
-                showPrepaidSection(data);
-                hidePostpaidSection();
-            } else {
-                showPostpaidSection(data);
-                hidePrepaidSection();
-            }
+            // Generate and display formatted data
+            const dataContent = document.getElementById('dataContent');
+            dataContent.innerHTML = generateFormattedHTML(data);
         }
 
-        function showPrepaidSection(data) {
-            document.getElementById('prepaidSection').style.display = 'block';
-            
-            // Fill prepaid specific info
-            document.getElementById('lastRecharge').textContent = data.last_recharge_amount ? '৳' + data.last_recharge_amount + ' (' + (data.last_recharge_time || '-') + ')' : '-';
-            document.getElementById('installationDate').textContent = data.installation_date || '-';
-            document.getElementById('meterStatus').textContent = data.lock_status || '-';
-            document.getElementById('totalRecharges').textContent = data.total_recharges || '0';
+        function generateFormattedHTML(data) {
+            let html = '';
 
-            // Fill recharge table
-            const rechargeTableBody = document.getElementById('rechargeTableBody');
-            rechargeTableBody.innerHTML = '';
+            // Header with meter info
+            html += `<div class="section-title">
+                        <span class="emoji">📊</span> 
+                        ${data.type.toUpperCase()} মিটার তথ্য
+                    </div>`;
 
-            const recharges = data.recharge_history || [];
-            if (recharges.length === 0) {
-                rechargeTableBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">কোন রিচার্জ তথ্য পাওয়া যায়নি</td></tr>';
-            } else {
-                recharges.forEach(recharge => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${recharge.date || '-'}</td>
-                        <td>${recharge.order_no || '-'}</td>
-                        <td>${recharge.amount ? '৳' + recharge.amount : '-'}</td>
-                        <td style="font-family: monospace;">${recharge.tokens || '-'}</td>
-                    `;
-                    rechargeTableBody.appendChild(row);
+            // Basic Information
+            html += `<div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">🔢 মিটার নং:</span>
+                            <span class="info-value">${data.meter_number || 'N/A'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">👤 গ্রাহক নং:</span>
+                            <span class="info-value">${data.consumer_number || data.customer_number || 'N/A'}</span>
+                        </div>
+                    </div>`;
+
+            // Customer Information
+            if (data.customer_info && Object.keys(data.customer_info).length > 0) {
+                html += `<div class="section-title">
+                            <span class="emoji">👤</span> গ্রাহক তথ্য
+                         </div>`;
+
+                // Personal Information
+                html += `<div class="subsection-title">ব্যক্তিগত তথ্য</div>
+                         <div class="info-grid">`;
+                
+                ['Customer Name', 'Father Name', 'Customer Address'].forEach(key => {
+                    if (data.customer_info[key] && data.customer_info[key] !== 'N/A') {
+                        html += `<div class="info-item">
+                                    <span class="info-label">${key}:</span>
+                                    <span class="info-value">${data.customer_info[key]}</span>
+                                 </div>`;
+                    }
+                });
+                html += '</div>';
+
+                // Billing Information
+                html += `<div class="subsection-title">বিলিং তথ্য</div>
+                         <div class="info-grid">`;
+                
+                ['Location Code', 'Area Code', 'Bill Group', 'Book Number', 
+                 'Tariff Description', 'Sanctioned Load', 'Walk Order'].forEach(key => {
+                    if (data.customer_info[key] && data.customer_info[key] !== 'N/A') {
+                        html += `<div class="info-item">
+                                    <span class="info-label">${key}:</span>
+                                    <span class="info-value">${data.customer_info[key]}</span>
+                                 </div>`;
+                    }
+                });
+                html += '</div>';
+
+                // Technical Information
+                html += `<div class="subsection-title">টেকনিক্যাল তথ্য</div>
+                         <div class="info-grid">`;
+                
+                ['Usage Type', 'Description', 'Start Bill Cycle', 'Meter Condition', 'Meter Status'].forEach(key => {
+                    if (data.customer_info[key] && data.customer_info[key] !== 'N/A') {
+                        html += `<div class="info-item">
+                                    <span class="info-label">${key}:</span>
+                                    <span class="info-value">${data.customer_info[key]}</span>
+                                 </div>`;
+                    }
+                });
+                html += '</div>';
+            }
+
+            // Balance Information
+            if (data.balance_info && Object.keys(data.balance_info).length > 0) {
+                html += `<div class="section-title">
+                            <span class="emoji">💰</span> ব্যালেন্স তথ্য
+                         </div>
+                         <div class="info-grid">`;
+                
+                for (const [key, value] of Object.entries(data.balance_info)) {
+                    const amount = parseFloat(value) || 0;
+                    const amountClass = amount === 0 ? 'amount-positive' : 'amount-negative';
+                    const displayValue = amount === 0 ? '০.০০' : `৳ ${Math.abs(amount).toFixed(2)}`;
+                    
+                    html += `<div class="info-item">
+                                <span class="info-label">${key}:</span>
+                                <span class="info-value ${amountClass}">${displayValue}</span>
+                             </div>`;
+                }
+                html += '</div>';
+            }
+
+            // Bill Information with Table
+            if (data.bill_info && data.bill_info.length > 0) {
+                html += `<div class="section-title">
+                            <span class="emoji">📋</span> বিল তথ্য
+                         </div>`;
+
+                // Bill Summary
+                if (data.bill_summary) {
+                    html += `<div class="summary-card">
+                                <div class="summary-grid">`;
+                    
+                    const summary = data.bill_summary;
+                    const summaryItems = [
+                        { 
+                            label: 'মোট বিল', 
+                            value: summary.total_bills || 0, 
+                            emoji: '📊' 
+                        },
+                        { 
+                            label: 'মোট পরিমাণ', 
+                            value: `৳ ${((summary.total_amount || 0)).toFixed(0)}`, 
+                            emoji: '💰' 
+                        },
+                        { 
+                            label: 'মোট পরিশোধ', 
+                            value: `৳ ${((summary.total_paid || 0)).toFixed(0)}`, 
+                            emoji: '💳' 
+                        },
+                        { 
+                            label: 'বকেয়া', 
+                            value: `৳ ${((summary.arrears || 0)).toFixed(0)}`, 
+                            emoji: '⚠️' 
+                        }
+                    ];
+                    
+                    summaryItems.forEach(item => {
+                        html += `<div class="summary-item">
+                                    <div class="emoji">${item.emoji}</div>
+                                    <div class="summary-value">${item.value}</div>
+                                    <div class="summary-label">${item.label}</div>
+                                 </div>`;
+                    });
+                    
+                    html += `</div></div>`;
+                }
+
+                // Bill Table
+                html += `<div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>বিল মাস</th>
+                                        <th>বিল নং</th>
+                                        <th>ব্যবহার (kWh)</th>
+                                        <th>মোট বিল</th>
+                                        <th>পরিশোধিত</th>
+                                        <th>ব্যালেন্স</th>
+                                        <th>নির্ধারিত তারিখ</th>
+                                    </tr>
+                                </thead>
+                                <tbody>`;
+                
+                data.bill_info.forEach(bill => {
+                    const balance = parseFloat(bill.BALANCE) || 0;
+                    const balanceClass = balance === 0 ? 'amount-positive' : 'amount-negative';
+                    const balanceDisplay = balance === 0 ? '০' : `৳ ${Math.abs(balance).toFixed(0)}`;
+                    
+                    html += `<tr>
+                                <td>${formatBillMonth(bill.BILL_MONTH)}</td>
+                                <td>${bill.BILL_NO || 'N/A'}</td>
+                                <td>${bill.CONS_KWH_SR || '০'}</td>
+                                <td>৳ ${((bill.TOTAL_BILL || 0)).toFixed(0)}</td>
+                                <td>৳ ${((bill.PAID_AMT || 0)).toFixed(0)}</td>
+                                <td class="${balanceClass}">${balanceDisplay}</td>
+                                <td>${bill.INVOICE_DUE_DATE || 'N/A'}</td>
+                            </tr>`;
+                });
+                
+                html += `</tbody></table></div>`;
+            }
+
+            // Meter Readings
+            if (data.meter_readings && Object.keys(data.meter_readings).length > 0) {
+                html += `<div class="section-title">
+                            <span class="emoji">🔢</span> মিটার রিডিং
+                         </div>
+                         <div class="info-grid">`;
+                
+                for (const [key, value] of Object.entries(data.meter_readings)) {
+                    if (value && value !== 'N/A' && value !== 'null') {
+                        html += `<div class="info-item">
+                                    <span class="info-label">${key}:</span>
+                                    <span class="info-value">${value}</span>
+                                 </div>`;
+                    }
+                }
+                html += '</div>';
+            }
+
+            // Recharge History for Prepaid
+            if (data.type === 'prepaid' && data.recharge_history && data.recharge_history.length > 0) {
+                html += `<div class="section-title">
+                            <span class="emoji">🔑</span> রিচার্জ ইতিহাস
+                         </div>
+                         <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>তারিখ</th>
+                                        <th>অর্ডার নং</th>
+                                        <th>পরিমাণ</th>
+                                        <th>এনার্জি খরচ</th>
+                                        <th>টোকেন</th>
+                                        <th>অপারেটর</th>
+                                        <th>সিকোয়েন্স</th>
+                                    </tr>
+                                </thead>
+                                <tbody>`;
+                
+                data.recharge_history.slice(0, 10).forEach(transaction => {
+                    html += `<tr>
+                                <td>${transaction.Date || 'N/A'}</td>
+                                <td>${transaction['Order Number'] || 'N/A'}</td>
+                                <td>${transaction.Amount || '০'}</td>
+                                <td>${transaction['Energy Cost'] || '০'}</td>
+                                <td>${transaction.Tokens || 'N/A'}</td>
+                                <td>${transaction.Operator || 'N/A'}</td>
+                                <td>${transaction.Sequence || 'N/A'}</td>
+                            </tr>`;
+                });
+                
+                html += `</tbody></table></div>`;
+                
+                // Recharge summary
+                html += `<div class="summary-card">
+                            <div class="summary-item">
+                                <div class="emoji">📈</div>
+                                <div class="summary-value">${data.total_recharges || data.recharge_history.length}</div>
+                                <div class="summary-label">মোট রিচার্জ</div>
+                            </div>
+                         </div>`;
+            }
+
+            // Multiple Customers for Postpaid
+            if (data.type === 'postpaid' && data.customer_results && data.customer_results.length > 1) {
+                html += `<div class="section-title">
+                            <span class="emoji">👥</span> একাধিক গ্রাহক পাওয়া গেছে
+                         </div>`;
+                
+                data.customer_results.forEach((customer, index) => {
+                    html += `<div class="subsection-title">
+                                গ্রাহক ${index + 1}/${data.customer_results.length}
+                             </div>`;
+                    
+                    if (customer.customer_info) {
+                        html += `<div class="info-grid">`;
+                        for (const [key, value] of Object.entries(customer.customer_info)) {
+                            if (value && value !== 'N/A') {
+                                html += `<div class="info-item">
+                                            <span class="info-label">${key}:</span>
+                                            <span class="info-value">${value}</span>
+                                         </div>`;
+                            }
+                        }
+                        html += '</div>';
+                    }
                 });
             }
+
+            return html;
         }
 
-        function showPostpaidSection(data) {
-            document.getElementById('postpaidSection').style.display = 'block';
+        function formatBillMonth(dateStr) {
+            if (!dateStr || dateStr === 'N/A') return 'N/A';
             
-            // Fill postpaid specific info
-            document.getElementById('totalBills').textContent = data.total_bills || '0';
-            
-            const meterInfo = data.meter_info || {};
-            document.getElementById('lastReading').textContent = meterInfo.last_reading_sr || '-';
-            document.getElementById('lastBill').textContent = '-'; // You can calculate this from bill history
-
-            // Fill bill table
-            const billTableBody = document.getElementById('billTableBody');
-            billTableBody.innerHTML = '';
-
-            const bills = data.bill_history || [];
-            if (bills.length === 0) {
-                billTableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">কোন বিল তথ্য পাওয়া যায়নি</td></tr>';
-            } else {
-                bills.forEach(bill => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${bill.bill_month || '-'}</td>
-                        <td>${bill.bill_number || '-'}</td>
-                        <td>${bill.consumption || '-'}</td>
-                        <td>${bill.total_amount ? '৳' + bill.total_amount : '-'}</td>
-                        <td>${bill.paid_amount ? '৳' + bill.paid_amount : '-'}</td>
-                        <td>${bill.balance ? '৳' + bill.balance : '-'}</td>
-                    `;
-                    billTableBody.appendChild(row);
-                });
+            try {
+                // Format: YYYY-MM to Month-YYYY
+                const [year, month] = dateStr.split('-');
+                const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                
+                if (month && year) {
+                    const monthIndex = parseInt(month) - 1;
+                    if (monthIndex >= 0 && monthIndex < 12) {
+                        return `${monthNames[monthIndex]}-${year}`;
+                    }
+                }
+                return dateStr;
+            } catch (e) {
+                return dateStr;
             }
-        }
-
-        function hidePrepaidSection() {
-            document.getElementById('prepaidSection').style.display = 'none';
-        }
-
-        function hidePostpaidSection() {
-            document.getElementById('postpaidSection').style.display = 'none';
         }
 
         function showLoading() {
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('error').style.display = 'none';
-            document.getElementById('searchBtn').disabled = true;
-            document.getElementById('searchBtn').textContent = 'খুঁজছি...';
+            document.getElementById("loading").style.display = "block";
+            document.getElementById("error").style.display = "none";
+            document.getElementById("searchBtn").disabled = true;
+            document.getElementById("searchBtn").textContent = "খুঁজছি...";
         }
 
         function hideLoading() {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('searchBtn').disabled = false;
-            document.getElementById('searchBtn').textContent = 'খুঁজুন';
+            document.getElementById("loading").style.display = "none";
+            document.getElementById("searchBtn").disabled = false;
+            document.getElementById("searchBtn").textContent = "খুঁজুন";
         }
 
         function showError(message) {
-            const errorDiv = document.getElementById('error');
+            const errorDiv = document.getElementById("error");
             errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
+            errorDiv.style.display = "block";
             hideLoading();
         }
 
+        function clearResults() {
+            document.getElementById("dataContent").innerHTML = "";
+            document.getElementById("error").style.display = "none";
+        }
+
         function showSearchSection() {
-            document.getElementById('dataSection').style.display = 'none';
-            document.getElementById('searchSection').style.display = 'block';
-            document.getElementById('searchInput').value = '';
-            document.getElementById('searchInput').focus();
+            document.getElementById("dataSection").style.display = "none";
+            document.getElementById("searchSection").style.display = "block";
+            document.getElementById("searchInput").value = "";
+            document.getElementById("searchInput").focus();
+            clearResults();
+        }
+
+        function closeLookup() {
+            if (window.AndroidInterface) {
+                AndroidInterface.closeLookup();
+            } else {
+                window.close();
+            }
         }
 
         function saveAsPDF() {
-            if (window.AndroidInterface && AndroidInterface.saveAsPDF) {
+            if (window.AndroidInterface) {
                 AndroidInterface.saveAsPDF();
             } else {
-                alert('PDF সেভ করার জন্য প্রিন্ট অপশন ব্যবহার করুন');
                 window.print();
             }
         }
 
-        function closeLookup() {
-            if (window.AndroidInterface && AndroidInterface.closeLookup) {
-                AndroidInterface.closeLookup();
+        // Handle Enter key press
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                fetchData();
             }
-        }
+        });
 
         // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            selectType('prepaid');
-            
-            // Allow Enter key to search
-            document.getElementById('searchInput').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    fetchData();
-                }
-            });
-        });
+        document.getElementById('searchInput').focus();
     </script>
 </body>
 </html>
