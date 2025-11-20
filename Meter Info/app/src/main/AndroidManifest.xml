@@ -19,7 +19,7 @@
         android:requestLegacyExternalStorage="true"
         android:usesCleartextTraffic="true">
 
-        <!-- NEW: Home screen as launcher -->
+        <!-- Home screen as launcher -->
         <activity
             android:name=".Home"
             android:exported="true">
@@ -34,13 +34,21 @@
             android:name=".MainActivity"
             android:exported="false" />
 
-        <!-- NEW: HtmlActivity for application form -->
+        <!-- HtmlActivity for application form -->
         <activity
             android:name=".HtmlActivity"
             android:exported="false" />
+
+        <!-- NEW: LookupHtmlActivity for meter lookup -->
         <activity
-    android:name=".MeterDataDisplayActivity"
-    android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
+            android:name=".LookupHtmlActivity"
+            android:exported="false" />
+
+        <!-- MeterDataDisplayActivity for HTML display -->
+        <activity
+            android:name=".MeterDataDisplayActivity"
+            android:exported="false"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
 
     </application>
 </manifest>
