@@ -52,26 +52,15 @@ public class LookupDataHelper {
                 return result;
             }
 
-            // Step 3: Extract and merge all data using MainActivity's methods
-            MainActivity mainActivity = new MainActivity();
-
-            // Get SERVER1 cleaned data
-            Map<String, Object> cleanedSERVER1 = mainActivity.cleanSERVER1Data(server1Result.get("SERVER1_data"));
-
-            // Merge SERVER2 and SERVER3 data
-            Map<String, Object> mergedData = mainActivity.mergeSERVERData(server3Result);
-
-            // Combine all data
+            // Combine all data directly without MainActivity methods
             Map<String, Object> combinedResult = new HashMap<>();
             combinedResult.putAll(server3Result);
             combinedResult.put("meter_number", meterNumber);
             combinedResult.put("consumer_number", consumerNumber);
 
-            if (mergedData != null) {
-                combinedResult.putAll(mergedData);
-            }
-            if (cleanedSERVER1 != null) {
-                combinedResult.putAll(cleanedSERVER1);
+            // Add SERVER1 data if available
+            if (server1Result.containsKey("SERVER1_data")) {
+                combinedResult.putAll((Map) server1Result.get("SERVER1_data"));
             }
 
             // Format the data for HTML display
@@ -96,20 +85,10 @@ public class LookupDataHelper {
                 return result;
             }
 
-            // Use MainActivity's methods to process data
-            MainActivity mainActivity = new MainActivity();
-
-            // Merge SERVER2 and SERVER3 data
-            Map<String, Object> mergedData = mainActivity.mergeSERVERData(server3Result);
-
-            // Combine all data
+            // Combine data directly
             Map<String, Object> combinedResult = new HashMap<>();
             combinedResult.putAll(server3Result);
             combinedResult.put("customer_number", inputNumber);
-
-            if (mergedData != null) {
-                combinedResult.putAll(mergedData);
-            }
 
             // Format the data for HTML display
             result = formatLookupDataForDisplay(combinedResult, "postpaid");
