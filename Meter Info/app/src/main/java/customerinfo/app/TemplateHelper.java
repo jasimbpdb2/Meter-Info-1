@@ -1,1044 +1,876 @@
 package customerinfo.app;
 
 import android.content.Context;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import java.util.*;
 
 public class TemplateHelper {
-
-    public static final String TEMPLATE_POSTPAID = "postpaid_template.html";
-    public static final String TEMPLATE_PREPAID = "prepaid_template.html";
-
-    // Data classes
-    public static class PostpaidData {
-        public String customerNumber;
-        public MultipleCustomersData multipleCustomers;
-        public SingleCustomerData singleCustomer;
-        public BillInfoData billInfo;
-        public BalanceInfoData balanceInfo;
-        public BillSummaryData billSummary;
-        public ErrorData error;
-
-        public PostpaidData(String customerNumber, MultipleCustomersData multipleCustomers, 
-                          SingleCustomerData singleCustomer, BillInfoData billInfo, 
-                          BalanceInfoData balanceInfo, BillSummaryData billSummary, ErrorData error) {
-            this.customerNumber = customerNumber;
-            this.multipleCustomers = multipleCustomers;
-            this.singleCustomer = singleCustomer;
-            this.billInfo = billInfo;
-            this.balanceInfo = balanceInfo;
-            this.billSummary = billSummary;
-            this.error = error;
-        }
-    }
-
-    public static class MultipleCustomersData {
-        public int customerCount;
-        public List<CustomerData> customers;
-
-        public MultipleCustomersData(int customerCount, List<CustomerData> customers) {
-            this.customerCount = customerCount;
-            this.customers = customers;
-        }
-    }
-
-    public static class CustomerData {
-        public int index;
-        public String customerNumber;
-        public List<KeyValuePair> customerInfo;
-
-        public CustomerData(int index, String customerNumber, List<KeyValuePair> customerInfo) {
-            this.index = index;
-            this.customerNumber = customerNumber;
-            this.customerInfo = customerInfo;
-        }
-    }
-
-    public static class SingleCustomerData {
-        public List<KeyValuePair> customerInfo;
-
-        public SingleCustomerData(List<KeyValuePair> customerInfo) {
-            this.customerInfo = customerInfo;
-        }
-    }
-
-    public static class BillInfoData {
-        public List<BillData> bills;
-
-        public BillInfoData(List<BillData> bills) {
-            this.bills = bills;
-        }
-    }
-
-    public static class BillData {
-        public String billMonth;
-        public String billNo;
-        public String consumption;
-        public String currentBill;
-        public String dueDate;
-        public String paidAmt;
-        public String receiptDate;
-        public String balance;
-
-        public BillData(String billMonth, String billNo, String consumption, String currentBill, 
-                       String dueDate, String paidAmt, String receiptDate, String balance) {
-            this.billMonth = billMonth;
-            this.billNo = billNo;
-            this.consumption = consumption;
-            this.currentBill = currentBill;
-            this.dueDate = dueDate;
-            this.paidAmt = paidAmt;
-            this.receiptDate = receiptDate;
-            this.balance = balance;
-        }
-    }
-
-    public static class BalanceInfoData {
-        public List<KeyValuePair> fields;
-
-        public BalanceInfoData(List<KeyValuePair> fields) {
-            this.fields = fields;
-        }
-    }
-
-    public static class BillSummaryData {
-        public List<KeyValuePair> fields;
-
-        public BillSummaryData(List<KeyValuePair> fields) {
-            this.fields = fields;
-        }
-    }
 
     public static class PrepaidData {
         public String meterNumber;
         public String consumerNumber;
-        public PrepaidCustomerInfoData prepaidCustomerInfo;
-        public TokensData tokens;
-        public CustomerInfoData postpaidCustomerInfo;
-        public BillInfoData billInfo;
-        public BalanceInfoData balanceInfo;
-        public BillSummaryData billSummary;
-        public ErrorData error;
-
-        public PrepaidData(String meterNumber, String consumerNumber, PrepaidCustomerInfoData prepaidCustomerInfo,
-                          TokensData tokens, CustomerInfoData postpaidCustomerInfo, BillInfoData billInfo,
-                          BalanceInfoData balanceInfo, BillSummaryData billSummary, ErrorData error) {
-            this.meterNumber = meterNumber;
-            this.consumerNumber = consumerNumber;
-            this.prepaidCustomerInfo = prepaidCustomerInfo;
-            this.tokens = tokens;
-            this.postpaidCustomerInfo = postpaidCustomerInfo;
-            this.billInfo = billInfo;
-            this.balanceInfo = balanceInfo;
-            this.billSummary = billSummary;
-            this.error = error;
-        }
+        public Map<String, String> customerInfo;
+        public List<Map<String, String>> recentTransactions;
+        public Map<String, String> personalInfo;
+        public Map<String, String> meterInfo;
+        public Map<String, String> billingInfo;
+        public Map<String, String> technicalInfo;
+        public Map<String, String> readingInfo;
+        public Map<String, String> billSummary;
+        public Map<String, String> balanceInfo;
+        public JSONArray billTableData;
+        public String searchTime;
     }
 
-    public static class PrepaidCustomerInfoData {
-        public List<KeyValuePair> fields;
-
-        public PrepaidCustomerInfoData(List<KeyValuePair> fields) {
-            this.fields = fields;
-        }
+    public static class PostpaidData {
+        public String customerNumber;
+        public String meterNumber;
+        public Map<String, String> customerInfo;
+        public Map<String, String> personalInfo;
+        public Map<String, String> meterInfo;
+        public Map<String, String> billingInfo;
+        public Map<String, String> technicalInfo;
+        public Map<String, String> readingInfo;
+        public Map<String, String> billSummary;
+        public Map<String, String> balanceInfo;
+        public JSONArray billTableData;
+        public String searchTime;
+        public List<CustomerResult> multipleCustomers;
     }
 
-    public static class TokensData {
-        public List<TokenData> tokenList;
-
-        public TokensData(List<TokenData> tokenList) {
-            this.tokenList = tokenList;
-        }
+    public static class CustomerResult {
+        public String customerNumber;
+        public Map<String, String> customerInfo;
+        public Map<String, String> billSummary;
+        public Map<String, String> balanceInfo;
     }
 
-    public static class TokenData {
-        public int index;
-        public String token;
-        public String date;
-        public String amount;
-        public String operator;
-        public String sequence;
-
-        public TokenData(int index, String token, String date, String amount, String operator, String sequence) {
-            this.index = index;
-            this.token = token;
-            this.date = date;
-            this.amount = amount;
-            this.operator = operator;
-            this.sequence = sequence;
-        }
-    }
-
-    public static class CustomerInfoData {
-        public List<KeyValuePair> fields;
-
-        public CustomerInfoData(List<KeyValuePair> fields) {
-            this.fields = fields;
-        }
-    }
-
-    public static class KeyValuePair {
-        public String key;
-        public String value;
-
-        public KeyValuePair(String key, String value) {
-            this.key = key;
-            this.value = value;
-        }
-    }
-
-    public static class ErrorData {
-        public String errorMessage;
-
-        public ErrorData(String errorMessage) {
-            this.errorMessage = errorMessage;
-        }
-    }
-
-    // UPDATED: Convert MainActivity result to PostpaidData - FIXED
-    public static PostpaidData convertToPostpaidData(Map<String, Object> result) {
-        try {
-            String customerNumber = extractCustomerNumber(result);
-            
-            // Check if it's multiple customers (meter lookup)
-            if (result.containsKey("customer_results")) {
-                List<String> customerNumbers = (List<String>) result.get("customer_numbers");
-                List<Map<String, Object>> customerResults = (List<Map<String, Object>>) result.get("customer_results");
-
-                List<CustomerData> customers = new ArrayList<>();
-                for (int i = 0; i < customerResults.size(); i++) {
-                    Map<String, Object> customerResult = customerResults.get(i);
-                    List<KeyValuePair> customerInfo = extractCustomerInfoFromMergedData(customerResult);
-                    String custNumber = i < customerNumbers.size() ? customerNumbers.get(i) : "N/A";
-                    customers.add(new CustomerData(i + 1, custNumber, customerInfo));
-                }
-
-                return new PostpaidData(
-                    customerNumber,
-                    new MultipleCustomersData(customers.size(), customers),
-                    null,
-                    extractBillInfoFromMergedData(result),
-                    extractBalanceInfoFromMergedData(result),
-                    extractBillSummaryFromMergedData(result),
-                    extractError(result)
-                );
-            } else {
-                // Single customer - use the merged data structure
-                List<KeyValuePair> customerInfo = extractCustomerInfoFromMergedData(result);
-                return new PostpaidData(
-                    customerNumber,
-                    null,
-                    new SingleCustomerData(customerInfo),
-                    extractBillInfoFromMergedData(result),
-                    extractBalanceInfoFromMergedData(result),
-                    extractBillSummaryFromMergedData(result),
-                    extractError(result)
-                );
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new PostpaidData(
-                "N/A",
-                null, null, null, null, null,
-                new ErrorData("Error converting data: " + e.getMessage())
-            );
-        }
-    }
-
-    // UPDATED: Convert MainActivity result to PrepaidData - FIXED
+    // Convert MainActivity result to PrepaidData
     public static PrepaidData convertToPrepaidData(Map<String, Object> result) {
-        try {
-            String meterNumber = extractMeterNumber(result);
-            String consumerNumber = extractConsumerNumber(result);
-
-            return new PrepaidData(
-                meterNumber,
-                consumerNumber,
-                extractPrepaidCustomerInfo(result),
-                extractTokensFromMergedData(result),
-                extractCustomerInfoFromMergedDataAsCustomerInfoData(result),
-                extractBillInfoFromMergedData(result),
-                extractBalanceInfoFromMergedData(result),
-                extractBillSummaryFromMergedData(result),
-                extractError(result)
-            );
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new PrepaidData(
-                "N/A", "N/A", null, null, null, null, null, null,
-                new ErrorData("Error converting data: " + e.getMessage())
-            );
-        }
-    }
-
-    // NEW: Extract customer info from MainActivity's merged data structure
-    private static List<KeyValuePair> extractCustomerInfoFromMergedData(Map<String, Object> result) {
-        List<KeyValuePair> fields = new ArrayList<>();
-        if (result == null) return fields;
-
-        try {
-            // First try to get data from merged structure (MainActivity's mergeSERVERData)
-            Map<String, Object> mergedData = getMergedData(result);
-            
-            if (mergedData != null && mergedData.containsKey("customer_info")) {
+        PrepaidData data = new PrepaidData();
+        
+        data.meterNumber = getSafeString(result.get("meter_number"));
+        data.consumerNumber = getSafeString(result.get("consumer_number"));
+        data.searchTime = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss").format(new Date());
+        
+        // Get merged data
+        Map<String, Object> mergedData = mergeSERVERData(result);
+        if (mergedData != null) {
+            // Customer Info sections
+            if (mergedData.containsKey("customer_info")) {
                 Map<String, String> customerInfo = (Map<String, String>) mergedData.get("customer_info");
-                for (Map.Entry<String, String> entry : customerInfo.entrySet()) {
-                    if (isValidValue(entry.getValue())) {
-                        fields.add(new KeyValuePair(entry.getKey(), entry.getValue()));
-                    }
-                }
-            }
-
-            // If no merged data, try direct extraction
-            if (fields.isEmpty()) {
-                fields = extractBasicCustomerInfoDirect(result);
-            }
-
-            // Always add basic identifiers
-            addIfValid(fields, "Customer Number", extractCustomerNumber(result));
-            addIfValid(fields, "Consumer Number", extractConsumerNumber(result));
-            addIfValid(fields, "Meter Number", extractMeterNumber(result));
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            fields.add(new KeyValuePair("Error", "Failed to extract customer info: " + e.getMessage()));
-        }
-        return fields;
-    }
-
-    // NEW: Extract bill info from MainActivity's merged data structure
-    private static BillInfoData extractBillInfoFromMergedData(Map<String, Object> result) {
-        List<BillData> bills = new ArrayList<>();
-
-        try {
-            Map<String, Object> mergedData = getMergedData(result);
-            if (mergedData != null && mergedData.containsKey("bill_info_raw")) {
-                JSONArray billInfo = (JSONArray) mergedData.get("bill_info_raw");
-                for (int i = 0; i < billInfo.length() && i < 10; i++) { // Limit to 10 bills
-                    JSONObject bill = billInfo.getJSONObject(i);
-                    bills.add(new BillData(
-                        formatBillMonth(bill.optString("BILL_MONTH")),
-                        bill.optString("BILL_NO"),
-                        bill.optString("CONS_KWH_SR"),
-                        formatCurrency(bill.optString("TOTAL_BILL")),
-                        formatDate(bill.optString("INVOICE_DUE_DATE")),
-                        formatCurrency(bill.optString("PAID_AMT")),
-                        formatDate(bill.optString("RECEIPT_DATE")),
-                        formatCurrency(bill.optString("BALANCE"))
-                    ));
-                }
-            }
-
-            // If no bills found, check for bill summary
-            if (bills.isEmpty() && mergedData != null && mergedData.containsKey("bill_summary")) {
-                Map<String, Object> billSummary = (Map<String, Object>) mergedData.get("bill_summary");
-                if (billSummary.containsKey("all_bills")) {
-                    List<Map<String, Object>> allBills = (List<Map<String, Object>>) billSummary.get("all_bills");
-                    for (Map<String, Object> bill : allBills) {
-                        bills.add(new BillData(
-                            getSafeString(bill.get("bill_month")),
-                            getSafeString(bill.get("bill_number")),
-                            getSafeString(bill.get("consumption")),
-                            formatCurrency(getSafeString(bill.get("total_amount"))),
-                            getSafeString(bill.get("due_date")),
-                            "৳0", // paid amount
-                            "N/A", // receipt date
-                            formatCurrency(getSafeString(bill.get("balance")))
-                        ));
-                    }
-                }
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return bills.isEmpty() ? null : new BillInfoData(bills);
-    }
-
-    // NEW: Extract balance info from MainActivity's merged data structure
-    private static BalanceInfoData extractBalanceInfoFromMergedData(Map<String, Object> result) {
-        List<KeyValuePair> fields = new ArrayList<>();
-
-        try {
-            Map<String, Object> mergedData = getMergedData(result);
-            if (mergedData != null && mergedData.containsKey("balance_info")) {
-                Map<String, String> balanceInfo = (Map<String, String>) mergedData.get("balance_info");
-                for (Map.Entry<String, String> entry : balanceInfo.entrySet()) {
-                    if (isValidValue(entry.getValue())) {
-                        fields.add(new KeyValuePair(entry.getKey(), formatCurrency(entry.getValue())));
-                    }
-                }
-            }
-
-            // If no balance info, add default
-            if (fields.isEmpty()) {
-                fields.add(new KeyValuePair("Total Balance", "৳0"));
-                fields.add(new KeyValuePair("Arrear Amount", "৳0"));
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return fields.isEmpty() ? null : new BalanceInfoData(fields);
-    }
-
-    // NEW: Extract bill summary from MainActivity's merged data structure
-    private static BillSummaryData extractBillSummaryFromMergedData(Map<String, Object> result) {
-        List<KeyValuePair> fields = new ArrayList<>();
-
-        try {
-            Map<String, Object> mergedData = getMergedData(result);
-            if (mergedData != null && mergedData.containsKey("bill_summary")) {
-                Map<String, Object> billSummary = (Map<String, Object>) mergedData.get("bill_summary");
+                data.customerInfo = customerInfo;
                 
-                addIfValid(fields, "Total Bills", getSafeString(billSummary.get("total_bills")));
-                addIfValid(fields, "Latest Bill Date", getSafeString(billSummary.get("latest_bill_date")));
-                addIfValid(fields, "Latest Bill Amount", formatCurrency(getSafeString(billSummary.get("latest_total_amount"))));
-                addIfValid(fields, "Latest Consumption", getSafeString(billSummary.get("latest_consumption")) + " kWh");
-                addIfValid(fields, "Recent Consumption (3 months)", getSafeString(billSummary.get("recent_consumption")) + " kWh");
-                addIfValid(fields, "Recent Amount (3 months)", formatCurrency(getSafeString(billSummary.get("recent_amount"))));
+                // Split into sections like MainActivity
+                data.personalInfo = extractSection(customerInfo, new String[]{
+                    "Customer Name", "Father Name", "Customer Address"
+                });
+                
+                data.meterInfo = extractSection(customerInfo, new String[]{
+                    "Meter Number", "Meter Condition", "Meter Status", "Connection Date"
+                });
+                
+                data.billingInfo = extractSection(customerInfo, new String[]{
+                    "Customer Number", "Location Code", "Area Code", "Bill Group", 
+                    "Book Number", "Tariff Description", "Sanctioned Load", "Walk Order", "Account_Number"
+                });
+                
+                data.technicalInfo = extractSection(customerInfo, new String[]{
+                    "Usage Type", "Description", "Start Bill Cycle"
+                });
+                
+                data.readingInfo = extractSection(customerInfo, new String[]{
+                    "Arrear Amount", "Current Reading SR", "Last Bill Reading SR",
+                    "Last Bill Reading OF PK", "Last Bill Reading PK"
+                });
             }
-
-            // If no bill summary, create basic one
-            if (fields.isEmpty()) {
-                BillInfoData billInfo = extractBillInfoFromMergedData(result);
-                if (billInfo != null && !billInfo.bills.isEmpty()) {
-                    BillData latestBill = billInfo.bills.get(0);
-                    fields.add(new KeyValuePair("Total Bills", String.valueOf(billInfo.bills.size())));
-                    fields.add(new KeyValuePair("Latest Bill Date", latestBill.billMonth));
-                    fields.add(new KeyValuePair("Latest Amount", latestBill.currentBill));
-                    fields.add(new KeyValuePair("Latest Consumption", latestBill.consumption + " kWh"));
-                } else {
-                    fields.add(new KeyValuePair("Total Bills", "0"));
-                    fields.add(new KeyValuePair("Latest Bill Date", "N/A"));
-                    fields.add(new KeyValuePair("Latest Amount", "৳0"));
-                    fields.add(new KeyValuePair("Status", "No bill history available"));
-                }
+            
+            // Balance Info
+            if (mergedData.containsKey("balance_info")) {
+                data.balanceInfo = (Map<String, String>) mergedData.get("balance_info");
             }
-
-        } catch (Exception e) {
-            e.printStackTrace();
+            
+            // Bill Summary
+            if (mergedData.containsKey("bill_summary")) {
+                Map<String, Object> billSummaryObj = (Map<String, Object>) mergedData.get("bill_summary");
+                data.billSummary = new HashMap<>();
+                data.billSummary.put("first_bill_period", getSafeString(billSummaryObj.get("first_bill_period")));
+                data.billSummary.put("last_bill_period", getSafeString(billSummaryObj.get("last_bill_period")));
+                data.billSummary.put("total_bills", getSafeString(billSummaryObj.get("total_bills")));
+                data.billSummary.put("total_amount", getSafeString(billSummaryObj.get("total_amount")));
+                data.billSummary.put("total_paid", getSafeString(billSummaryObj.get("total_paid")));
+                data.billSummary.put("arrears", getSafeString(billSummaryObj.get("arrears")));
+            }
+            
+            // Bill Table Data
+            if (mergedData.containsKey("bill_info_raw")) {
+                data.billTableData = (JSONArray) mergedData.get("bill_info_raw");
+            }
         }
-
-        return fields.isEmpty() ? null : new BillSummaryData(fields);
+        
+        // Prepaid specific data from SERVER1
+        Map<String, Object> cleanedSERVER1 = cleanSERVER1Data(result.get("SERVER1_data"));
+        if (cleanedSERVER1 != null && cleanedSERVER1.containsKey("recent_transactions")) {
+            data.recentTransactions = (List<Map<String, String>>) cleanedSERVER1.get("recent_transactions");
+        }
+        
+        return data;
     }
 
-    // NEW: Extract prepaid customer info from MainActivity's cleaned SERVER1 data
-    private static PrepaidCustomerInfoData extractPrepaidCustomerInfo(Map<String, Object> result) {
-        List<KeyValuePair> fields = new ArrayList<>();
-
-        try {
-            // Try to get prepaid-specific data from SERVER1_data
-            if (result.containsKey("SERVER1_data")) {
-                Object server1Data = result.get("SERVER1_data");
-                Map<String, Object> cleanedData = cleanSERVER1DataForTemplate(server1Data);
+    // Convert MainActivity result to PostpaidData
+    public static PostpaidData convertToPostpaidData(Map<String, Object> result) {
+        PostpaidData data = new PostpaidData();
+        
+        data.customerNumber = getSafeString(result.get("customer_number"));
+        data.meterNumber = getSafeString(result.get("meter_number"));
+        data.searchTime = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss").format(new Date());
+        
+        // Handle multiple customers from meter lookup
+        if (result.containsKey("customer_results")) {
+            data.multipleCustomers = new ArrayList<>();
+            List<Map<String, Object>> customerResults = (List<Map<String, Object>>) result.get("customer_results");
+            List<String> customerNumbers = (List<String>) result.get("customer_numbers");
+            
+            for (int i = 0; i < customerResults.size(); i++) {
+                CustomerResult customer = new CustomerResult();
+                customer.customerNumber = customerNumbers.get(i);
                 
-                if (cleanedData.containsKey("customer_info")) {
-                    Map<String, String> customerInfo = (Map<String, String>) cleanedData.get("customer_info");
-                    for (Map.Entry<String, String> entry : customerInfo.entrySet()) {
+                Map<String, Object> mergedData = mergeSERVERData(customerResults.get(i));
+                if (mergedData != null) {
+                    if (mergedData.containsKey("customer_info")) {
+                        customer.customerInfo = (Map<String, String>) mergedData.get("customer_info");
+                    }
+                    if (mergedData.containsKey("bill_summary")) {
+                        Map<String, Object> billSummaryObj = (Map<String, Object>) mergedData.get("bill_summary");
+                        customer.billSummary = new HashMap<>();
+                        customer.billSummary.put("total_bills", getSafeString(billSummaryObj.get("total_bills")));
+                        customer.billSummary.put("total_amount", getSafeString(billSummaryObj.get("total_amount")));
+                        customer.billSummary.put("arrears", getSafeString(billSummaryObj.get("arrears")));
+                    }
+                    if (mergedData.containsKey("balance_info")) {
+                        customer.balanceInfo = (Map<String, String>) mergedData.get("balance_info");
+                    }
+                }
+                data.multipleCustomers.add(customer);
+            }
+        } else {
+            // Single customer
+            Map<String, Object> mergedData = mergeSERVERData(result);
+            if (mergedData != null) {
+                if (mergedData.containsKey("customer_info")) {
+                    Map<String, String> customerInfo = (Map<String, String>) mergedData.get("customer_info");
+                    data.customerInfo = customerInfo;
+                    
+                    // Split into sections
+                    data.personalInfo = extractSection(customerInfo, new String[]{
+                        "Customer Name", "Father Name", "Customer Address"
+                    });
+                    
+                    data.meterInfo = extractSection(customerInfo, new String[]{
+                        "Meter Number", "Meter Condition", "Meter Status", "Connection Date"
+                    });
+                    
+                    data.billingInfo = extractSection(customerInfo, new String[]{
+                        "Customer Number", "Location Code", "Area Code", "Bill Group", 
+                        "Book Number", "Tariff Description", "Sanctioned Load", "Walk Order", "Account_Number"
+                    });
+                    
+                    data.technicalInfo = extractSection(customerInfo, new String[]{
+                        "Usage Type", "Description", "Start Bill Cycle"
+                    });
+                    
+                    data.readingInfo = extractSection(customerInfo, new String[]{
+                        "Arrear Amount", "Current Reading SR", "Last Bill Reading SR",
+                        "Last Bill Reading OF PK", "Last Bill Reading PK"
+                    });
+                }
+                
+                if (mergedData.containsKey("balance_info")) {
+                    data.balanceInfo = (Map<String, String>) mergedData.get("balance_info");
+                }
+                
+                if (mergedData.containsKey("bill_summary")) {
+                    Map<String, Object> billSummaryObj = (Map<String, Object>) mergedData.get("bill_summary");
+                    data.billSummary = new HashMap<>();
+                    data.billSummary.put("first_bill_period", getSafeString(billSummaryObj.get("first_bill_period")));
+                    data.billSummary.put("last_bill_period", getSafeString(billSummaryObj.get("last_bill_period")));
+                    data.billSummary.put("total_bills", getSafeString(billSummaryObj.get("total_bills")));
+                    data.billSummary.put("total_amount", getSafeString(billSummaryObj.get("total_amount")));
+                    data.billSummary.put("total_paid", getSafeString(billSummaryObj.get("total_paid")));
+                    data.billSummary.put("arrears", getSafeString(billSummaryObj.get("arrears")));
+                }
+                
+                if (mergedData.containsKey("bill_info_raw")) {
+                    data.billTableData = (JSONArray) mergedData.get("bill_info_raw");
+                }
+            }
+        }
+        
+        return data;
+    }
+
+    // HTML Template Rendering
+    public static String renderPrepaidTemplate(Context context, PrepaidData data) {
+        StringBuilder html = new StringBuilder();
+        
+        html.append("<!DOCTYPE html>");
+        html.append("<html lang='en'>");
+        html.append("<head>");
+        html.append("<meta charset='UTF-8'>");
+        html.append("<meta name='viewport' content='width=device-width, initial-scale=1.0'>");
+        html.append("<title>Prepaid Meter Information</title>");
+        html.append("<style>");
+        html.append(getCommonCSS());
+        html.append("</style>");
+        html.append("</head>");
+        html.append("<body>");
+        
+        // Header
+        html.append("<div class='header'>");
+        html.append("<h1>📊 PREPAID METER INFORMATION</h1>");
+        html.append("<div class='search-info'>");
+        html.append("<p><strong>Search Time:</strong> ").append(data.searchTime).append("</p>");
+        html.append("</div>");
+        html.append("</div>");
+        
+        // Basic Info Card
+        html.append("<div class='card'>");
+        html.append("<h2>🔢 Basic Information</h2>");
+        html.append("<div class='info-grid'>");
+        html.append("<div><strong>Meter Number:</strong> ").append(escapeHtml(data.meterNumber)).append("</div>");
+        html.append("<div><strong>Consumer Number:</strong> ").append(escapeHtml(data.consumerNumber)).append("</div>");
+        html.append("</div>");
+        html.append("</div>");
+        
+        // Prepaid Customer Details
+        if (data.customerInfo != null && !data.customerInfo.isEmpty()) {
+            html.append("<div class='card'>");
+            html.append("<h2>📋 PREPAID CUSTOMER DETAILS</h2>");
+            
+            html.append("<div class='section'>");
+            html.append("<h3>👤 CUSTOMER INFORMATION</h3>");
+            html.append("<div class='info-list'>");
+            for (Map.Entry<String, String> entry : data.customerInfo.entrySet()) {
+                if (isValidValue(entry.getValue())) {
+                    html.append("<div class='info-item'>• ").append(escapeHtml(entry.getKey())).append(": ").append(escapeHtml(entry.getValue())).append("</div>");
+                }
+            }
+            html.append("</div>");
+            html.append("</div>");
+            html.append("</div>");
+        }
+        
+        // Recent Tokens
+        if (data.recentTransactions != null && !data.recentTransactions.isEmpty()) {
+            html.append("<div class='card'>");
+            html.append("<h2>🔑 LAST RECHARGE TOKENS</h2>");
+            html.append("<div class='tokens-container'>");
+            
+            for (int i = 0; i < data.recentTransactions.size(); i++) {
+                Map<String, String> transaction = data.recentTransactions.get(i);
+                html.append("<div class='token-card'>");
+                html.append("<h3>Order ").append(i + 1).append("</h3>");
+                html.append("<div class='token-details'>");
+                html.append("<p><span class='emoji'>📅</span> Date: ").append(escapeHtml(transaction.get("Date"))).append("</p>");
+                html.append("<p><span class='emoji'>🧾</span> Order: ").append(escapeHtml(transaction.get("Order Number"))).append("</p>");
+                html.append("<p><span class='emoji'>👤</span> Operator: ").append(escapeHtml(transaction.get("Operator"))).append("</p>");
+                html.append("<p><span class='emoji'>🔢</span> Sequence: ").append(escapeHtml(transaction.get("Sequence"))).append("</p>");
+                html.append("<p><span class='emoji'>💰</span> Amount: ").append(escapeHtml(transaction.get("Amount"))).append("</p>");
+                html.append("<p><span class='emoji'>⚡</span> Energy: ").append(escapeHtml(transaction.get("Energy Cost"))).append("</p>");
+                html.append("<p><span class='emoji'>🔑</span> TOKENS: <strong class='token'>").append(escapeHtml(transaction.get("Tokens"))).append("</strong></p>");
+                html.append("</div>");
+                html.append("</div>");
+            }
+            
+            html.append("</div>");
+            html.append("</div>");
+        }
+        
+        // Merged Customer Information Sections
+        html.append(renderCustomerSections(data.personalInfo, data.meterInfo, data.billingInfo, data.technicalInfo, data.readingInfo));
+        
+        // Bill Summary
+        if (data.billSummary != null && !data.billSummary.isEmpty()) {
+            html.append("<div class='card'>");
+            html.append("<h2>📊 BILL SUMMARY</h2>");
+            html.append("<div class='bill-summary'>");
+            html.append("<div class='summary-grid'>");
+            html.append("<div><strong>First Bill Period:</strong> ").append(escapeHtml(data.billSummary.get("first_bill_period"))).append("</div>");
+            html.append("<div><strong>Last Bill Period:</strong> ").append(escapeHtml(data.billSummary.get("last_bill_period"))).append("</div>");
+            html.append("<div><strong>Total Bills:</strong> ").append(escapeHtml(data.billSummary.get("total_bills"))).append("</div>");
+            html.append("<div><strong>Total Amount:</strong> ৳").append(escapeHtml(data.billSummary.get("total_amount"))).append("</div>");
+            html.append("<div><strong>Total Paid:</strong> ৳").append(escapeHtml(data.billSummary.get("total_paid"))).append("</div>");
+            html.append("<div><strong>Arrears:</strong> ৳").append(escapeHtml(data.billSummary.get("arrears"))).append("</div>");
+            html.append("</div>");
+            html.append("</div>");
+            html.append("</div>");
+        }
+        
+        // Balance Details
+        if (data.balanceInfo != null && !data.balanceInfo.isEmpty()) {
+            html.append("<div class='card'>");
+            html.append("<h2>💰 FINAL BALANCE DETAILS</h2>");
+            html.append("<div class='balance-details'>");
+            String[] balanceOrder = {"Total Balance", "Arrear Amount", "PRN", "LPS", "VAT"};
+            for (String key : balanceOrder) {
+                if (data.balanceInfo.containsKey(key) && isValidValue(data.balanceInfo.get(key))) {
+                    html.append("<div class='balance-item'>• ").append(escapeHtml(key)).append(": ").append(escapeHtml(data.balanceInfo.get(key))).append("</div>");
+                }
+            }
+            html.append("</div>");
+            html.append("</div>");
+        }
+        
+        // Bill Table
+        if (data.billTableData != null && data.billTableData.length() > 0) {
+            html.append(renderBillTable(data.billTableData));
+        }
+        
+        html.append("</body>");
+        html.append("</html>");
+        
+        return html.toString();
+    }
+
+    public static String renderPostpaidTemplate(Context context, PostpaidData data) {
+        StringBuilder html = new StringBuilder();
+        
+        html.append("<!DOCTYPE html>");
+        html.append("<html lang='en'>");
+        html.append("<head>");
+        html.append("<meta charset='UTF-8'>");
+        html.append("<meta name='viewport' content='width=device-width, initial-scale=1.0'>");
+        html.append("<title>Postpaid Meter Information</title>");
+        html.append("<style>");
+        html.append(getCommonCSS());
+        html.append("</style>");
+        html.append("</head>");
+        html.append("<body>");
+        
+        // Header
+        html.append("<div class='header'>");
+        html.append("<h1>💡 POSTPAID METER INFORMATION</h1>");
+        html.append("<div class='search-info'>");
+        html.append("<p><strong>Search Time:</strong> ").append(data.searchTime).append("</p>");
+        html.append("</div>");
+        html.append("</div>");
+        
+        // Multiple Customers
+        if (data.multipleCustomers != null && !data.multipleCustomers.isEmpty()) {
+            html.append("<div class='card'>");
+            html.append("<h2>📊 Found ").append(data.multipleCustomers.size()).append(" Customer(s) for This Meter</h2>");
+            
+            for (int i = 0; i < data.multipleCustomers.size(); i++) {
+                CustomerResult customer = data.multipleCustomers.get(i);
+                html.append("<div class='customer-section'>");
+                html.append("<h3 class='customer-header'>👤 CUSTOMER ").append(i + 1).append("/").append(data.multipleCustomers.size()).append(": ").append(escapeHtml(customer.customerNumber)).append("</h3>");
+                
+                if (customer.customerInfo != null) {
+                    html.append("<div class='info-list'>");
+                    for (Map.Entry<String, String> entry : customer.customerInfo.entrySet()) {
                         if (isValidValue(entry.getValue())) {
-                            fields.add(new KeyValuePair(entry.getKey(), entry.getValue()));
+                            html.append("<div class='info-item'>• ").append(escapeHtml(entry.getKey())).append(": ").append(escapeHtml(entry.getValue())).append("</div>");
                         }
                     }
+                    html.append("</div>");
                 }
+                
+                if (customer.billSummary != null) {
+                    html.append("<div class='bill-summary'>");
+                    html.append("<h4>Bill Summary</h4>");
+                    html.append("<div class='summary-grid'>");
+                    html.append("<div><strong>Total Bills:</strong> ").append(escapeHtml(customer.billSummary.get("total_bills"))).append("</div>");
+                    html.append("<div><strong>Total Amount:</strong> ৳").append(escapeHtml(customer.billSummary.get("total_amount"))).append("</div>");
+                    html.append("<div><strong>Arrears:</strong> ৳").append(escapeHtml(customer.billSummary.get("arrears"))).append("</div>");
+                    html.append("</div>");
+                    html.append("</div>");
+                }
+                
+                html.append("</div>");
             }
-
-            // Add basic identifiers
-            addIfValid(fields, "Meter Number", extractMeterNumber(result));
-            addIfValid(fields, "Consumer Number", extractConsumerNumber(result));
-
-            // Supplement with merged data if available
-            List<KeyValuePair> mergedInfo = extractCustomerInfoFromMergedData(result);
-            for (KeyValuePair field : mergedInfo) {
-                // Avoid duplicates
-                boolean exists = false;
-                for (KeyValuePair existing : fields) {
-                    if (existing.key.equals(field.key)) {
-                        exists = true;
-                        break;
+            html.append("</div>");
+        } else {
+            // Single Customer
+            html.append("<div class='card'>");
+            html.append("<h2>🔢 Basic Information</h2>");
+            html.append("<div class='info-grid'>");
+            html.append("<div><strong>Consumer Number:</strong> ").append(escapeHtml(data.customerNumber)).append("</div>");
+            if (data.meterNumber != null && !data.meterNumber.equals("N/A")) {
+                html.append("<div><strong>Meter Number:</strong> ").append(escapeHtml(data.meterNumber)).append("</div>");
+            }
+            html.append("</div>");
+            html.append("</div>");
+            
+            // Customer Information Sections
+            html.append(renderCustomerSections(data.personalInfo, data.meterInfo, data.billingInfo, data.technicalInfo, data.readingInfo));
+            
+            // Bill Summary
+            if (data.billSummary != null && !data.billSummary.isEmpty()) {
+                html.append("<div class='card'>");
+                html.append("<h2>📊 BILL SUMMARY</h2>");
+                html.append("<div class='bill-summary'>");
+                html.append("<div class='summary-grid'>");
+                html.append("<div><strong>First Bill Period:</strong> ").append(escapeHtml(data.billSummary.get("first_bill_period"))).append("</div>");
+                html.append("<div><strong>Last Bill Period:</strong> ").append(escapeHtml(data.billSummary.get("last_bill_period"))).append("</div>");
+                html.append("<div><strong>Total Bills:</strong> ").append(escapeHtml(data.billSummary.get("total_bills"))).append("</div>");
+                html.append("<div><strong>Total Amount:</strong> ৳").append(escapeHtml(data.billSummary.get("total_amount"))).append("</div>");
+                html.append("<div><strong>Total Paid:</strong> ৳").append(escapeHtml(data.billSummary.get("total_paid"))).append("</div>");
+                html.append("<div><strong>Arrears:</strong> ৳").append(escapeHtml(data.billSummary.get("arrears"))).append("</div>");
+                html.append("</div>");
+                html.append("</div>");
+                html.append("</div>");
+            }
+            
+            // Balance Details
+            if (data.balanceInfo != null && !data.balanceInfo.isEmpty()) {
+                html.append("<div class='card'>");
+                html.append("<h2>💰 FINAL BALANCE DETAILS</h2>");
+                html.append("<div class='balance-details'>");
+                String[] balanceOrder = {"Total Balance", "Arrear Amount", "PRN", "LPS", "VAT"};
+                for (String key : balanceOrder) {
+                    if (data.balanceInfo.containsKey(key) && isValidValue(data.balanceInfo.get(key))) {
+                        html.append("<div class='balance-item'>• ").append(escapeHtml(key)).append(": ").append(escapeHtml(data.balanceInfo.get(key))).append("</div>");
                     }
                 }
-                if (!exists && isValidValue(field.value)) {
-                    fields.add(field);
+                html.append("</div>");
+                html.append("</div>");
+            }
+            
+            // Bill Table
+            if (data.billTableData != null && data.billTableData.length() > 0) {
+                html.append(renderBillTable(data.billTableData));
+            }
+        }
+        
+        html.append("</body>");
+        html.append("</html>");
+        
+        return html.toString();
+    }
+
+    private static String renderCustomerSections(Map<String, String> personalInfo, Map<String, String> meterInfo, 
+                                               Map<String, String> billingInfo, Map<String, String> technicalInfo, 
+                                               Map<String, String> readingInfo) {
+        StringBuilder html = new StringBuilder();
+        
+        html.append("<div class='card'>");
+        html.append("<h2>👤 CUSTOMER INFORMATION</h2>");
+        
+        if (personalInfo != null && !personalInfo.isEmpty()) {
+            html.append("<div class='section'>");
+            html.append("<h3>📋 PERSONAL INFORMATION</h3>");
+            html.append("<div class='info-list'>");
+            for (Map.Entry<String, String> entry : personalInfo.entrySet()) {
+                if (isValidValue(entry.getValue())) {
+                    html.append("<div class='info-item'>• ").append(escapeHtml(entry.getKey())).append(": ").append(escapeHtml(entry.getValue())).append("</div>");
                 }
             }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            fields.add(new KeyValuePair("Error", "Failed to extract prepaid info: " + e.getMessage()));
+            html.append("</div>");
+            html.append("</div>");
         }
-
-        return new PrepaidCustomerInfoData(fields);
-    }
-
-    // NEW: Extract tokens from MainActivity's cleaned SERVER1 data
-    private static TokensData extractTokensFromMergedData(Map<String, Object> result) {
-        List<TokenData> tokenList = new ArrayList<>();
-
-        try {
-            if (result.containsKey("SERVER1_data")) {
-                Object server1Data = result.get("SERVER1_data");
-                Map<String, Object> cleanedData = cleanSERVER1DataForTemplate(server1Data);
-                
-                if (cleanedData.containsKey("recent_transactions")) {
-                    List<Map<String, String>> transactions = (List<Map<String, String>>) cleanedData.get("recent_transactions");
-                    for (int i = 0; i < transactions.size() && i < 3; i++) {
-                        Map<String, String> transaction = transactions.get(i);
-                        tokenList.add(new TokenData(
-                            i + 1,
-                            transaction.get("Tokens"),
-                            transaction.get("Date"),
-                            transaction.get("Amount"),
-                            transaction.get("Operator"),
-                            transaction.get("Sequence")
-                        ));
-                    }
+        
+        if (meterInfo != null && !meterInfo.isEmpty()) {
+            html.append("<div class='section'>");
+            html.append("<h3>🔧 METER INFORMATION</h3>");
+            html.append("<div class='info-list'>");
+            for (Map.Entry<String, String> entry : meterInfo.entrySet()) {
+                if (isValidValue(entry.getValue())) {
+                    html.append("<div class='info-item'>• ").append(escapeHtml(entry.getKey())).append(": ").append(escapeHtml(entry.getValue())).append("</div>");
                 }
             }
-
-        } catch (Exception e) {
-            e.printStackTrace();
+            html.append("</div>");
+            html.append("</div>");
         }
-
-        return tokenList.isEmpty() ? null : new TokensData(tokenList);
-    }
-
-    // NEW: Helper to get merged data from MainActivity result
-    private static Map<String, Object> getMergedData(Map<String, Object> result) {
-        try {
-            // Check if result already contains merged data (from MainActivity's mergeSERVERData)
-            if (result.containsKey("customer_info") || result.containsKey("balance_info") || 
-                result.containsKey("bill_info_raw") || result.containsKey("bill_summary")) {
-                return result;
-            }
-            
-            // Try to extract from unique_analysis or other merged structures
-            if (result.containsKey("unique_analysis")) {
-                return result;
-            }
-            
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return result;
-    }
-
-    // NEW: Clean SERVER1 data for template (simplified version of MainActivity's method)
-    private static Map<String, Object> cleanSERVER1DataForTemplate(Object SERVER1DataObj) {
-        Map<String, Object> cleaned = new HashMap<>();
-
-        try {
-            String responseBody;
-            if (SERVER1DataObj instanceof String) {
-                responseBody = (String) SERVER1DataObj;
-            } else {
-                responseBody = SERVER1DataObj.toString();
-            }
-
-            // Extract customer info
-            Map<String, String> customerInfo = new HashMap<>();
-            
-            // Simple pattern matching for key fields
-            extractIfContains(responseBody, "customerName", "Name", customerInfo);
-            extractIfContains(responseBody, "customerAddress", "Address", customerInfo);
-            extractIfContains(responseBody, "customerPhone", "Phone", customerInfo);
-            extractIfContains(responseBody, "tariffCategory", "Tariff Category", customerInfo);
-            extractIfContains(responseBody, "sanctionLoad", "Sanctioned Load", customerInfo);
-            extractIfContains(responseBody, "meterType", "Meter Type", customerInfo);
-            extractIfContains(responseBody, "accountType", "Account Type", customerInfo);
-            extractIfContains(responseBody, "lastRechargeAmount", "Last Recharge Amount", customerInfo);
-            extractIfContains(responseBody, "lastRechargeTime", "Last Recharge Time", customerInfo);
-
-            if (!customerInfo.isEmpty()) {
-                cleaned.put("customer_info", customerInfo);
-            }
-
-            // Extract tokens using simple pattern
-            List<Map<String, String>> transactions = extractTokensWithSimplePattern(responseBody);
-            if (!transactions.isEmpty()) {
-                cleaned.put("recent_transactions", transactions);
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return cleaned;
-    }
-
-    // Helper methods
-    private static void extractIfContains(String response, String jsonKey, String displayKey, Map<String, String> target) {
-        try {
-            String pattern = "\"" + jsonKey + "\":\"(.*?)\"";
-            java.util.regex.Pattern r = java.util.regex.Pattern.compile(pattern);
-            java.util.regex.Matcher m = r.matcher(response);
-            if (m.find()) {
-                String value = m.group(1);
-                if (isValidValue(value)) {
-                    target.put(displayKey, value);
+        
+        if (billingInfo != null && !billingInfo.isEmpty()) {
+            html.append("<div class='section'>");
+            html.append("<h3>💳 BILLING INFORMATION</h3>");
+            html.append("<div class='info-list'>");
+            for (Map.Entry<String, String> entry : billingInfo.entrySet()) {
+                if (isValidValue(entry.getValue())) {
+                    html.append("<div class='info-item'>• ").append(escapeHtml(entry.getKey())).append(": ").append(escapeHtml(entry.getValue())).append("</div>");
                 }
             }
-        } catch (Exception e) {
-            // Ignore
+            html.append("</div>");
+            html.append("</div>");
         }
+        
+        if (technicalInfo != null && !technicalInfo.isEmpty()) {
+            html.append("<div class='section'>");
+            html.append("<h3>⚙️ TECHNICAL INFORMATION</h3>");
+            html.append("<div class='info-list'>");
+            for (Map.Entry<String, String> entry : technicalInfo.entrySet()) {
+                if (isValidValue(entry.getValue())) {
+                    html.append("<div class='info-item'>• ").append(escapeHtml(entry.getKey())).append(": ").append(escapeHtml(entry.getValue())).append("</div>");
+                }
+            }
+            html.append("</div>");
+            html.append("</div>");
+        }
+        
+        if (readingInfo != null && !readingInfo.isEmpty()) {
+            html.append("<div class='section'>");
+            html.append("<h3>📊 METER READINGS</h3>");
+            html.append("<div class='info-list'>");
+            for (Map.Entry<String, String> entry : readingInfo.entrySet()) {
+                if (isValidValue(entry.getValue())) {
+                    html.append("<div class='info-item'>• ").append(escapeHtml(entry.getKey())).append(": ").append(escapeHtml(entry.getValue())).append("</div>");
+                }
+            }
+            html.append("</div>");
+            html.append("</div>");
+        }
+        
+        html.append("</div>");
+        return html.toString();
     }
 
-    private static List<Map<String, String>> extractTokensWithSimplePattern(String response) {
-        List<Map<String, String>> transactions = new ArrayList<>();
+    private static String renderBillTable(JSONArray billData) {
+        StringBuilder html = new StringBuilder();
+        
+        html.append("<div class='card'>");
+        html.append("<h2>📋 BILL HISTORY TABLE</h2>");
+        html.append("<div class='table-container'>");
+        html.append("<table class='bill-table'>");
+        html.append("<thead>");
+        html.append("<tr>");
+        html.append("<th>Bill Month</th>");
+        html.append("<th>Bill No</th>");
+        html.append("<th>Consumption</th>");
+        html.append("<th>Current Bill</th>");
+        html.append("<th>Due Date</th>");
+        html.append("<th>Paid</th>");
+        html.append("<th>Pay Date</th>");
+        html.append("<th>Balance</th>");
+        html.append("</tr>");
+        html.append("</thead>");
+        html.append("<tbody>");
         
         try {
-            // Look for token patterns
-            String tokenPattern = "\"tokens\":\"(\\d{4}-\\d{4}-\\d{4}-\\d{4}-\\d{4})\"";
-            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(tokenPattern);
-            java.util.regex.Matcher matcher = pattern.matcher(response);
-            
-            int count = 0;
-            while (matcher.find() && count < 3) {
-                Map<String, String> transaction = new HashMap<>();
-                transaction.put("Tokens", matcher.group(1));
-                transaction.put("Date", "Recent");
-                transaction.put("Amount", "৳Unknown");
-                transaction.put("Operator", "System");
-                transaction.put("Sequence", String.valueOf(count + 1));
-                
-                transactions.add(transaction);
-                count++;
+            int displayCount = Math.min(billData.length(), 10); // Show max 10 bills
+            for (int i = 0; i < displayCount; i++) {
+                JSONObject bill = billData.getJSONObject(i);
+                html.append("<tr>");
+                html.append("<td>").append(escapeHtml(formatBillMonth(bill.optString("BILL_MONTH")))).append("</td>");
+                html.append("<td>").append(escapeHtml(bill.optString("BILL_NO"))).append("</td>");
+                html.append("<td>").append(escapeHtml(formatConsumption(bill.optDouble("CONS_KWH_SR", 0)))).append("</td>");
+                html.append("<td>").append(escapeHtml(formatAmount(bill.optDouble("CURRENT_BILL", 0)))).append("</td>");
+                html.append("<td>").append(escapeHtml(formatDate(bill.optString("INVOICE_DUE_DATE")))).append("</td>");
+                html.append("<td>").append(escapeHtml(formatAmount(bill.optDouble("PAID_AMT", 0)))).append("</td>");
+                html.append("<td>").append(escapeHtml(formatDate(bill.optString("RECEIPT_DATE")))).append("</td>");
+                html.append("<td>").append(escapeHtml(formatAmount(bill.optDouble("BALANCE", 0)))).append("</td>");
+                html.append("</tr>");
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            html.append("<tr><td colspan='8'>Error loading bill data</td></tr>");
         }
         
-        return transactions;
-    }
-
-    // Basic extraction methods
-    private static List<KeyValuePair> extractBasicCustomerInfoDirect(Map<String, Object> result) {
-        List<KeyValuePair> fields = new ArrayList<>();
+        html.append("</tbody>");
+        html.append("</table>");
+        html.append("</div>");
+        html.append("</div>");
         
-        addIfValid(fields, "Customer Number", extractCustomerNumber(result));
-        addIfValid(fields, "Consumer Number", extractConsumerNumber(result));
-        addIfValid(fields, "Meter Number", extractMeterNumber(result));
-        
-        return fields;
+        return html.toString();
     }
 
-    private static CustomerInfoData extractCustomerInfoFromMergedDataAsCustomerInfoData(Map<String, Object> result) {
-        return new CustomerInfoData(extractCustomerInfoFromMergedData(result));
-    }
-
-    private static String extractCustomerNumber(Map<String, Object> result) {
-        String[] keys = {"customer_number", "customerNumber", "CUSTOMER_NUMBER"};
-        for (String key : keys) {
-            if (result.containsKey(key)) {
-                String value = getSafeString(result.get(key));
-                if (!value.equals("N/A")) return value;
+    private static String getCommonCSS() {
+        return """
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
             }
-        }
-        return "N/A";
-    }
-
-    private static String extractConsumerNumber(Map<String, Object> result) {
-        String[] keys = {"consumer_number", "consumerNumber", "customerAccountNo"};
-        for (String key : keys) {
-            if (result.containsKey(key)) {
-                String value = getSafeString(result.get(key));
-                if (!value.equals("N/A")) return value;
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                line-height: 1.6;
+                color: #333;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+                padding: 20px;
             }
-        }
-        return "N/A";
-    }
-
-    private static String extractMeterNumber(Map<String, Object> result) {
-        String[] keys = {"meter_number", "meterNumber", "METER_NUM"};
-        for (String key : keys) {
-            if (result.containsKey(key)) {
-                String value = getSafeString(result.get(key));
-                if (!value.equals("N/A")) return value;
+            .header {
+                background: white;
+                padding: 25px;
+                border-radius: 15px;
+                box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+                margin-bottom: 25px;
+                text-align: center;
+                border-left: 5px solid #3498db;
             }
-        }
-        return "N/A";
+            .header h1 {
+                color: #2c3e50;
+                margin-bottom: 10px;
+                font-size: 24px;
+            }
+            .search-info {
+                color: #7f8c8d;
+                font-size: 14px;
+            }
+            .card {
+                background: white;
+                padding: 25px;
+                border-radius: 15px;
+                box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+                margin-bottom: 25px;
+                border-left: 5px solid #2ecc71;
+            }
+            .card h2 {
+                color: #2c3e50;
+                margin-bottom: 20px;
+                padding-bottom: 10px;
+                border-bottom: 2px solid #ecf0f1;
+                font-size: 20px;
+            }
+            .card h3 {
+                color: #34495e;
+                margin: 20px 0 15px 0;
+                font-size: 16px;
+            }
+            .info-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 15px;
+                margin-bottom: 15px;
+            }
+            .info-grid div {
+                padding: 12px;
+                background: #f8f9fa;
+                border-radius: 8px;
+                border-left: 3px solid #3498db;
+            }
+            .info-list {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+            .info-item {
+                padding: 10px 15px;
+                background: #f8f9fa;
+                border-radius: 8px;
+                border-left: 3px solid #27ae60;
+                margin-bottom: 5px;
+            }
+            .section {
+                margin-bottom: 25px;
+            }
+            .section:last-child {
+                margin-bottom: 0;
+            }
+            .tokens-container {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 20px;
+                margin-top: 20px;
+            }
+            .token-card {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 20px;
+                border-radius: 12px;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            }
+            .token-card h3 {
+                color: white;
+                margin-bottom: 15px;
+                text-align: center;
+                border-bottom: 1px solid rgba(255,255,255,0.3);
+                padding-bottom: 10px;
+            }
+            .token-details p {
+                margin-bottom: 8px;
+                display: flex;
+                align-items: center;
+            }
+            .emoji {
+                margin-right: 8px;
+                font-size: 16px;
+            }
+            .token {
+                background: rgba(255,255,255,0.2);
+                padding: 5px 10px;
+                border-radius: 6px;
+                font-family: monospace;
+                font-weight: bold;
+            }
+            .bill-summary {
+                background: #f8f9fa;
+                padding: 20px;
+                border-radius: 10px;
+                border: 1px solid #e9ecef;
+            }
+            .summary-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 15px;
+            }
+            .summary-grid div {
+                padding: 12px;
+                background: white;
+                border-radius: 8px;
+                text-align: center;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            }
+            .balance-details {
+                background: #f8f9fa;
+                padding: 20px;
+                border-radius: 10px;
+                border: 1px solid #e9ecef;
+            }
+            .balance-item {
+                padding: 10px 15px;
+                background: white;
+                border-radius: 8px;
+                margin-bottom: 8px;
+                border-left: 3px solid #e74c3c;
+            }
+            .customer-section {
+                background: #f8f9fa;
+                padding: 20px;
+                border-radius: 10px;
+                margin-bottom: 20px;
+                border: 1px solid #e9ecef;
+            }
+            .customer-header {
+                color: #2c3e50;
+                margin-bottom: 15px;
+                padding-bottom: 10px;
+                border-bottom: 2px solid #bdc3c7;
+            }
+            .table-container {
+                overflow-x: auto;
+                margin-top: 15px;
+            }
+            .bill-table {
+                width: 100%;
+                border-collapse: collapse;
+                background: white;
+                border-radius: 8px;
+                overflow: hidden;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+            .bill-table th {
+                background: #34495e;
+                color: white;
+                padding: 12px 15px;
+                text-align: left;
+                font-weight: 600;
+            }
+            .bill-table td {
+                padding: 12px 15px;
+                border-bottom: 1px solid #ecf0f1;
+            }
+            .bill-table tr:nth-child(even) {
+                background: #f8f9fa;
+            }
+            .bill-table tr:hover {
+                background: #e3f2fd;
+            }
+            @media (max-width: 768px) {
+                body {
+                    padding: 10px;
+                }
+                .card {
+                    padding: 15px;
+                }
+                .info-grid {
+                    grid-template-columns: 1fr;
+                }
+                .summary-grid {
+                    grid-template-columns: 1fr;
+                }
+                .tokens-container {
+                    grid-template-columns: 1fr;
+                }
+                .bill-table {
+                    font-size: 14px;
+                }
+                .bill-table th,
+                .bill-table td {
+                    padding: 8px 10px;
+                }
+            }
+            """;
     }
 
-    private static ErrorData extractError(Map<String, Object> result) {
-        if (result.containsKey("error")) {
-            return new ErrorData(getSafeString(result.get("error")));
-        }
-        return null;
+    // Utility methods (you'll need to implement these or copy from MainActivity)
+    private static String escapeHtml(String text) {
+        if (text == null) return "";
+        return text.replace("&", "&amp;")
+                  .replace("<", "&lt;")
+                  .replace(">", "&gt;")
+                  .replace("\"", "&quot;")
+                  .replace("'", "&#39;");
     }
 
-    // Utility methods
     private static boolean isValidValue(String value) {
         if (value == null) return false;
-        String trimmedValue = value.trim();
-        return !trimmedValue.isEmpty() &&
-                !trimmedValue.equals("N/A") &&
-                !trimmedValue.equals("null") &&
-                !trimmedValue.equals("{}") &&
-                !trimmedValue.equals("undefined");
+        String trimmed = value.trim();
+        return !trimmed.isEmpty() && 
+               !trimmed.equals("N/A") && 
+               !trimmed.equals("null") && 
+               !trimmed.equals("undefined") &&
+               !trimmed.equals("{}");
     }
 
-    private static String getSafeString(Object value) {
-        if (value == null) return "N/A";
-        String stringValue = value.toString();
-        return (stringValue.equals("null") || stringValue.isEmpty()) ? "N/A" : stringValue;
+    private static String getSafeString(Object obj) {
+        if (obj == null) return "N/A";
+        String str = obj.toString();
+        return str.equals("null") || str.isEmpty() ? "N/A" : str;
     }
 
-    private static void addIfValid(List<KeyValuePair> fields, String key, String value) {
-        if (isValidValue(value)) {
-            fields.add(new KeyValuePair(key, value));
+    private static Map<String, String> extractSection(Map<String, String> source, String[] keys) {
+        Map<String, String> section = new HashMap<>();
+        for (String key : keys) {
+            if (source.containsKey(key) && isValidValue(source.get(key))) {
+                section.put(key, source.get(key));
+            }
+        }
+        return section;
+    }
+
+    // These methods should be copied from your MainActivity:
+    private static Map<String, Object> mergeSERVERData(Map<String, Object> result) {
+        // Copy this method from your MainActivity
+        return MainActivity.mergeSERVERData(result);
+    }
+
+    private static Map<String, Object> cleanSERVER1Data(Object SERVER1DataObj) {
+        // Copy this method from your MainActivity  
+        return MainActivity.cleanSERVER1Data(SERVER1DataObj);
+    }
+
+    private static String formatBillMonth(String dateStr) {
+        // Copy from MainActivity
+        try {
+            if (dateStr == null || dateStr.equals("null")) return "—";
+            String[] parts = dateStr.substring(0, 10).split("-");
+            if (parts.length >= 2) {
+                int month = Integer.parseInt(parts[1]);
+                String[] monthNames = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+                return month >= 1 && month <= 12 ? monthNames[month-1] + " " + parts[0] : dateStr.substring(0,7);
+            }
+            return dateStr.length() >= 7 ? dateStr.substring(0,7) : dateStr;
+        } catch (Exception e) {
+            return dateStr;
         }
     }
 
     private static String formatDate(String dateString) {
-        if (dateString == null || dateString.isEmpty() || dateString.equals("N/A")) {
-            return "N/A";
-        }
+        if (dateString == null || dateString.isEmpty() || dateString.equals("null")) return "—";
         try {
-            if (dateString.contains("T")) {
-                return dateString.split("T")[0];
-            }
-            return dateString;
+            return dateString.contains("T") ? dateString.split("T")[0] : dateString;
         } catch (Exception e) {
             return dateString;
         }
     }
 
-    private static String formatBillMonth(String dateStr) {
-        if (dateStr == null || dateStr.isEmpty() || dateStr.equals("null")) {
-            return "N/A";
-        }
-        try {
-            String[] parts = dateStr.substring(0, 10).split("-");
-            if (parts.length >= 2) {
-                int month = Integer.parseInt(parts[1]);
-                String[] monthNames = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
-                if (month >= 1 && month <= 12) {
-                    return monthNames[month - 1] + "-" + parts[0];
-                }
-            }
-            return dateStr.substring(0, 7);
-        } catch (Exception e) {
-            return dateStr.length() >= 7 ? dateStr.substring(0, 7) : dateStr;
-        }
+    private static String formatConsumption(double consumption) {
+        return consumption == 0 ? "—" : String.format("%.0f", consumption);
     }
 
-    private static String formatCurrency(String amount) {
-        if (amount == null || amount.isEmpty() || amount.equals("N/A")) {
-            return "৳0";
-        }
-        try {
-            // Remove any existing currency symbols and trim
-            String cleanAmount = amount.replace("৳", "").trim();
-            if (cleanAmount.isEmpty() || cleanAmount.equals("0") || cleanAmount.equals("0.00")) {
-                return "৳0";
-            }
-            // Try to parse as double to format consistently
-            double value = Double.parseDouble(cleanAmount);
-            return String.format("৳%.2f", value);
-        } catch (Exception e) {
-            return "৳" + amount;
-        }
-    }
-
-    // Template rendering methods (keep your existing ones)
-    public static String renderPostpaidTemplate(Context context, PostpaidData data) {
-        String template = loadTemplate(context, TEMPLATE_POSTPAID);
-        return replacePostpaidPlaceholders(template, data);
-    }
-
-    public static String renderPrepaidTemplate(Context context, PrepaidData data) {
-        String template = loadTemplate(context, TEMPLATE_PREPAID);
-        return replacePrepaidPlaceholders(template, data);
-    }
-
-    private static String loadTemplate(Context context, String templateName) {
-        try {
-            java.io.InputStream inputStream = context.getAssets().open(templateName);
-            int size = inputStream.available();
-            byte[] buffer = new byte[size];
-            inputStream.read(buffer);
-            inputStream.close();
-            return new String(buffer, "UTF-8");
-        } catch (Exception e) {
-            return "<html><body><h1>Error loading template: " + e.getMessage() + "</h1></body></html>";
-        }
-    }
-
-    // Keep your existing replacePostpaidPlaceholders and replacePrepaidPlaceholders methods
-    // They should work fine with the corrected data structures
-
-    private static String replacePostpaidPlaceholders(String template, PostpaidData data) {
-        // Your existing implementation here
-        String result = template.replace("{{CUSTOMER_NUMBER}}", data.customerNumber);
-
-        // Handle multiple customers
-        if (data.multipleCustomers != null) {
-            result = result.replace("{{#MULTIPLE_CUSTOMERS}}", "")
-                          .replace("{{/MULTIPLE_CUSTOMERS}}", "");
-
-            result = result.replace("{{CUSTOMER_COUNT}}", String.valueOf(data.multipleCustomers.customerCount));
-
-            StringBuilder customersHtml = new StringBuilder();
-            for (CustomerData customer : data.multipleCustomers.customers) {
-                StringBuilder customerHtml = new StringBuilder();
-                customerHtml.append("<div class=\"customer-card\">")
-                           .append("<h4>👤 Customer ").append(customer.index).append(": ").append(customer.customerNumber).append("</h4>");
-
-                for (KeyValuePair info : customer.customerInfo) {
-                    customerHtml.append("<div class=\"field\">")
-                               .append("<span><strong>").append(info.key).append(":</strong></span>")
-                               .append("<span>").append(info.value).append("</span>")
-                               .append("</div>");
-                }
-
-                customerHtml.append("</div>");
-                customersHtml.append(customerHtml.toString());
-            }
-
-            result = result.replace("{{#CUSTOMERS}}{{/CUSTOMERS}}", customersHtml.toString());
-        } else {
-            result = result.replace("{{#MULTIPLE_CUSTOMERS}}", "<!--")
-                          .replace("{{/MULTIPLE_CUSTOMERS}}", "-->");
-        }
-
-        // Handle single customer
-        if (data.singleCustomer != null) {
-            result = result.replace("{{#SINGLE_CUSTOMER}}", "")
-                          .replace("{{/SINGLE_CUSTOMER}}", "");
-
-            StringBuilder customerInfoHtml = new StringBuilder();
-            for (KeyValuePair info : data.singleCustomer.customerInfo) {
-                customerInfoHtml.append("<div class=\"field\">")
-                               .append("<span><strong>").append(info.key).append(":</strong></span>")
-                               .append("<span>").append(info.value).append("</span>")
-                               .append("</div>");
-            }
-
-            result = result.replace("{{#CUSTOMER_INFO}}{{/CUSTOMER_INFO}}", customerInfoHtml.toString());
-        } else {
-            result = result.replace("{{#SINGLE_CUSTOMER}}", "<!--")
-                          .replace("{{/SINGLE_CUSTOMER}}", "-->");
-        }
-
-        // Handle bill info
-        if (data.billInfo != null) {
-            result = result.replace("{{#BILL_INFO}}", "")
-                          .replace("{{/BILL_INFO}}", "");
-
-            StringBuilder billsHtml = new StringBuilder();
-            for (BillData bill : data.billInfo.bills) {
-                billsHtml.append("<tr>")
-                        .append("<td>").append(bill.billMonth).append("</td>")
-                        .append("<td>").append(bill.billNo).append("</td>")
-                        .append("<td>").append(bill.consumption).append("</td>")
-                        .append("<td>").append(bill.currentBill).append("</td>")
-                        .append("<td>").append(bill.dueDate).append("</td>")
-                        .append("<td>").append(bill.paidAmt).append("</td>")
-                        .append("<td>").append(bill.receiptDate).append("</td>")
-                        .append("<td>").append(bill.balance).append("</td>")
-                        .append("</tr>");
-            }
-
-            result = result.replace("{{#BILLS}}{{/BILLS}}", billsHtml.toString());
-        } else {
-            result = result.replace("{{#BILL_INFO}}", "<!--")
-                          .replace("{{/BILL_INFO}}", "-->");
-        }
-
-        // Handle balance info
-        if (data.balanceInfo != null) {
-            result = result.replace("{{#BALANCE_INFO}}", "")
-                          .replace("{{/BALANCE_INFO}}", "");
-
-            StringBuilder balanceHtml = new StringBuilder();
-            for (KeyValuePair field : data.balanceInfo.fields) {
-                balanceHtml.append("<div class=\"field\">")
-                          .append("<span><strong>").append(field.key).append(":</strong></span>")
-                          .append("<span>").append(field.value).append("</span>")
-                          .append("</div>");
-            }
-
-            result = result.replace("{{#FIELDS}}{{/FIELDS}}", balanceHtml.toString());
-        } else {
-            result = result.replace("{{#BALANCE_INFO}}", "<!--")
-                          .replace("{{/BALANCE_INFO}}", "-->");
-        }
-
-        // Handle bill summary
-        if (data.billSummary != null) {
-            result = result.replace("{{#BILL_SUMMARY}}", "")
-                          .replace("{{/BILL_SUMMARY}}", "");
-
-            StringBuilder summaryHtml = new StringBuilder();
-            for (KeyValuePair field : data.billSummary.fields) {
-                summaryHtml.append("<div class=\"field\">")
-                          .append("<span><strong>").append(field.key).append(":</strong></span>")
-                          .append("<span>").append(field.value).append("</span>")
-                          .append("</div>");
-            }
-
-            result = result.replace("{{#FIELDS}}{{/FIELDS}}", summaryHtml.toString());
-        } else {
-            result = result.replace("{{#BILL_SUMMARY}}", "<!--")
-                          .replace("{{/BILL_SUMMARY}}", "-->");
-        }
-
-        // Handle error
-        if (data.error != null) {
-            result = result.replace("{{#ERROR}}", "")
-                          .replace("{{/ERROR}}", "")
-                          .replace("{{ERROR_MESSAGE}}", data.error.errorMessage);
-        } else {
-            result = result.replace("{{#ERROR}}", "<!--")
-                          .replace("{{/ERROR}}", "-->");
-        }
-
-        return result;
-    }
-
-    private static String replacePrepaidPlaceholders(String template, PrepaidData data) {
-        // Your existing implementation here
-        String result = template.replace("{{METER_NUMBER}}", data.meterNumber)
-                               .replace("{{CONSUMER_NUMBER}}", data.consumerNumber);
-
-        // Handle prepaid customer info
-        if (data.prepaidCustomerInfo != null) {
-            result = result.replace("{{#PREPAID_CUSTOMER_INFO}}", "")
-                          .replace("{{/PREPAID_CUSTOMER_INFO}}", "");
-
-            StringBuilder prepaidHtml = new StringBuilder();
-            for (KeyValuePair field : data.prepaidCustomerInfo.fields) {
-                prepaidHtml.append("<div class=\"field\">")
-                          .append("<span><strong>").append(field.key).append(":</strong></span>")
-                          .append("<span>").append(field.value).append("</span>")
-                          .append("</div>");
-            }
-
-            result = result.replace("{{#FIELDS}}{{/FIELDS}}", prepaidHtml.toString());
-        } else {
-            result = result.replace("{{#PREPAID_CUSTOMER_INFO}}", "<!--")
-                          .replace("{{/PREPAID_CUSTOMER_INFO}}", "-->");
-        }
-
-        // Handle tokens
-        if (data.tokens != null) {
-            result = result.replace("{{#TOKENS}}", "")
-                          .replace("{{/TOKENS}}", "");
-
-            StringBuilder tokensHtml = new StringBuilder();
-            for (TokenData token : data.tokens.tokenList) {
-                tokensHtml.append("<div class=\"token\">")
-                         .append("<strong>Order ").append(token.index).append(":</strong><br>")
-                         .append("<strong>Token:</strong> ").append(token.token).append("<br>")
-                         .append("<strong>Date:</strong> ").append(token.date).append("<br>")
-                         .append("<strong>Amount:</strong> ").append(token.amount).append("<br>")
-                         .append("<strong>Operator:</strong> ").append(token.operator).append("<br>")
-                         .append("<strong>Sequence:</strong> ").append(token.sequence)
-                         .append("</div>");
-            }
-
-            result = result.replace("{{#TOKEN_LIST}}{{/TOKEN_LIST}}", tokensHtml.toString());
-        } else {
-            result = result.replace("{{#TOKENS}}", "<!--")
-                          .replace("{{/TOKENS}}", "-->");
-        }
-
-        // Handle postpaid customer info
-        if (data.postpaidCustomerInfo != null) {
-            result = result.replace("{{#POSTPAID_CUSTOMER_INFO}}", "")
-                          .replace("{{/POSTPAID_CUSTOMER_INFO}}", "");
-
-            StringBuilder postpaidHtml = new StringBuilder();
-            for (KeyValuePair field : data.postpaidCustomerInfo.fields) {
-                postpaidHtml.append("<div class=\"field\">")
-                           .append("<span><strong>").append(field.key).append(":</strong></span>")
-                           .append("<span>").append(field.value).append("</span>")
-                           .append("</div>");
-            }
-
-            result = result.replace("{{#FIELDS}}{{/FIELDS}}", postpaidHtml.toString());
-        } else {
-            result = result.replace("{{#POSTPAID_CUSTOMER_INFO}}", "<!--")
-                          .replace("{{/POSTPAID_CUSTOMER_INFO}}", "-->");
-        }
-
-        // Handle bill info
-        if (data.billInfo != null) {
-            result = result.replace("{{#BILL_INFO}}", "")
-                          .replace("{{/BILL_INFO}}", "");
-
-            StringBuilder billsHtml = new StringBuilder();
-            for (BillData bill : data.billInfo.bills) {
-                billsHtml.append("<tr>")
-                        .append("<td>").append(bill.billMonth).append("</td>")
-                        .append("<td>").append(bill.billNo).append("</td>")
-                        .append("<td>").append(bill.consumption).append("</td>")
-                        .append("<td>").append(bill.currentBill).append("</td>")
-                        .append("<td>").append(bill.dueDate).append("</td>")
-                        .append("<td>").append(bill.paidAmt).append("</td>")
-                        .append("<td>").append(bill.receiptDate).append("</td>")
-                        .append("<td>").append(bill.balance).append("</td>")
-                        .append("</tr>");
-            }
-
-            result = result.replace("{{#BILLS}}{{/BILLS}}", billsHtml.toString());
-        } else {
-            result = result.replace("{{#BILL_INFO}}", "<!--")
-                          .replace("{{/BILL_INFO}}", "-->");
-        }
-
-        // Handle balance info
-        if (data.balanceInfo != null) {
-            result = result.replace("{{#BALANCE_INFO}}", "")
-                          .replace("{{/BALANCE_INFO}}", "");
-
-            StringBuilder balanceHtml = new StringBuilder();
-            for (KeyValuePair field : data.balanceInfo.fields) {
-                balanceHtml.append("<div class=\"field\">")
-                          .append("<span><strong>").append(field.key).append(":</strong></span>")
-                          .append("<span>").append(field.value).append("</span>")
-                          .append("</div>");
-            }
-
-            result = result.replace("{{#FIELDS}}{{/FIELDS}}", balanceHtml.toString());
-        } else {
-            result = result.replace("{{#BALANCE_INFO}}", "<!--")
-                          .replace("{{/BALANCE_INFO}}", "-->");
-        }
-
-        // Handle bill summary
-        if (data.billSummary != null) {
-            result = result.replace("{{#BILL_SUMMARY}}", "")
-                          .replace("{{/BILL_SUMMARY}}", "");
-
-            StringBuilder summaryHtml = new StringBuilder();
-            for (KeyValuePair field : data.billSummary.fields) {
-                summaryHtml.append("<div class=\"field\">")
-                          .append("<span><strong>").append(field.key).append(":</strong></span>")
-                          .append("<span>").append(field.value).append("</span>")
-                          .append("</div>");
-            }
-
-            result = result.replace("{{#FIELDS}}{{/FIELDS}}", summaryHtml.toString());
-        } else {
-            result = result.replace("{{#BILL_SUMMARY}}", "<!--")
-                          .replace("{{/BILL_SUMMARY}}", "-->");
-        }
-
-        // Handle error
-        if (data.error != null) {
-            result = result.replace("{{#ERROR}}", "")
-                          .replace("{{/ERROR}}", "")
-                          .replace("{{ERROR_MESSAGE}}", data.error.errorMessage);
-        } else {
-            result = result.replace("{{#ERROR}}", "<!--")
-                          .replace("{{/ERROR}}", "-->");
-        }
-
-        return result;
+    private static String formatAmount(double amount) {
+        return amount == 0 ? "—" : "৳" + String.format("%.0f", amount);
     }
 }
