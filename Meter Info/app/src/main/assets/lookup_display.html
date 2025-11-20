@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>মিটার তথ্য লুকআপ</title>
     <style>
+        /* Your existing CSS remains unchanged */
         * {
             margin: 0;
             padding: 0;
@@ -325,29 +326,74 @@
             font-size: 14px;
         }
 
+        /* Debug Section Styles */
+        .debug-section {
+            display: none;
+            background: #fff3cd;
+            border: 2px dashed #ffc107;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .debug-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .debug-title {
+            color: #856404;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .debug-content {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ffeaa7;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .debug-toggle {
+            background: #ffc107;
+            color: #000;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
         @media (max-width: 768px) {
             .search-row {
                 flex-direction: column;
             }
-            
+
             .action-buttons {
                 flex-direction: column;
             }
-            
+
             .info-grid {
                 grid-template-columns: 1fr;
             }
-            
+
             .info-item {
                 flex-direction: column;
                 text-align: left;
             }
-            
+
             .info-value {
                 text-align: left;
                 margin-top: 5px;
             }
-            
+
             .summary-grid {
                 grid-template-columns: 1fr;
             }
@@ -355,22 +401,23 @@
 
         @media print {
             .search-section,
-            .action-buttons {
+            .action-buttons,
+            .debug-section {
                 display: none !important;
             }
-            
+
             body {
                 background: white;
                 padding: 0;
                 margin: 0;
             }
-            
+
             .data-section {
                 display: block !important;
                 box-shadow: none;
                 padding: 0;
             }
-            
+
             .section-title {
                 background: #333 !important;
                 color: white !important;
@@ -419,6 +466,17 @@
                 <!-- Data will be populated by JavaScript -->
             </div>
 
+            <!-- Debug Section -->
+            <div class="debug-section" id="debugSection">
+                <div class="debug-header">
+                    <div class="debug-title">🐛 ডিবাগ তথ্য</div>
+                    <button class="debug-toggle" onclick="toggleDebug()">ডিবাগ লুকাও</button>
+                </div>
+                <div class="debug-content" id="debugContent">
+                    <!-- Debug info will be populated here -->
+                </div>
+            </div>
+
             <!-- Action Buttons -->
             <div class="action-buttons">
                 <button class="btn btn-print" onclick="window.print()">
@@ -433,6 +491,9 @@
                 <button class="btn btn-close" onclick="closeLookup()">
                     ✕ বন্ধ
                 </button>
+                <button class="btn" onclick="toggleDebug()" style="background: #ffc107; color: #000;">
+                    🐛 ডিবাগ
+                </button>
             </div>
         </div>
     </div>
@@ -442,11 +503,11 @@
 
         function selectType(type) {
             currentType = type;
-            
+
             // Update button states
             document.getElementById('prepaidBtn').classList.toggle('active', type === 'prepaid');
             document.getElementById('postpaidBtn').classList.toggle('active', type === 'postpaid');
-            
+
             // Update placeholder
             const input = document.getElementById('searchInput');
             if (type === 'prepaid') {
@@ -454,7 +515,7 @@
             } else {
                 input.placeholder = 'গ্রাহক নং লিখুন';
             }
-            
+
             // Clear previous results
             clearResults();
         }
@@ -484,7 +545,7 @@
 
         function displayData(data) {
             hideLoading();
-            
+
             if (data.error) {
                 showError(data.error);
                 return;
@@ -497,6 +558,9 @@
             // Generate and display formatted data
             const dataContent = document.getElementById('dataContent');
             dataContent.innerHTML = generateFormattedHTML(data);
+
+            // Show debug information
+            showDebugInfo(data);
         }
 
         function generateFormattedHTML(data) {
@@ -529,7 +593,7 @@
                 // Personal Information
                 html += `<div class="subsection-title">ব্যক্তিগত তথ্য</div>
                          <div class="info-grid">`;
-                
+
                 ['Customer Name', 'Father Name', 'Customer Address'].forEach(key => {
                     if (data.customer_info[key] && data.customer_info[key] !== 'N/A') {
                         html += `<div class="info-item">
@@ -543,7 +607,7 @@
                 // Billing Information
                 html += `<div class="subsection-title">বিলিং তথ্য</div>
                          <div class="info-grid">`;
-                
+
                 ['Location Code', 'Area Code', 'Bill Group', 'Book Number', 
                  'Tariff Description', 'Sanctioned Load', 'Walk Order'].forEach(key => {
                     if (data.customer_info[key] && data.customer_info[key] !== 'N/A') {
@@ -558,7 +622,7 @@
                 // Technical Information
                 html += `<div class="subsection-title">টেকনিক্যাল তথ্য</div>
                          <div class="info-grid">`;
-                
+
                 ['Usage Type', 'Description', 'Start Bill Cycle', 'Meter Condition', 'Meter Status'].forEach(key => {
                     if (data.customer_info[key] && data.customer_info[key] !== 'N/A') {
                         html += `<div class="info-item">
@@ -576,12 +640,12 @@
                             <span class="emoji">💰</span> ব্যালেন্স তথ্য
                          </div>
                          <div class="info-grid">`;
-                
+
                 for (const [key, value] of Object.entries(data.balance_info)) {
                     const amount = parseFloat(value) || 0;
                     const amountClass = amount === 0 ? 'amount-positive' : 'amount-negative';
                     const displayValue = amount === 0 ? '০.০০' : `৳ ${Math.abs(amount).toFixed(2)}`;
-                    
+
                     html += `<div class="info-item">
                                 <span class="info-label">${key}:</span>
                                 <span class="info-value ${amountClass}">${displayValue}</span>
@@ -600,7 +664,7 @@
                 if (data.bill_summary) {
                     html += `<div class="summary-card">
                                 <div class="summary-grid">`;
-                    
+
                     const summary = data.bill_summary;
                     const summaryItems = [
                         { 
@@ -624,7 +688,7 @@
                             emoji: '⚠️' 
                         }
                     ];
-                    
+
                     summaryItems.forEach(item => {
                         html += `<div class="summary-item">
                                     <div class="emoji">${item.emoji}</div>
@@ -632,7 +696,7 @@
                                     <div class="summary-label">${item.label}</div>
                                  </div>`;
                     });
-                    
+
                     html += `</div></div>`;
                 }
 
@@ -651,12 +715,12 @@
                                     </tr>
                                 </thead>
                                 <tbody>`;
-                
+
                 data.bill_info.forEach(bill => {
                     const balance = parseFloat(bill.BALANCE) || 0;
                     const balanceClass = balance === 0 ? 'amount-positive' : 'amount-negative';
                     const balanceDisplay = balance === 0 ? '০' : `৳ ${Math.abs(balance).toFixed(0)}`;
-                    
+
                     html += `<tr>
                                 <td>${formatBillMonth(bill.BILL_MONTH)}</td>
                                 <td>${bill.BILL_NO || 'N/A'}</td>
@@ -667,7 +731,7 @@
                                 <td>${bill.INVOICE_DUE_DATE || 'N/A'}</td>
                             </tr>`;
                 });
-                
+
                 html += `</tbody></table></div>`;
             }
 
@@ -677,7 +741,7 @@
                             <span class="emoji">🔢</span> মিটার রিডিং
                          </div>
                          <div class="info-grid">`;
-                
+
                 for (const [key, value] of Object.entries(data.meter_readings)) {
                     if (value && value !== 'N/A' && value !== 'null') {
                         html += `<div class="info-item">
@@ -708,7 +772,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>`;
-                
+
                 data.recharge_history.slice(0, 10).forEach(transaction => {
                     html += `<tr>
                                 <td>${transaction.Date || 'N/A'}</td>
@@ -720,9 +784,9 @@
                                 <td>${transaction.Sequence || 'N/A'}</td>
                             </tr>`;
                 });
-                
+
                 html += `</tbody></table></div>`;
-                
+
                 // Recharge summary
                 html += `<div class="summary-card">
                             <div class="summary-item">
@@ -738,12 +802,12 @@
                 html += `<div class="section-title">
                             <span class="emoji">👥</span> একাধিক গ্রাহক পাওয়া গেছে
                          </div>`;
-                
+
                 data.customer_results.forEach((customer, index) => {
                     html += `<div class="subsection-title">
                                 গ্রাহক ${index + 1}/${data.customer_results.length}
                              </div>`;
-                    
+
                     if (customer.customer_info) {
                         html += `<div class="info-grid">`;
                         for (const [key, value] of Object.entries(customer.customer_info)) {
@@ -762,15 +826,75 @@
             return html;
         }
 
+        function showDebugInfo(data) {
+            const debugContent = document.getElementById('debugContent');
+            let debugHTML = '';
+
+            debugHTML += `📊 ডেটা স্ট্রাকচার:\n`;
+            debugHTML += `টাইপ: ${data.type || 'N/A'}\n`;
+            debugHTML += `মিটার: ${data.meter_number || 'N/A'}\n`;
+            debugHTML += `গ্রাহক: ${data.consumer_number || data.customer_number || 'N/A'}\n\n`;
+
+            debugHTML += `🔑 উপলব্ধ কীগুলি:\n`;
+            debugHTML += Object.keys(data).join(', ') + '\n\n';
+
+            // Show customer info
+            if (data.customer_info) {
+                debugHTML += `👤 গ্রাহক তথ্য (${Object.keys(data.customer_info).length}টি):\n`;
+                Object.keys(data.customer_info).forEach(key => {
+                    debugHTML += `  ${key}: ${data.customer_info[key]}\n`;
+                });
+                debugHTML += '\n';
+            }
+
+            // Show balance info
+            if (data.balance_info) {
+                debugHTML += `💰 ব্যালেন্স তথ্য (${Object.keys(data.balance_info).length}টি):\n`;
+                Object.keys(data.balance_info).forEach(key => {
+                    debugHTML += `  ${key}: ${data.balance_info[key]}\n`;
+                });
+                debugHTML += '\n';
+            }
+
+            // Show bill info
+            if (data.bill_info) {
+                debugHTML += `📋 বিল তথ্য: ${data.bill_info.length}টি বিল\n`;
+                if (data.bill_info.length > 0) {
+                    debugHTML += `  প্রথম বিল: ${JSON.stringify(data.bill_info[0])}\n`;
+                }
+                debugHTML += '\n';
+            }
+
+            // Show recharge history
+            if (data.recharge_history) {
+                debugHTML += `🔋 রিচার্জ ইতিহাস: ${data.recharge_history.length}টি\n\n`;
+            }
+
+            debugContent.textContent = debugHTML;
+        }
+
+        function toggleDebug() {
+            const debugSection = document.getElementById('debugSection');
+            const debugToggle = document.querySelector('.debug-toggle');
+            
+            if (debugSection.style.display === 'none') {
+                debugSection.style.display = 'block';
+                debugToggle.textContent = 'ডিবাগ লুকাও';
+            } else {
+                debugSection.style.display = 'none';
+                debugToggle.textContent = 'ডিবাগ দেখাও';
+            }
+        }
+
         function formatBillMonth(dateStr) {
             if (!dateStr || dateStr === 'N/A') return 'N/A';
-            
+
             try {
                 // Format: YYYY-MM to Month-YYYY
                 const [year, month] = dateStr.split('-');
                 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
                     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                
+
                 if (month && year) {
                     const monthIndex = parseInt(month) - 1;
                     if (monthIndex >= 0 && monthIndex < 12) {
