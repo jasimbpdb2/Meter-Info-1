@@ -10,7 +10,7 @@ public class TemplateHelper {
     public static final String TEMPLATE_POSTPAID = "postpaid_template.html";
     public static final String TEMPLATE_PREPAID = "prepaid_template.html";
 
-    // Data classes as static nested classes
+    // Data classes (keep your existing ones)
     public static class PostpaidData {
         public String customerNumber;
         public MultipleCustomersData multipleCustomers;
@@ -196,24 +196,24 @@ public class TemplateHelper {
         }
     }
 
-    // Convert MainActivity result to PostpaidData
+    // MAIN FIX: Convert MainActivity result to PostpaidData
     public static PostpaidData convertToPostpaidData(Map<String, Object> result) {
         try {
             String customerNumber = getSafeString(result.get("customer_number"));
-            
+
             // Check if it's multiple customers (meter lookup)
             if (result.containsKey("customer_results")) {
                 List<String> customerNumbers = (List<String>) result.get("customer_numbers");
                 List<Map<String, Object>> customerResults = (List<Map<String, Object>>) result.get("customer_results");
-                
+
                 List<CustomerData> customers = new ArrayList<>();
                 for (int i = 0; i < customerResults.size(); i++) {
                     Map<String, Object> customerResult = customerResults.get(i);
-                    List<KeyValuePair> customerInfo = extractBasicCustomerInfo(customerResult);
+                    List<KeyValuePair> customerInfo = extractCustomerInfoFromMergedData(customerResult);
                     String custNumber = i < customerNumbers.size() ? customerNumbers.get(i) : "N/A";
                     customers.add(new CustomerData(i + 1, custNumber, customerInfo));
                 }
-                
+
                 return new PostpaidData(
                     customerNumber,
                     new MultipleCustomersData(customers.size(), customers),
@@ -225,7 +225,7 @@ public class TemplateHelper {
                 );
             } else {
                 // Single customer
-                List<KeyValuePair> customerInfo = extractBasicCustomerInfo(result);
+                List<KeyValuePair> customerInfo = extractCustomerInfoFromMergedData(result);
                 return new PostpaidData(
                     customerNumber,
                     null,
@@ -246,12 +246,12 @@ public class TemplateHelper {
         }
     }
 
-    // Convert MainActivity result to PrepaidData
+    // MAIN FIX: Convert MainActivity result to PrepaidData
     public static PrepaidData convertToPrepaidData(Map<String, Object> result) {
         try {
             String meterNumber = getSafeString(result.get("meter_number"));
             String consumerNumber = getSafeString(result.get("consumer_number"));
-            
+
             return new PrepaidData(
                 meterNumber,
                 consumerNumber,
@@ -272,404 +272,225 @@ public class TemplateHelper {
         }
     }
 
-    // Extract basic customer info directly from result
-    private static List<KeyValuePair> extractBasicCustomerInfo(Map<String, Object> result) {
+    // FIXED: Extract customer info using MainActivity's mergeSERVERData method
+    private static List<KeyValuePair> extractCustomerInfoFromMergedData(Map<String, Object> result) {
         List<KeyValuePair> fields = new ArrayList<>();
         if (result == null) return fields;
-        
+
         try {
-            // Extract basic fields
-            if (result.containsKey("customer_number")) {
-                fields.add(new KeyValuePair("Customer Number", getSafeString(result.get("customer_number"))));
-            }
-            if (result.containsKey("meter_number")) {
-                fields.add(new KeyValuePair("Meter Number", getSafeString(result.get("meter_number"))));
-            }
-            if (result.containsKey("consumer_number")) {
-                fields.add(new KeyValuePair("Consumer Number", getSafeString(result.get("consumer_number"))));
-            }
+            // First, try to get merged data using MainActivity's logic
+            Map<String, Object> mergedData = mergeSERVERData(result);
             
-            // Try to extract from SERVER2_data if available
-            if (result.containsKey("SERVER2_data")) {
-                Object server2Data = result.get("SERVER2_data");
-                JSONObject server2Json = convertToJSONObject(server2Data);
-                if (server2Json != null) {
-                    extractFromSERVER2Data(server2Json, fields);
-                }
-            }
-            
-            // Try to extract from SERVER3_data if available
-            if (result.containsKey("SERVER3_data")) {
-                Object server3Data = result.get("SERVER3_data");
-                JSONObject server3Json = convertToJSONObject(server3Data);
-                if (server3Json != null) {
-                    extractFromSERVER3Data(server3Json, fields);
+            if (mergedData != null && mergedData.containsKey("customer_info")) {
+                Map<String, String> customerInfo = (Map<String, String>) mergedData.get("customer_info");
+                
+                // Add all customer info fields
+                for (Map.Entry<String, String> entry : customerInfo.entrySet()) {
+                    if (isValidValue(entry.getValue())) {
+                        fields.add(new KeyValuePair(entry.getKey(), entry.getValue()));
+                    }
                 }
             }
 
-            // If no specific data found, add basic info
+            // If no merged data, try direct extraction
             if (fields.isEmpty()) {
-                fields.add(new KeyValuePair("Status", "Data available but no specific customer info found"));
-                fields.add(new KeyValuePair("Source", getDataSources(result)));
+                extractBasicInfoDirectly(result, fields);
             }
+
         } catch (Exception e) {
             e.printStackTrace();
             fields.add(new KeyValuePair("Error", "Failed to extract customer info: " + e.getMessage()));
         }
+
         return fields;
     }
 
-    // Helper to get data sources
-    private static String getDataSources(Map<String, Object> result) {
-        List<String> sources = new ArrayList<>();
-        if (result.containsKey("SERVER2_data")) sources.add("SERVER2");
-        if (result.containsKey("SERVER3_data")) sources.add("SERVER3");
-        if (result.containsKey("SERVER1_data")) sources.add("SERVER1");
-        if (result.containsKey("data_source")) sources.add(getSafeString(result.get("data_source")));
-        return sources.isEmpty() ? "Unknown" : String.join(", ", sources);
-    }
-
-    // Extract from SERVER2 data
-    private static void extractFromSERVER2Data(JSONObject server2Data, List<KeyValuePair> fields) {
-        try {
-            if (server2Data.has("customerInfo")) {
-                Object customerInfoObj = server2Data.get("customerInfo");
-                if (customerInfoObj instanceof JSONArray) {
-                    JSONArray customerInfoArray = (JSONArray) customerInfoObj;
-                    if (customerInfoArray.length() > 0) {
-                        Object firstElement = customerInfoArray.get(0);
-                        if (firstElement instanceof JSONArray) {
-                            JSONArray innerArray = (JSONArray) firstElement;
-                            if (innerArray.length() > 0) {
-                                Object customerObj = innerArray.get(0);
-                                if (customerObj instanceof JSONObject) {
-                                    JSONObject firstCustomer = (JSONObject) customerObj;
-                                    extractSERVER2CustomerInfo(firstCustomer, fields);
-                                }
-                            }
-                        } else if (firstElement instanceof JSONObject) {
-                            JSONObject firstCustomer = (JSONObject) firstElement;
-                            extractSERVER2CustomerInfo(firstCustomer, fields);
-                        }
-                    }
-                }
-            }
-            
-            // Also check for balance info
-            if (server2Data.has("finalBalanceInfo")) {
-                String balance = server2Data.optString("finalBalanceInfo");
-                if (!balance.equals("null") && !balance.isEmpty()) {
-                    addIfValid(fields, "Final Balance", balance);
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    // Extract SERVER2 customer info
-    private static void extractSERVER2CustomerInfo(JSONObject customer, List<KeyValuePair> fields) {
-        addIfValid(fields, "Customer Name", customer.optString("CUSTOMER_NAME"));
-        addIfValid(fields, "Address", customer.optString("ADDRESS"));
-        addIfValid(fields, "Tariff", customer.optString("TARIFF"));
-        addIfValid(fields, "Meter Number", customer.optString("METER_NUM"));
-        addIfValid(fields, "Meter Status", getMeterStatus(customer.optString("METER_STATUS")));
-        addIfValid(fields, "Location Code", customer.optString("LOCATION_CODE"));
-        addIfValid(fields, "Bill Group", customer.optString("BILL_GROUP"));
-    }
-
-    // Extract from SERVER3 data
-    private static void extractFromSERVER3Data(JSONObject server3Data, List<KeyValuePair> fields) {
-        try {
-            addIfValid(fields, "Customer Name", server3Data.optString("customerName"));
-            addIfValid(fields, "Customer Address", server3Data.optString("customerAddr"));
-            addIfValid(fields, "Father Name", server3Data.optString("fatherName"));
-            addIfValid(fields, "Meter Number", server3Data.optString("meterNum"));
-            addIfValid(fields, "Tariff Description", server3Data.optString("tariffDesc"));
-            addIfValid(fields, "Sanctioned Load", server3Data.optString("sanctionedLoad"));
-            addIfValid(fields, "Location Code", server3Data.optString("locationCode"));
-            addIfValid(fields, "Area Code", server3Data.optString("areaCode"));
-            addIfValid(fields, "Book Number", server3Data.optString("bookNumber"));
-            addIfValid(fields, "Bill Group", server3Data.optString("billGroup"));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    // Extract prepaid customer info
+    // FIXED: Extract prepaid customer info
     private static PrepaidCustomerInfoData extractPrepaidCustomerInfo(Map<String, Object> result) {
         List<KeyValuePair> fields = new ArrayList<>();
-        
+
         try {
             // Add basic info
             addIfValid(fields, "Meter Number", getSafeString(result.get("meter_number")));
             addIfValid(fields, "Consumer Number", getSafeString(result.get("consumer_number")));
-            
-            // Extract from SERVER1_data if available
+
+            // Try to extract from SERVER1_data using MainActivity's cleaning logic
             if (result.containsKey("SERVER1_data")) {
                 Object server1Data = result.get("SERVER1_data");
-                if (server1Data instanceof String) {
-                    String response = (String) server1Data;
-                    extractPrepaidInfoFromResponse(response, fields);
-                } else if (server1Data instanceof Map) {
-                    Map<String, Object> server1Map = (Map<String, Object>) server1Data;
-                    extractPrepaidInfoFromMap(server1Map, fields);
+                Map<String, Object> cleanedData = cleanSERVER1Data(server1Data);
+                
+                if (cleanedData.containsKey("customer_info")) {
+                    Map<String, String> customerInfo = (Map<String, String>) cleanedData.get("customer_info");
+                    for (Map.Entry<String, String> entry : customerInfo.entrySet()) {
+                        addIfValid(fields, entry.getKey(), entry.getValue());
+                    }
                 }
             }
-            
-            // Also try to extract from merged data
-            extractBasicCustomerInfo(result).forEach(field -> {
-                if (!field.key.equals("Meter Number") && !field.key.equals("Consumer Number")) {
-                    fields.add(field);
+
+            // Also try merged data
+            Map<String, Object> mergedData = mergeSERVERData(result);
+            if (mergedData != null && mergedData.containsKey("customer_info")) {
+                Map<String, String> customerInfo = (Map<String, String>) mergedData.get("customer_info");
+                for (Map.Entry<String, String> entry : customerInfo.entrySet()) {
+                    // Don't duplicate basic fields
+                    if (!entry.getKey().equals("Meter Number") && !entry.getKey().equals("Consumer Number")) {
+                        addIfValid(fields, entry.getKey(), entry.getValue());
+                    }
                 }
-            });
-            
+            }
+
         } catch (Exception e) {
             e.printStackTrace();
             fields.add(new KeyValuePair("Error", "Failed to extract prepaid info: " + e.getMessage()));
         }
-        
+
         return new PrepaidCustomerInfoData(fields);
     }
 
-    // Extract prepaid info from Map
-    private static void extractPrepaidInfoFromMap(Map<String, Object> server1Map, List<KeyValuePair> fields) {
-        try {
-            if (server1Map.containsKey("mCustomerData")) {
-                Object mCustomerData = server1Map.get("mCustomerData");
-                if (mCustomerData instanceof Map) {
-                    Map<String, Object> customerData = (Map<String, Object>) mCustomerData;
-                    if (customerData.containsKey("result")) {
-                        Object result = customerData.get("result");
-                        if (result instanceof Map) {
-                            Map<String, Object> resultMap = (Map<String, Object>) result;
-                            extractPrepaidFieldsFromMap(resultMap, fields);
-                        }
-                    }
-                }
-            }
-            
-            extractPrepaidFieldsFromMap(server1Map, fields);
-            
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    // Extract prepaid fields from map
-    private static void extractPrepaidFieldsFromMap(Map<String, Object> map, List<KeyValuePair> fields) {
-        addIfValid(fields, "Customer Name", getSafeString(map.get("customerName")));
-        addIfValid(fields, "Customer Address", getSafeString(map.get("customerAddress")));
-        addIfValid(fields, "Tariff Category", getSafeString(map.get("tariffCategory")));
-        addIfValid(fields, "Connection Category", getSafeString(map.get("connectionCategory")));
-        addIfValid(fields, "Sanctioned Load", getSafeString(map.get("sanctionLoad")));
-        addIfValid(fields, "Meter Type", getSafeString(map.get("meterType")));
-        addIfValid(fields, "Last Recharge", getSafeString(map.get("lastRechargeAmount")));
-    }
-
-    // Extract prepaid info from SERVER1 response
-    private static void extractPrepaidInfoFromResponse(String response, List<KeyValuePair> fields) {
-        try {
-            if (response.contains("\"customerName\"")) {
-                String customerName = extractJsonValue(response, "customerName");
-                addIfValid(fields, "Customer Name", customerName);
-            }
-            if (response.contains("\"customerAddress\"")) {
-                String address = extractJsonValue(response, "customerAddress");
-                addIfValid(fields, "Address", address);
-            }
-            if (response.contains("\"tariffCategory\"")) {
-                String tariff = extractJsonValue(response, "tariffCategory");
-                addIfValid(fields, "Tariff Category", tariff);
-            }
-            if (response.contains("\"sanctionLoad\"")) {
-                String load = extractJsonValue(response, "sanctionLoad");
-                addIfValid(fields, "Sanctioned Load", load);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    // Extract tokens
+    // FIXED: Extract tokens using MainActivity's logic
     private static TokensData extractTokens(Map<String, Object> result) {
         List<TokenData> tokenList = new ArrayList<>();
-        
+
         try {
             if (result.containsKey("SERVER1_data")) {
                 Object server1Data = result.get("SERVER1_data");
-                if (server1Data instanceof String) {
-                    extractTokensFromResponse((String) server1Data, tokenList);
-                } else if (server1Data instanceof Map) {
-                    extractTokensFromMap((Map<String, Object>) server1Data, tokenList);
+                Map<String, Object> cleanedData = cleanSERVER1Data(server1Data);
+                
+                if (cleanedData.containsKey("recent_transactions")) {
+                    List<Map<String, String>> transactions = (List<Map<String, String>>) cleanedData.get("recent_transactions");
+                    
+                    for (int i = 0; i < transactions.size(); i++) {
+                        Map<String, String> transaction = transactions.get(i);
+                        tokenList.add(new TokenData(
+                            i + 1,
+                            transaction.get("Tokens"),
+                            transaction.get("Date"),
+                            transaction.get("Amount"),
+                            transaction.get("Operator"),
+                            transaction.get("Sequence")
+                        ));
+                    }
                 }
             }
-            
-            // If no tokens found, add sample data for demo
-            if (tokenList.isEmpty()) {
-                tokenList.add(new TokenData(1, "1234-5678-9012-3456", "2024-01-15", "৳500", "Operator1", "001"));
-                tokenList.add(new TokenData(2, "2345-6789-0123-4567", "2024-01-10", "৳300", "Operator2", "002"));
-            }
-            
+
         } catch (Exception e) {
             e.printStackTrace();
         }
-        
+
         return tokenList.isEmpty() ? null : new TokensData(tokenList);
     }
 
-    // Extract tokens from response string
-    private static void extractTokensFromResponse(String response, List<TokenData> tokenList) {
-        try {
-            if (response.contains("\"tokens\"")) {
-                String token = extractJsonValue(response, "tokens");
-                if (isValidValue(token) && !token.equals("N/A")) {
-                    tokenList.add(new TokenData(1, token, "Recent", "৳Unknown", "System", "001"));
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    // Extract tokens from map
-    private static void extractTokensFromMap(Map<String, Object> map, List<TokenData> tokenList) {
-        try {
-            if (map.containsKey("tokens")) {
-                Object tokens = map.get("tokens");
-                if (tokens instanceof String) {
-                    String token = (String) tokens;
-                    if (isValidValue(token)) {
-                        tokenList.add(new TokenData(1, token, "Recent", "৳Unknown", "System", "001"));
-                    }
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    // Extract customer info as CustomerInfoData
+    // FIXED: Extract customer info data
     private static CustomerInfoData extractCustomerInfoData(Map<String, Object> result) {
-        return new CustomerInfoData(extractBasicCustomerInfo(result));
+        return new CustomerInfoData(extractCustomerInfoFromMergedData(result));
     }
 
-    // Extract bill info
+    // FIXED: Extract bill info using MainActivity's merged data
     private static BillInfoData extractBillInfo(Map<String, Object> result) {
         List<BillData> bills = new ArrayList<>();
-        
+
         try {
-            if (result.containsKey("SERVER2_data")) {
-                Object server2Data = result.get("SERVER2_data");
-                JSONObject server2Json = convertToJSONObject(server2Data);
-                if (server2Json != null && server2Json.has("billInfo")) {
-                    Object billInfoObj = server2Json.get("billInfo");
-                    if (billInfoObj instanceof JSONArray) {
-                        JSONArray billInfoArray = (JSONArray) billInfoObj;
-                        for (int i = 0; i < billInfoArray.length(); i++) {
-                            JSONObject bill = billInfoArray.getJSONObject(i);
-                            bills.add(new BillData(
-                                formatBillMonth(bill.optString("BILL_MONTH")),
-                                bill.optString("BILL_NO"),
-                                bill.optString("CONS_KWH_SR"),
-                                bill.optString("TOTAL_BILL"),
-                                formatDate(bill.optString("INVOICE_DUE_DATE")),
-                                bill.optString("PAID_AMT"),
-                                formatDate(bill.optString("RECEIPT_DATE")),
-                                bill.optString("BALANCE")
-                            ));
-                        }
-                    }
+            Map<String, Object> mergedData = mergeSERVERData(result);
+            
+            if (mergedData != null && mergedData.containsKey("bill_info_raw")) {
+                JSONArray billInfo = (JSONArray) mergedData.get("bill_info_raw");
+                
+                for (int i = 0; i < billInfo.length(); i++) {
+                    JSONObject bill = billInfo.getJSONObject(i);
+                    bills.add(new BillData(
+                        formatBillMonth(bill.optString("BILL_MONTH")),
+                        bill.optString("BILL_NO"),
+                        bill.optString("CONS_KWH_SR"),
+                        formatCurrency(bill.optString("TOTAL_BILL")),
+                        formatDate(bill.optString("INVOICE_DUE_DATE")),
+                        formatCurrency(bill.optString("PAID_AMT")),
+                        formatDate(bill.optString("RECEIPT_DATE")),
+                        formatCurrency(bill.optString("BALANCE"))
+                    ));
                 }
             }
-            
-            // If no bills found, add sample data for demo
-            if (bills.isEmpty()) {
-                bills.add(new BillData("Jan-2024", "B001", "150", "৳1200", "2024-02-05", "৳1200", "2024-02-01", "0"));
-                bills.add(new BillData("Dec-2023", "B002", "140", "৳1100", "2024-01-05", "৳1100", "2024-01-01", "0"));
-            }
-            
+
         } catch (Exception e) {
             e.printStackTrace();
         }
-        
+
         return bills.isEmpty() ? null : new BillInfoData(bills);
     }
 
-    // Extract balance info
+    // FIXED: Extract balance info using MainActivity's merged data
     private static BalanceInfoData extractBalanceInfo(Map<String, Object> result) {
         List<KeyValuePair> fields = new ArrayList<>();
-        
+
         try {
-            if (result.containsKey("SERVER2_data")) {
-                Object server2Data = result.get("SERVER2_data");
-                JSONObject server2Json = convertToJSONObject(server2Data);
-                if (server2Json != null) {
-                    if (server2Json.has("finalBalanceInfo")) {
-                        String balance = server2Json.optString("finalBalanceInfo");
-                        if (!balance.equals("null") && !balance.isEmpty()) {
-                            fields.add(new KeyValuePair("Total Balance", balance));
-                            fields.add(new KeyValuePair("Arrear Amount", balance));
-                        }
-                    }
-                    
-                    if (server2Json.has("balanceInfo")) {
-                        Object balanceInfoObj = server2Json.get("balanceInfo");
-                        if (balanceInfoObj instanceof JSONObject) {
-                            JSONObject balanceInfo = (JSONObject) balanceInfoObj;
-                            if (balanceInfo.has("Result") && balanceInfo.getJSONArray("Result").length() > 0) {
-                                JSONObject firstBalance = balanceInfo.getJSONArray("Result").getJSONObject(0);
-                                double totalBalance = firstBalance.optDouble("BALANCE", 0);
-                                if (totalBalance > 0) {
-                                    fields.add(new KeyValuePair("Total Balance", String.format("৳%.2f", totalBalance)));
-                                }
-                            }
-                        }
+            Map<String, Object> mergedData = mergeSERVERData(result);
+            
+            if (mergedData != null && mergedData.containsKey("balance_info")) {
+                Map<String, String> balanceInfo = (Map<String, String>) mergedData.get("balance_info");
+                
+                for (Map.Entry<String, String> entry : balanceInfo.entrySet()) {
+                    if (isValidValue(entry.getValue())) {
+                        fields.add(new KeyValuePair(entry.getKey(), formatCurrency(entry.getValue())));
                     }
                 }
             }
-            
-            if (fields.isEmpty()) {
-                fields.add(new KeyValuePair("Total Balance", "৳0"));
-                fields.add(new KeyValuePair("Arrear Amount", "৳0"));
-                fields.add(new KeyValuePair("Current Bill", "৳0"));
-            }
+
         } catch (Exception e) {
             e.printStackTrace();
         }
-        
+
         return fields.isEmpty() ? null : new BalanceInfoData(fields);
     }
 
-    // Extract bill summary
+    // FIXED: Extract bill summary using MainActivity's merged data
     private static BillSummaryData extractBillSummary(Map<String, Object> result) {
         List<KeyValuePair> fields = new ArrayList<>();
-        
+
         try {
-            BillInfoData billInfo = extractBillInfo(result);
-            if (billInfo != null && !billInfo.bills.isEmpty()) {
-                int totalBills = billInfo.bills.size();
-                BillData latestBill = billInfo.bills.get(0);
-                
-                fields.add(new KeyValuePair("Total Bills", String.valueOf(totalBills)));
-                fields.add(new KeyValuePair("Latest Bill Date", latestBill.billMonth));
-                fields.add(new KeyValuePair("Latest Amount", latestBill.currentBill));
-                fields.add(new KeyValuePair("Latest Consumption", latestBill.consumption + " kWh"));
-            } else {
-                fields.add(new KeyValuePair("Total Bills", "12"));
-                fields.add(new KeyValuePair("Latest Bill Date", "Jan-2024"));
-                fields.add(new KeyValuePair("Latest Amount", "৳1200"));
-                fields.add(new KeyValuePair("Recent Consumption", "150 kWh"));
-            }
+            Map<String, Object> mergedData = mergeSERVERData(result);
             
+            if (mergedData != null && mergedData.containsKey("bill_summary")) {
+                Map<String, Object> billSummary = (Map<String, Object>) mergedData.get("bill_summary");
+                
+                addIfValid(fields, "Total Bills", String.valueOf(billSummary.get("total_bills")));
+                addIfValid(fields, "Latest Bill Date", getSafeString(billSummary.get("latest_bill_date")));
+                addIfValid(fields, "Latest Consumption", getSafeString(billSummary.get("latest_consumption")) + " kWh");
+                addIfValid(fields, "Latest Amount", formatCurrency(getSafeString(billSummary.get("latest_total_amount"))));
+                
+                // Calculate first and last bill periods
+                if (mergedData.containsKey("bill_info_raw")) {
+                    JSONArray billInfo = (JSONArray) mergedData.get("bill_info_raw");
+                    if (billInfo.length() > 0) {
+                        JSONObject firstBill = billInfo.getJSONObject(billInfo.length() - 1);
+                        JSONObject lastBill = billInfo.getJSONObject(0);
+                        
+                        addIfValid(fields, "First Bill Period", formatBillMonth(firstBill.optString("BILL_MONTH")));
+                        addIfValid(fields, "Last Bill Period", formatBillMonth(lastBill.optString("BILL_MONTH")));
+                        
+                        // Calculate totals
+                        double totalAmount = 0;
+                        double totalPaid = 0;
+                        for (int i = 0; i < billInfo.length(); i++) {
+                            JSONObject bill = billInfo.getJSONObject(i);
+                            totalAmount += bill.optDouble("TOTAL_BILL", 0);
+                            totalPaid += bill.optDouble("PAID_AMT", 0);
+                        }
+                        double arrears = totalAmount - totalPaid;
+                        
+                        addIfValid(fields, "Total Amount", formatCurrency(String.valueOf(totalAmount)));
+                        addIfValid(fields, "Total Paid", formatCurrency(String.valueOf(totalPaid)));
+                        addIfValid(fields, "Arrears", formatCurrency(String.valueOf(arrears)));
+                    }
+                }
+            }
+
         } catch (Exception e) {
             e.printStackTrace();
         }
-        
+
         return fields.isEmpty() ? null : new BillSummaryData(fields);
     }
 
-    // Extract error
+    // FIXED: Extract error
     private static ErrorData extractError(Map<String, Object> result) {
         if (result.containsKey("error")) {
             return new ErrorData(result.get("error").toString());
@@ -677,20 +498,373 @@ public class TemplateHelper {
         return null;
     }
 
-    // Helper to convert Object to JSONObject
-    private static JSONObject convertToJSONObject(Object obj) {
+    // ========== CRITICAL: Replicate MainActivity's data processing methods ==========
+
+    // Replicate MainActivity's mergeSERVERData method
+    private static Map<String, Object> mergeSERVERData(Map<String, Object> result) {
         try {
-            if (obj instanceof JSONObject) {
-                return (JSONObject) obj;
-            } else if (obj instanceof Map) {
-                return new JSONObject((Map) obj);
-            } else if (obj instanceof String) {
-                return new JSONObject((String) obj);
+            JSONObject SERVER3Data = (JSONObject) result.get("SERVER3_data");
+            Object SERVER2DataObj = result.get("SERVER2_data");
+            JSONObject SERVER2Data = null;
+
+            if (SERVER2DataObj instanceof JSONObject) {
+                SERVER2Data = (JSONObject) SERVER2DataObj;
             }
+
+            if (SERVER3Data == null && (SERVER2Data == null)) {
+                return null;
+            }
+
+            Map<String, Object> merged = new HashMap<>();
+
+            // Process SERVER2 data first
+            if (SERVER2Data != null) {
+                Map<String, Object> cleanedSERVER2 = cleanSERVER2Data(SERVER2Data);
+                
+                // Preserve bill information
+                if (cleanedSERVER2.containsKey("bill_info_raw")) {
+                    merged.put("bill_info_raw", cleanedSERVER2.get("bill_info_raw"));
+                }
+                if (cleanedSERVER2.containsKey("bill_summary")) {
+                    merged.put("bill_summary", cleanedSERVER2.get("bill_summary"));
+                }
+                
+                // Customer info
+                if (cleanedSERVER2.containsKey("customer_info")) {
+                    merged.put("customer_info", cleanedSERVER2.get("customer_info"));
+                }
+                
+                // Balance info
+                if (cleanedSERVER2.containsKey("balance_info")) {
+                    merged.put("balance_info", cleanedSERVER2.get("balance_info"));
+                }
+            }
+
+            // Supplement with SERVER3 data
+            if (SERVER3Data != null) {
+                Map<String, Object> cleanedSERVER3 = cleanSERVER3Data(SERVER3Data);
+                
+                if (!merged.containsKey("customer_info") && cleanedSERVER3.containsKey("customer_info")) {
+                    merged.put("customer_info", cleanedSERVER3.get("customer_info"));
+                }
+                
+                if (!merged.containsKey("balance_info") && cleanedSERVER3.containsKey("balance_info")) {
+                    merged.put("balance_info", cleanedSERVER3.get("balance_info"));
+                }
+            }
+
+            return removeEmptyFields(merged);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    // Replicate MainActivity's cleanSERVER1Data method
+    private static Map<String, Object> cleanSERVER1Data(Object SERVER1DataObj) {
+        Map<String, Object> cleaned = new HashMap<>();
+
+        try {
+            String responseBody;
+            if (SERVER1DataObj instanceof String) {
+                responseBody = (String) SERVER1DataObj;
+            } else {
+                responseBody = SERVER1DataObj.toString();
+            }
+
+            // Extract the actual JSON part
+            String jsonPart = extractActualJson(responseBody);
+            JSONObject SERVER1Data = new JSONObject(jsonPart);
+
+            // Process mCustomerData
+            if (SERVER1Data.has("mCustomerData")) {
+                JSONObject mCustomerData = SERVER1Data.getJSONObject("mCustomerData");
+                if (mCustomerData.has("result")) {
+                    JSONObject result = mCustomerData.getJSONObject("result");
+
+                    Map<String, String> customerInfo = new HashMap<>();
+                    customerInfo.put("Name", extractDirectValue(result, "customerName"));
+                    customerInfo.put("Address", extractDirectValue(result, "customerAddress"));
+                    customerInfo.put("Phone", extractDirectValue(result, "customerPhone"));
+                    customerInfo.put("Division", extractDirectValue(result, "division"));
+                    customerInfo.put("Sub Division", extractDirectValue(result, "sndDivision"));
+                    customerInfo.put("Tariff Category", extractDirectValue(result, "tariffCategory"));
+                    customerInfo.put("Connection Category", extractDirectValue(result, "connectionCategory"));
+                    customerInfo.put("Account Type", extractDirectValue(result, "accountType"));
+                    customerInfo.put("Meter Type", extractDirectValue(result, "meterType"));
+                    customerInfo.put("Sanctioned Load", extractDirectValue(result, "sanctionLoad"));
+                    customerInfo.put("Last Recharge Amount", extractDirectValue(result, "lastRechargeAmount"));
+                    customerInfo.put("Last Recharge Time", extractDirectValue(result, "lastRechargeTime"));
+                    customerInfo.put("Installation Date", extractDirectValue(result, "installationDate"));
+                    customerInfo.put("Lock Status", extractDirectValue(result, "lockStatus"));
+                    customerInfo.put("Total Recharge This Month", extractDirectValue(result, "totalRechargeThisMonth"));
+
+                    cleaned.put("customer_info", removeEmptyFields(customerInfo));
+                }
+            }
+
+            // Process transactions
+            if (SERVER1Data.has("mOrderData")) {
+                List<Map<String, String>> transactions = extractTransactionsWithExactPatterns(responseBody);
+                if (!transactions.isEmpty()) {
+                    cleaned.put("recent_transactions", transactions);
+                }
+            }
+
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return null;
+
+        return removeEmptyFields(cleaned);
+    }
+
+    // Replicate MainActivity's cleanSERVER2Data method
+    private static Map<String, Object> cleanSERVER2Data(JSONObject SERVER2Data) {
+        Map<String, Object> cleaned = new HashMap<>();
+
+        try {
+            // Extract Customer Information
+            if (SERVER2Data.has("customerInfo") && SERVER2Data.getJSONArray("customerInfo").length() > 0) {
+                JSONArray customerInfoArray = SERVER2Data.getJSONArray("customerInfo");
+                if (customerInfoArray.length() > 0 && customerInfoArray.getJSONArray(0).length() > 0) {
+                    JSONObject firstCustomer = customerInfoArray.getJSONArray(0).getJSONObject(0);
+                    Map<String, String> customerInfo = new HashMap<>();
+
+                    customerInfo.put("Customer Name", firstCustomer.optString("CUSTOMER_NAME"));
+                    customerInfo.put("Address", firstCustomer.optString("ADDRESS"));
+                    customerInfo.put("Tariff Description", firstCustomer.optString("TARIFF"));
+                    customerInfo.put("Location Code", firstCustomer.optString("LOCATION_CODE"));
+                    customerInfo.put("Bill Group", firstCustomer.optString("BILL_GROUP"));
+                    customerInfo.put("Book Number", firstCustomer.optString("BOOK"));
+                    customerInfo.put("Walk Order", firstCustomer.optString("WALKING_SEQUENCE"));
+                    customerInfo.put("Meter Number", firstCustomer.optString("METER_NUM"));
+                    customerInfo.put("Meter Status", getMeterStatus(firstCustomer.optString("METER_STATUS")));
+                    customerInfo.put("Connection Date", formatDate(firstCustomer.optString("METER_CONNECT_DATE")));
+                    customerInfo.put("Description", firstCustomer.optString("DESCR"));
+                    customerInfo.put("Account_Number", firstCustomer.optString("CONS_EXTG_NUM"));
+                    customerInfo.put("Usage Type", firstCustomer.optString("USAGE_TYPE"));
+                    customerInfo.put("Start Bill Cycle", firstCustomer.optString("START_BILL_CYCLE"));
+
+                    cleaned.put("customer_info", removeEmptyFields(customerInfo));
+                }
+            }
+
+            // Extract Balance Information
+            Map<String, String> balanceInfo = new HashMap<>();
+            if (SERVER2Data.has("finalBalanceInfo")) {
+                String balanceString = SERVER2Data.optString("finalBalanceInfo");
+                if (balanceString != null && !balanceString.equals("null") && !balanceString.isEmpty()) {
+                    balanceInfo = parseFinalBalanceInfo(balanceString);
+                }
+            }
+            
+            if (!balanceInfo.isEmpty()) {
+                cleaned.put("balance_info", balanceInfo);
+            }
+
+            // Extract Bill Information
+            if (SERVER2Data.has("billInfo")) {
+                JSONArray billInfo = SERVER2Data.getJSONArray("billInfo");
+                cleaned.put("bill_info_raw", billInfo);
+
+                // Create bill summary
+                Map<String, Object> billSummary = new HashMap<>();
+                billSummary.put("total_bills", billInfo.length());
+
+                if (billInfo.length() > 0) {
+                    JSONObject latestBill = billInfo.getJSONObject(0);
+                    billSummary.put("latest_bill_date", formatBillMonth(latestBill.optString("BILL_MONTH")));
+                    billSummary.put("latest_bill_number", latestBill.optString("BILL_NO"));
+                    billSummary.put("latest_consumption", latestBill.optDouble("CONS_KWH_SR", 0));
+                    billSummary.put("latest_total_amount", latestBill.optDouble("TOTAL_BILL", 0));
+                    billSummary.put("latest_balance", latestBill.optDouble("BALANCE", 0));
+                }
+
+                cleaned.put("bill_summary", billSummary);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return removeEmptyFields(cleaned);
+    }
+
+    // Replicate MainActivity's cleanSERVER3Data method
+    private static Map<String, Object> cleanSERVER3Data(JSONObject SERVER3Data) {
+        Map<String, Object> cleaned = new HashMap<>();
+        Map<String, String> customerInfo = new HashMap<>();
+
+        customerInfo.put("Customer Name", SERVER3Data.optString("customerName"));
+        customerInfo.put("Customer Address", SERVER3Data.optString("customerAddr"));
+        customerInfo.put("Father Name", SERVER3Data.optString("fatherName"));
+        customerInfo.put("Location Code", SERVER3Data.optString("locationCode"));
+        customerInfo.put("Area Code", SERVER3Data.optString("areaCode"));
+        customerInfo.put("Book Number", SERVER3Data.optString("bookNumber"));
+        customerInfo.put("Bill Group", SERVER3Data.optString("billGroup"));
+        customerInfo.put("Meter Number", SERVER3Data.optString("meterNum"));
+        customerInfo.put("Meter Condition", SERVER3Data.optString("meterConditionDesc"));
+        customerInfo.put("Sanctioned Load", SERVER3Data.optString("sanctionedLoad"));
+        customerInfo.put("Tariff Description", SERVER3Data.optString("tariffDesc"));
+        customerInfo.put("Walk Order", SERVER3Data.optString("walkOrder"));
+        customerInfo.put("Arrear Amount", SERVER3Data.optString("arrearAmount"));
+        customerInfo.put("Last Bill Reading SR", SERVER3Data.optString("lastBillReadingSr"));
+        customerInfo.put("Last Bill Reading OF PK", SERVER3Data.optString("lastBillReadingOfPk"));
+        customerInfo.put("Last Bill Reading PK", SERVER3Data.optString("lastBillReadingPk"));
+
+        cleaned.put("customer_info", removeEmptyFields(customerInfo));
+
+        if (SERVER3Data.has("arrearAmount")) {
+            String arrearAmount = SERVER3Data.optString("arrearAmount");
+            Map<String, String> balanceInfo = new HashMap<>();
+            balanceInfo.put("Total Balance", arrearAmount);
+            balanceInfo.put("Arrear Amount", arrearAmount);
+            cleaned.put("balance_info", balanceInfo);
+        }
+
+        return removeEmptyFields(cleaned);
+    }
+
+    // ========== HELPER METHODS ==========
+
+    private static void extractBasicInfoDirectly(Map<String, Object> result, List<KeyValuePair> fields) {
+        addIfValid(fields, "Customer Number", getSafeString(result.get("customer_number")));
+        addIfValid(fields, "Meter Number", getSafeString(result.get("meter_number")));
+        addIfValid(fields, "Consumer Number", getSafeString(result.get("consumer_number")));
+    }
+
+    private static String extractActualJson(String responseBody) {
+        try {
+            int jsonStart = responseBody.indexOf("1:{");
+            if (jsonStart != -1) {
+                return responseBody.substring(jsonStart + 2);
+            }
+            return responseBody;
+        } catch (Exception e) {
+            return responseBody;
+        }
+    }
+
+    private static List<Map<String, String>> extractTransactionsWithExactPatterns(String response) {
+        List<Map<String, String>> transactions = new ArrayList<>();
+        int index = 0;
+        int count = 0;
+
+        while (index != -1 && count < 3) {
+            index = response.indexOf("\"tokens\":{\"_text\":\"", index);
+            if (index == -1) break;
+
+            int valueStart = index + "\"tokens\":{\"_text\":\"".length();
+            int valueEnd = response.indexOf("\"", valueStart);
+
+            if (valueEnd != -1) {
+                String token = response.substring(valueStart, valueEnd);
+                Map<String, String> transaction = extractTransactionFields(response, index);
+                transaction.put("Tokens", token);
+                transactions.add(transaction);
+                count++;
+            }
+
+            index = valueEnd + 1;
+        }
+
+        return transactions;
+    }
+
+    private static Map<String, String> extractTransactionFields(String response, int tokenPosition) {
+        Map<String, String> transaction = new HashMap<>();
+        int searchStart = Math.max(0, tokenPosition - 1000);
+        int searchEnd = Math.min(response.length(), tokenPosition + 200);
+        String searchArea = response.substring(searchStart, searchEnd);
+
+        transaction.put("Date", extractExactValue(searchArea, "date"));
+        transaction.put("Order Number", extractExactValue(searchArea, "orderNo"));
+        transaction.put("Amount", "৳" + extractExactValue(searchArea, "grossAmount"));
+        transaction.put("Energy Cost", "৳" + extractExactValue(searchArea, "energyCost"));
+        transaction.put("Operator", extractExactValue(searchArea, "operator"));
+        transaction.put("Sequence", extractExactValue(searchArea, "sequence"));
+
+        return transaction;
+    }
+
+    private static String extractExactValue(String text, String fieldName) {
+        try {
+            String pattern = "\"" + fieldName + "\":{\"_text\":\"";
+            int start = text.indexOf(pattern);
+            if (start != -1) {
+                int valueStart = start + pattern.length();
+                int valueEnd = text.indexOf("\"", valueStart);
+                if (valueEnd != -1) {
+                    return text.substring(valueStart, valueEnd);
+                }
+            }
+        } catch (Exception e) {
+            // Ignore
+        }
+        return "N/A";
+    }
+
+    private static String extractDirectValue(JSONObject jsonObject, String key) {
+        try {
+            if (!jsonObject.has(key)) {
+                return "N/A";
+            }
+
+            Object value = jsonObject.get(key);
+            if (value instanceof JSONObject) {
+                JSONObject obj = (JSONObject) value;
+                if (obj.has("_text")) {
+                    String textValue = obj.getString("_text");
+                    return (textValue == null || textValue.isEmpty() || textValue.equals("{}")) ? "N/A" : textValue.trim();
+                }
+                return "N/A";
+            }
+
+            String stringValue = value.toString().trim();
+            return (stringValue.isEmpty() || stringValue.equals("{}")) ? "N/A" : stringValue;
+
+        } catch (Exception e) {
+            return "N/A";
+        }
+    }
+
+    private static Map<String, String> parseFinalBalanceInfo(String balanceString) {
+        Map<String, String> balanceInfo = new HashMap<>();
+
+        if (balanceString == null || balanceString.isEmpty() || balanceString.equals("null")) {
+            return balanceInfo;
+        }
+
+        try {
+            if (!balanceString.contains(",") && !balanceString.contains(":")) {
+                balanceInfo.put("Total Balance", balanceString.trim());
+                balanceInfo.put("Arrear Amount", balanceString.trim());
+                return balanceInfo;
+            }
+
+            String[] parts = balanceString.split(",");
+            String totalBalance = parts[0].trim();
+            balanceInfo.put("Total Balance", totalBalance);
+            balanceInfo.put("Arrear Amount", totalBalance);
+
+            for (int i = 1; i < parts.length; i++) {
+                String part = parts[i].trim();
+                if (part.startsWith("PRN:")) {
+                    balanceInfo.put("PRN", part.substring(4).trim());
+                } else if (part.startsWith("LPS:")) {
+                    balanceInfo.put("LPS", part.substring(4).trim());
+                } else if (part.startsWith("VAT:")) {
+                    balanceInfo.put("VAT", part.substring(4).trim());
+                }
+            }
+
+        } catch (Exception e) {
+            balanceInfo.put("Total Balance", balanceString);
+            balanceInfo.put("Arrear Amount", balanceString);
+        }
+
+        return balanceInfo;
     }
 
     // Helper methods
@@ -760,21 +934,62 @@ public class TemplateHelper {
         }
     }
 
-    private static String extractJsonValue(String response, String key) {
-        try {
-            String pattern = "\"" + key + "\":\"(.*?)\"";
-            java.util.regex.Pattern r = java.util.regex.Pattern.compile(pattern);
-            java.util.regex.Matcher m = r.matcher(response);
-            if (m.find()) {
-                return m.group(1);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+    private static String formatCurrency(String value) {
+        if (value == null || value.isEmpty() || value.equals("N/A")) {
+            return "N/A";
         }
-        return "N/A";
+        try {
+            double amount = Double.parseDouble(value);
+            return String.format("৳%.2f", amount);
+        } catch (NumberFormatException e) {
+            return value;
+        }
     }
 
-    // Template rendering methods
+    @SuppressWarnings("unchecked")
+    private static <T> T removeEmptyFields(T data) {
+        if (data instanceof Map) {
+            Map<?, ?> map = (Map<?, ?>) data;
+            Map<Object, Object> result = new HashMap<>();
+            for (Map.Entry<?, ?> entry : map.entrySet()) {
+                Object key = entry.getKey();
+                Object value = entry.getValue();
+
+                if (key.toString().contains("bill") || key.toString().contains("balance")) {
+                    result.put(key, value);
+                    continue;
+                }
+
+                Object cleaned = removeEmptyFields(value);
+                if (cleaned != null &&
+                        !cleaned.equals("") &&
+                        !cleaned.equals("N/A") &&
+                        !(cleaned instanceof Map && ((Map<?, ?>) cleaned).isEmpty()) &&
+                        !(cleaned instanceof List && ((List<?>) cleaned).isEmpty())) {
+                    result.put(key, cleaned);
+                }
+            }
+            return (T) result;
+        } else if (data instanceof List) {
+            List<?> list = (List<?>) data;
+            List<Object> result = new ArrayList<>();
+            for (Object item : list) {
+                Object cleaned = removeEmptyFields(item);
+                if (cleaned != null &&
+                        !cleaned.equals("") &&
+                        !cleaned.equals("N/A") &&
+                        !(cleaned instanceof Map && ((Map<?, ?>) cleaned).isEmpty()) &&
+                        !(cleaned instanceof List && ((List<?>) cleaned).isEmpty())) {
+                    result.add(cleaned);
+                }
+            }
+            return (T) result;
+        } else {
+            return data;
+        }
+    }
+
+    // Template rendering methods (keep your existing ones)
     public static String renderPostpaidTemplate(Context context, PostpaidData data) {
         String template = loadTemplate(context, TEMPLATE_POSTPAID);
         return replacePostpaidPlaceholders(template, data);
@@ -798,33 +1013,37 @@ public class TemplateHelper {
         }
     }
 
+    // Keep your existing replacePostpaidPlaceholders and replacePrepaidPlaceholders methods
+    // They should work fine with the fixed data extraction above
+
     private static String replacePostpaidPlaceholders(String template, PostpaidData data) {
+        // Your existing implementation
         String result = template.replace("{{CUSTOMER_NUMBER}}", data.customerNumber);
 
         // Handle multiple customers
         if (data.multipleCustomers != null) {
             result = result.replace("{{#MULTIPLE_CUSTOMERS}}", "")
                           .replace("{{/MULTIPLE_CUSTOMERS}}", "");
-            
+
             result = result.replace("{{CUSTOMER_COUNT}}", String.valueOf(data.multipleCustomers.customerCount));
-            
+
             StringBuilder customersHtml = new StringBuilder();
             for (CustomerData customer : data.multipleCustomers.customers) {
                 StringBuilder customerHtml = new StringBuilder();
                 customerHtml.append("<div class=\"customer-card\">")
                            .append("<h4>👤 Customer ").append(customer.index).append(": ").append(customer.customerNumber).append("</h4>");
-                
+
                 for (KeyValuePair info : customer.customerInfo) {
                     customerHtml.append("<div class=\"field\">")
                                .append("<span><strong>").append(info.key).append(":</strong></span>")
                                .append("<span>").append(info.value).append("</span>")
                                .append("</div>");
                 }
-                
+
                 customerHtml.append("</div>");
                 customersHtml.append(customerHtml.toString());
             }
-            
+
             result = result.replace("{{#CUSTOMERS}}{{/CUSTOMERS}}", customersHtml.toString());
         } else {
             result = result.replace("{{#MULTIPLE_CUSTOMERS}}", "<!--")
@@ -835,7 +1054,7 @@ public class TemplateHelper {
         if (data.singleCustomer != null) {
             result = result.replace("{{#SINGLE_CUSTOMER}}", "")
                           .replace("{{/SINGLE_CUSTOMER}}", "");
-            
+
             StringBuilder customerInfoHtml = new StringBuilder();
             for (KeyValuePair info : data.singleCustomer.customerInfo) {
                 customerInfoHtml.append("<div class=\"field\">")
@@ -843,7 +1062,7 @@ public class TemplateHelper {
                                .append("<span>").append(info.value).append("</span>")
                                .append("</div>");
             }
-            
+
             result = result.replace("{{#CUSTOMER_INFO}}{{/CUSTOMER_INFO}}", customerInfoHtml.toString());
         } else {
             result = result.replace("{{#SINGLE_CUSTOMER}}", "<!--")
@@ -854,7 +1073,7 @@ public class TemplateHelper {
         if (data.billInfo != null) {
             result = result.replace("{{#BILL_INFO}}", "")
                           .replace("{{/BILL_INFO}}", "");
-            
+
             StringBuilder billsHtml = new StringBuilder();
             for (BillData bill : data.billInfo.bills) {
                 billsHtml.append("<tr>")
@@ -868,7 +1087,7 @@ public class TemplateHelper {
                         .append("<td>").append(bill.balance).append("</td>")
                         .append("</tr>");
             }
-            
+
             result = result.replace("{{#BILLS}}{{/BILLS}}", billsHtml.toString());
         } else {
             result = result.replace("{{#BILL_INFO}}", "<!--")
@@ -879,7 +1098,7 @@ public class TemplateHelper {
         if (data.balanceInfo != null) {
             result = result.replace("{{#BALANCE_INFO}}", "")
                           .replace("{{/BALANCE_INFO}}", "");
-            
+
             StringBuilder balanceHtml = new StringBuilder();
             for (KeyValuePair field : data.balanceInfo.fields) {
                 balanceHtml.append("<div class=\"field\">")
@@ -887,7 +1106,7 @@ public class TemplateHelper {
                           .append("<span>").append(field.value).append("</span>")
                           .append("</div>");
             }
-            
+
             result = result.replace("{{#FIELDS}}{{/FIELDS}}", balanceHtml.toString());
         } else {
             result = result.replace("{{#BALANCE_INFO}}", "<!--")
@@ -898,7 +1117,7 @@ public class TemplateHelper {
         if (data.billSummary != null) {
             result = result.replace("{{#BILL_SUMMARY}}", "")
                           .replace("{{/BILL_SUMMARY}}", "");
-            
+
             StringBuilder summaryHtml = new StringBuilder();
             for (KeyValuePair field : data.billSummary.fields) {
                 summaryHtml.append("<div class=\"field\">")
@@ -906,7 +1125,7 @@ public class TemplateHelper {
                           .append("<span>").append(field.value).append("</span>")
                           .append("</div>");
             }
-            
+
             result = result.replace("{{#FIELDS}}{{/FIELDS}}", summaryHtml.toString());
         } else {
             result = result.replace("{{#BILL_SUMMARY}}", "<!--")
@@ -927,6 +1146,7 @@ public class TemplateHelper {
     }
 
     private static String replacePrepaidPlaceholders(String template, PrepaidData data) {
+        // Your existing implementation
         String result = template.replace("{{METER_NUMBER}}", data.meterNumber)
                                .replace("{{CONSUMER_NUMBER}}", data.consumerNumber);
 
@@ -934,7 +1154,7 @@ public class TemplateHelper {
         if (data.prepaidCustomerInfo != null) {
             result = result.replace("{{#PREPAID_CUSTOMER_INFO}}", "")
                           .replace("{{/PREPAID_CUSTOMER_INFO}}", "");
-            
+
             StringBuilder prepaidHtml = new StringBuilder();
             for (KeyValuePair field : data.prepaidCustomerInfo.fields) {
                 prepaidHtml.append("<div class=\"field\">")
@@ -942,7 +1162,7 @@ public class TemplateHelper {
                           .append("<span>").append(field.value).append("</span>")
                           .append("</div>");
             }
-            
+
             result = result.replace("{{#FIELDS}}{{/FIELDS}}", prepaidHtml.toString());
         } else {
             result = result.replace("{{#PREPAID_CUSTOMER_INFO}}", "<!--")
@@ -953,7 +1173,7 @@ public class TemplateHelper {
         if (data.tokens != null) {
             result = result.replace("{{#TOKENS}}", "")
                           .replace("{{/TOKENS}}", "");
-            
+
             StringBuilder tokensHtml = new StringBuilder();
             for (TokenData token : data.tokens.tokenList) {
                 tokensHtml.append("<div class=\"token\">")
@@ -965,7 +1185,7 @@ public class TemplateHelper {
                          .append("<strong>Sequence:</strong> ").append(token.sequence)
                          .append("</div>");
             }
-            
+
             result = result.replace("{{#TOKEN_LIST}}{{/TOKEN_LIST}}", tokensHtml.toString());
         } else {
             result = result.replace("{{#TOKENS}}", "<!--")
@@ -976,7 +1196,7 @@ public class TemplateHelper {
         if (data.postpaidCustomerInfo != null) {
             result = result.replace("{{#POSTPAID_CUSTOMER_INFO}}", "")
                           .replace("{{/POSTPAID_CUSTOMER_INFO}}", "");
-            
+
             StringBuilder postpaidHtml = new StringBuilder();
             for (KeyValuePair field : data.postpaidCustomerInfo.fields) {
                 postpaidHtml.append("<div class=\"field\">")
@@ -984,7 +1204,7 @@ public class TemplateHelper {
                            .append("<span>").append(field.value).append("</span>")
                            .append("</div>");
             }
-            
+
             result = result.replace("{{#FIELDS}}{{/FIELDS}}", postpaidHtml.toString());
         } else {
             result = result.replace("{{#POSTPAID_CUSTOMER_INFO}}", "<!--")
@@ -995,7 +1215,7 @@ public class TemplateHelper {
         if (data.billInfo != null) {
             result = result.replace("{{#BILL_INFO}}", "")
                           .replace("{{/BILL_INFO}}", "");
-            
+
             StringBuilder billsHtml = new StringBuilder();
             for (BillData bill : data.billInfo.bills) {
                 billsHtml.append("<tr>")
@@ -1009,7 +1229,7 @@ public class TemplateHelper {
                         .append("<td>").append(bill.balance).append("</td>")
                         .append("</tr>");
             }
-            
+
             result = result.replace("{{#BILLS}}{{/BILLS}}", billsHtml.toString());
         } else {
             result = result.replace("{{#BILL_INFO}}", "<!--")
@@ -1020,7 +1240,7 @@ public class TemplateHelper {
         if (data.balanceInfo != null) {
             result = result.replace("{{#BALANCE_INFO}}", "")
                           .replace("{{/BALANCE_INFO}}", "");
-            
+
             StringBuilder balanceHtml = new StringBuilder();
             for (KeyValuePair field : data.balanceInfo.fields) {
                 balanceHtml.append("<div class=\"field\">")
@@ -1028,7 +1248,7 @@ public class TemplateHelper {
                           .append("<span>").append(field.value).append("</span>")
                           .append("</div>");
             }
-            
+
             result = result.replace("{{#FIELDS}}{{/FIELDS}}", balanceHtml.toString());
         } else {
             result = result.replace("{{#BALANCE_INFO}}", "<!--")
@@ -1039,7 +1259,7 @@ public class TemplateHelper {
         if (data.billSummary != null) {
             result = result.replace("{{#BILL_SUMMARY}}", "")
                           .replace("{{/BILL_SUMMARY}}", "");
-            
+
             StringBuilder summaryHtml = new StringBuilder();
             for (KeyValuePair field : data.billSummary.fields) {
                 summaryHtml.append("<div class=\"field\">")
@@ -1047,7 +1267,7 @@ public class TemplateHelper {
                           .append("<span>").append(field.value).append("</span>")
                           .append("</div>");
             }
-            
+
             result = result.replace("{{#FIELDS}}{{/FIELDS}}", summaryHtml.toString());
         } else {
             result = result.replace("{{#BILL_SUMMARY}}", "<!--")
