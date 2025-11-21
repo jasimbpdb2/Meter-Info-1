@@ -329,25 +329,25 @@
             .search-row {
                 flex-direction: column;
             }
-            
+
             .action-buttons {
                 flex-direction: column;
             }
-            
+
             .info-grid {
                 grid-template-columns: 1fr;
             }
-            
+
             .info-item {
                 flex-direction: column;
                 text-align: left;
             }
-            
+
             .info-value {
                 text-align: left;
                 margin-top: 5px;
             }
-            
+
             .summary-grid {
                 grid-template-columns: 1fr;
             }
@@ -358,19 +358,19 @@
             .action-buttons {
                 display: none !important;
             }
-            
+
             body {
                 background: white;
                 padding: 0;
                 margin: 0;
             }
-            
+
             .data-section {
                 display: block !important;
                 box-shadow: none;
                 padding: 0;
             }
-            
+
             .section-title {
                 background: #333 !important;
                 color: white !important;
@@ -442,11 +442,11 @@
 
         function selectType(type) {
             currentType = type;
-            
+
             // Update button states
             document.getElementById('prepaidBtn').classList.toggle('active', type === 'prepaid');
             document.getElementById('postpaidBtn').classList.toggle('active', type === 'postpaid');
-            
+
             // Update placeholder
             const input = document.getElementById('searchInput');
             if (type === 'prepaid') {
@@ -454,7 +454,7 @@
             } else {
                 input.placeholder = 'গ্রাহক নং লিখুন';
             }
-            
+
             // Clear previous results
             clearResults();
         }
@@ -473,6 +473,7 @@
                 try {
                     const result = AndroidInterface.fetchLookupData(input, currentType);
                     const data = JSON.parse(result);
+                    console.log("📊 Received data from Android:", data);
                     displayData(data);
                 } catch (err) {
                     showError('ডেটা লোড করতে সমস্যা হয়েছে: ' + err.message);
@@ -484,7 +485,7 @@
 
         function displayData(data) {
             hideLoading();
-            
+
             if (data.error) {
                 showError(data.error);
                 return;
@@ -502,10 +503,12 @@
         function generateFormattedHTML(data) {
             let html = '';
 
+            console.log("🔍 Generating HTML for data:", data);
+
             // Header with meter info
             html += `<div class="section-title">
                         <span class="emoji">📊</span> 
-                        ${data.type.toUpperCase()} মিটার তথ্য
+                        ${(data.type || 'UNKNOWN').toUpperCase()} মিটার তথ্য
                     </div>`;
 
             // Basic Information
@@ -520,12 +523,16 @@
                         </div>
                     </div>`;
 
-            // DEBUG SECTION
+            // DEBUG SECTION - Show all available data for troubleshooting
             html += `<div class="section-title" style="background: #ff9800;">
                         <span class="emoji">🐛</span> ডিবাগ তথ্য
                     </div>`;
-            
+
             html += `<div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">All Data Keys:</span>
+                            <span class="info-value">${Object.keys(data).join(', ')}</span>
+                        </div>
                         <div class="info-item">
                             <span class="info-label">RAW Keys:</span>
                             <span class="info-value">${data.debug_raw_keys || 'N/A'}</span>
@@ -544,54 +551,72 @@
                         </div>
                     </div>`;
 
-            // Customer Information
+            // Customer Information - FLEXIBLE DISPLAY
             if (data.customer_info && Object.keys(data.customer_info).length > 0) {
                 html += `<div class="section-title">
                             <span class="emoji">👤</span> গ্রাহক তথ্য
                          </div>`;
 
-                // Personal Information
-                html += `<div class="subsection-title">ব্যক্তিগত তথ্য</div>
-                         <div class="info-grid">`;
+                // Group fields dynamically based on what's available
+                const customerInfo = data.customer_info;
                 
-                ['Customer Name', 'Father Name', 'Customer Address'].forEach(key => {
-                    if (data.customer_info[key] && data.customer_info[key] !== 'N/A') {
-                        html += `<div class="info-item">
-                                    <span class="info-label">${key}:</span>
-                                    <span class="info-value">${data.customer_info[key]}</span>
-                                 </div>`;
-                    }
-                });
-                html += '</div>';
+                // Personal Information - Show any available personal fields
+                const personalFields = ['Customer Name', 'Name', 'Father Name', 'Customer Address', 'Address', 'Phone'];
+                const availablePersonal = personalFields.filter(field => 
+                    customerInfo[field] && customerInfo[field] !== 'N/A' && customerInfo[field] !== ''
+                );
 
-                // Billing Information
-                html += `<div class="subsection-title">বিলিং তথ্য</div>
-                         <div class="info-grid">`;
-                
-                ['Location Code', 'Area Code', 'Bill Group', 'Book Number', 
-                 'Tariff Description', 'Sanctioned Load', 'Walk Order'].forEach(key => {
-                    if (data.customer_info[key] && data.customer_info[key] !== 'N/A') {
+                if (availablePersonal.length > 0) {
+                    html += `<div class="subsection-title">ব্যক্তিগত তথ্য</div>
+                             <div class="info-grid">`;
+                    
+                    availablePersonal.forEach(field => {
                         html += `<div class="info-item">
-                                    <span class="info-label">${key}:</span>
-                                    <span class="info-value">${data.customer_info[key]}</span>
+                                    <span class="info-label">${field}:</span>
+                                    <span class="info-value">${customerInfo[field]}</span>
                                  </div>`;
-                    }
-                });
-                html += '</div>';
+                    });
+                    html += '</div>';
+                }
 
-                // Technical Information
-                html += `<div class="subsection-title">টেকনিক্যাল তথ্য</div>
-                         <div class="info-grid">`;
-                
-                ['Usage Type', 'Description', 'Start Bill Cycle', 'Meter Condition', 'Meter Status'].forEach(key => {
-                    if (data.customer_info[key] && data.customer_info[key] !== 'N/A') {
+                // Billing Information - Show any available billing fields
+                const billingFields = ['Location Code', 'Area Code', 'Bill Group', 'Book Number', 
+                                     'Tariff Description', 'Tariff', 'Sanctioned Load', 'Walk Order'];
+                const availableBilling = billingFields.filter(field => 
+                    customerInfo[field] && customerInfo[field] !== 'N/A' && customerInfo[field] !== ''
+                );
+
+                if (availableBilling.length > 0) {
+                    html += `<div class="subsection-title">বিলিং তথ্য</div>
+                             <div class="info-grid">`;
+                    
+                    availableBilling.forEach(field => {
                         html += `<div class="info-item">
-                                    <span class="info-label">${key}:</span>
-                                    <span class="info-value">${data.customer_info[key]}</span>
+                                    <span class="info-label">${field}:</span>
+                                    <span class="info-value">${customerInfo[field]}</span>
                                  </div>`;
-                    }
-                });
-                html += '</div>';
+                    });
+                    html += '</div>';
+                }
+
+                // Technical Information - Show any available technical fields
+                const technicalFields = ['Usage Type', 'Description', 'Start Bill Cycle', 'Meter Condition', 'Meter Status'];
+                const availableTechnical = technicalFields.filter(field => 
+                    customerInfo[field] && customerInfo[field] !== 'N/A' && customerInfo[field] !== ''
+                );
+
+                if (availableTechnical.length > 0) {
+                    html += `<div class="subsection-title">টেকনিক্যাল তথ্য</div>
+                             <div class="info-grid">`;
+                    
+                    availableTechnical.forEach(field => {
+                        html += `<div class="info-item">
+                                    <span class="info-label">${field}:</span>
+                                    <span class="info-value">${customerInfo[field]}</span>
+                                 </div>`;
+                    });
+                    html += '</div>';
+                }
             }
 
             // Balance Information
@@ -600,16 +625,18 @@
                             <span class="emoji">💰</span> ব্যালেন্স তথ্য
                          </div>
                          <div class="info-grid">`;
-                
+
                 for (const [key, value] of Object.entries(data.balance_info)) {
-                    const amount = parseFloat(value) || 0;
-                    const amountClass = amount === 0 ? 'amount-positive' : 'amount-negative';
-                    const displayValue = amount === 0 ? '০.০০' : `৳ ${Math.abs(amount).toFixed(2)}`;
-                    
-                    html += `<div class="info-item">
-                                <span class="info-label">${key}:</span>
-                                <span class="info-value ${amountClass}">${displayValue}</span>
-                             </div>`;
+                    if (value && value !== 'N/A' && value !== '') {
+                        const amount = parseFloat(value.toString().replace('৳', '').trim()) || 0;
+                        const amountClass = amount === 0 ? 'amount-positive' : 'amount-negative';
+                        const displayValue = amount === 0 ? '০.০০' : `৳ ${Math.abs(amount).toFixed(2)}`;
+
+                        html += `<div class="info-item">
+                                    <span class="info-label">${key}:</span>
+                                    <span class="info-value ${amountClass}">${displayValue}</span>
+                                 </div>`;
+                    }
                 }
                 html += '</div>';
             }
@@ -624,12 +651,12 @@
                 if (data.bill_summary) {
                     html += `<div class="summary-card">
                                 <div class="summary-grid">`;
-                    
+
                     const summary = data.bill_summary;
                     const summaryItems = [
                         { 
                             label: 'মোট বিল', 
-                            value: summary.total_bills || 0, 
+                            value: summary.total_bills || data.bill_info.length, 
                             emoji: '📊' 
                         },
                         { 
@@ -648,7 +675,7 @@
                             emoji: '⚠️' 
                         }
                     ];
-                    
+
                     summaryItems.forEach(item => {
                         html += `<div class="summary-item">
                                     <div class="emoji">${item.emoji}</div>
@@ -656,11 +683,11 @@
                                     <div class="summary-label">${item.label}</div>
                                  </div>`;
                     });
-                    
+
                     html += `</div></div>`;
                 }
 
-                // Bill Table
+                // Bill Table - FLEXIBLE COLUMNS
                 html += `<div class="table-container">
                             <table class="data-table">
                                 <thead>
@@ -675,23 +702,23 @@
                                     </tr>
                                 </thead>
                                 <tbody>`;
-                
+
                 data.bill_info.forEach(bill => {
                     const balance = parseFloat(bill.BALANCE) || 0;
                     const balanceClass = balance === 0 ? 'amount-positive' : 'amount-negative';
                     const balanceDisplay = balance === 0 ? '০' : `৳ ${Math.abs(balance).toFixed(0)}`;
-                    
+
                     html += `<tr>
                                 <td>${formatBillMonth(bill.BILL_MONTH)}</td>
                                 <td>${bill.BILL_NO || 'N/A'}</td>
-                                <td>${bill.CONS_KWH_SR || '০'}</td>
-                                <td>৳ ${((bill.TOTAL_BILL || 0)).toFixed(0)}</td>
-                                <td>৳ ${((bill.PAID_AMT || 0)).toFixed(0)}</td>
+                                <td>${bill.CONS_KWH_SR || bill.consumption || '০'}</td>
+                                <td>৳ ${((bill.TOTAL_BILL || bill.total_amount || 0)).toFixed(0)}</td>
+                                <td>৳ ${((bill.PAID_AMT || bill.paid_amount || 0)).toFixed(0)}</td>
                                 <td class="${balanceClass}">${balanceDisplay}</td>
-                                <td>${bill.INVOICE_DUE_DATE || 'N/A'}</td>
+                                <td>${bill.INVOICE_DUE_DATE || bill.due_date || 'N/A'}</td>
                             </tr>`;
                 });
-                
+
                 html += `</tbody></table></div>`;
             }
 
@@ -701,9 +728,9 @@
                             <span class="emoji">🔢</span> মিটার রিডিং
                          </div>
                          <div class="info-grid">`;
-                
+
                 for (const [key, value] of Object.entries(data.meter_readings)) {
-                    if (value && value !== 'N/A' && value !== 'null') {
+                    if (value && value !== 'N/A' && value !== 'null' && value !== '') {
                         html += `<div class="info-item">
                                     <span class="info-label">${key}:</span>
                                     <span class="info-value">${value}</span>
@@ -732,21 +759,21 @@
                                     </tr>
                                 </thead>
                                 <tbody>`;
-                
+
                 data.recharge_history.slice(0, 10).forEach(transaction => {
                     html += `<tr>
                                 <td>${transaction.Date || 'N/A'}</td>
-                                <td>${transaction['Order Number'] || 'N/A'}</td>
+                                <td>${transaction['Order Number'] || transaction.order_number || 'N/A'}</td>
                                 <td>${transaction.Amount || '০'}</td>
-                                <td>${transaction['Energy Cost'] || '০'}</td>
+                                <td>${transaction['Energy Cost'] || transaction.energy_cost || '০'}</td>
                                 <td>${transaction.Tokens || 'N/A'}</td>
                                 <td>${transaction.Operator || 'N/A'}</td>
                                 <td>${transaction.Sequence || 'N/A'}</td>
                             </tr>`;
                 });
-                
+
                 html += `</tbody></table></div>`;
-                
+
                 // Recharge summary
                 html += `<div class="summary-card">
                             <div class="summary-item">
@@ -762,16 +789,16 @@
                 html += `<div class="section-title">
                             <span class="emoji">👥</span> একাধিক গ্রাহক পাওয়া গেছে
                          </div>`;
-                
+
                 data.customer_results.forEach((customer, index) => {
                     html += `<div class="subsection-title">
                                 গ্রাহক ${index + 1}/${data.customer_results.length}
                              </div>`;
-                    
+
                     if (customer.customer_info) {
                         html += `<div class="info-grid">`;
                         for (const [key, value] of Object.entries(customer.customer_info)) {
-                            if (value && value !== 'N/A') {
+                            if (value && value !== 'N/A' && value !== '') {
                                 html += `<div class="info-item">
                                             <span class="info-label">${key}:</span>
                                             <span class="info-value">${value}</span>
@@ -783,22 +810,43 @@
                 });
             }
 
+            // If no specific data found, show available data
+            if (html === '') {
+                html += `<div class="section-title">
+                            <span class="emoji">ℹ️</span> উপলব্ধ তথ্য
+                         </div>
+                         <div class="info-grid">`;
+                
+                for (const [key, value] of Object.entries(data)) {
+                    if (key !== 'type' && key !== 'debug_raw_keys' && key !== 'debug_server2_keys' && 
+                        key !== 'debug_server3_keys' && key !== 'debug_server1') {
+                        html += `<div class="info-item">
+                                    <span class="info-label">${key}:</span>
+                                    <span class="info-value">${JSON.stringify(value).substring(0, 100)}</span>
+                                 </div>`;
+                    }
+                }
+                html += '</div>';
+            }
+
             return html;
         }
 
         function formatBillMonth(dateStr) {
             if (!dateStr || dateStr === 'N/A') return 'N/A';
-            
+
             try {
-                // Format: YYYY-MM to Month-YYYY
-                const [year, month] = dateStr.split('-');
-                const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                
-                if (month && year) {
-                    const monthIndex = parseInt(month) - 1;
-                    if (monthIndex >= 0 && monthIndex < 12) {
-                        return `${monthNames[monthIndex]}-${year}`;
+                // Handle different date formats
+                if (dateStr.includes('-')) {
+                    const [year, month] = dateStr.split('-');
+                    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+                    if (month && year) {
+                        const monthIndex = parseInt(month) - 1;
+                        if (monthIndex >= 0 && monthIndex < 12) {
+                            return `${monthNames[monthIndex]}-${year}`;
+                        }
                     }
                 }
                 return dateStr;
