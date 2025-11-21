@@ -54,19 +54,19 @@ public class LookupDataHelper {
                 return result;
             }
 
-            // Combine all data WITHOUT MainActivity instances
+            // Create combined result with all data
             Map<String, Object> combinedResult = new HashMap<>();
             combinedResult.putAll(server3Result);
             combinedResult.put("meter_number", meterNumber);
             combinedResult.put("consumer_number", consumerNumber);
-
-            // Add SERVER1 data directly
+            
+            // Add SERVER1 data
             if (server1Result.containsKey("SERVER1_data")) {
                 combinedResult.put("SERVER1_data", server1Result.get("SERVER1_data"));
             }
 
-            // Format the data for HTML display
-            result = formatLookupDataForDisplay(combinedResult, "prepaid");
+            // Process data for HTML display
+            result = processDataForHTML(combinedResult, "prepaid");
 
         } catch (Exception e) {
             result.put("error", "ডেটা প্রসেসিং ব্যর্থ: " + e.getMessage());
@@ -87,13 +87,13 @@ public class LookupDataHelper {
                 return result;
             }
 
-            // Combine data directly
+            // Create combined result
             Map<String, Object> combinedResult = new HashMap<>();
             combinedResult.putAll(server3Result);
             combinedResult.put("customer_number", inputNumber);
 
-            // Format the data for HTML display
-            result = formatLookupDataForDisplay(combinedResult, "postpaid");
+            // Process data for HTML display
+            result = processDataForHTML(combinedResult, "postpaid");
 
         } catch (Exception e) {
             result.put("error", "ডেটা প্রসেসিং ব্যর্থ: " + e.getMessage());
@@ -102,112 +102,84 @@ public class LookupDataHelper {
         return result;
     }
 
-    private Map<String, Object> formatLookupDataForDisplay(Map<String, Object> rawData, String type) {
+    private Map<String, Object> processDataForHTML(Map<String, Object> rawData, String type) {
         Map<String, Object> result = new HashMap<>();
-
+        
         try {
-            // Extract all the structured data for HTML display WITHOUT MainActivity
-            extractStructuredData(rawData, result, type);
+            // Basic information
+            result.put("type", type);
+            result.put("meter_number", rawData.getOrDefault("meter_number", "N/A"));
+            result.put("consumer_number", rawData.getOrDefault("consumer_number", rawData.get("customer_number")));
+
+            // Extract SERVER2 data for customer info, balance, and bills
+            if (rawData.containsKey("SERVER2_data")) {
+                JSONObject server2Data = (JSONObject) rawData.get("SERVER2_data");
+                extractSERVER2Data(server2Data, result);
+            }
+
+            // Extract SERVER3 data for additional customer info
+            if (rawData.containsKey("SERVER3_data")) {
+                JSONObject server3Data = (JSONObject) rawData.get("SERVER3_data");
+                extractSERVER3Data(server3Data, result);
+            }
+
+            // Extract SERVER1 data for prepaid (tokens and customer info)
+            if ("prepaid".equals(type) && rawData.containsKey("SERVER1_data")) {
+                extractSERVER1Data(rawData.get("SERVER1_data"), result);
+            }
 
         } catch (Exception e) {
-            System.out.println("❌ Error formatting lookup data: " + e.getMessage());
-            result.put("error", "Data formatting failed: " + e.getMessage());
+            System.out.println("❌ Error processing data for HTML: " + e.getMessage());
+            result.put("error", "Data processing failed: " + e.getMessage());
         }
 
         return result;
     }
 
-    private void extractStructuredData(Map<String, Object> rawData, Map<String, Object> result, String type) {
-        // Basic information
-        result.put("type", type);
-        result.put("meter_number", rawData.getOrDefault("meter_number", "N/A"));
-        result.put("consumer_number", rawData.getOrDefault("consumer_number", rawData.get("customer_number")));
-
-        // Extract customer information
-        extractCustomerInfo(rawData, result);
-
-        // Extract balance information
-        extractBalanceInfo(rawData, result);
-
-        // Extract bill information (for both prepaid and postpaid)
-        extractBillInfo(rawData, result);
-
-        // Extract recharge history for prepaid
-        if ("prepaid".equals(type)) {
-            extractRechargeInfo(rawData, result);
-        }
-
-        // Extract meter readings
-        extractMeterReadings(rawData, result);
-    }
-
-    private void extractCustomerInfo(Map<String, Object> rawData, Map<String, Object> result) {
-        Map<String, String> customerInfo = new HashMap<>();
-
-        // Try to get customer info from merged data first
-        if (rawData.containsKey("customer_info") && rawData.get("customer_info") instanceof Map) {
-            customerInfo.putAll((Map<String, String>) rawData.get("customer_info"));
-        }
-
-        // Fallback to individual fields
-        if (customerInfo.isEmpty()) {
-            // Extract from SERVER3 data
-            if (rawData.containsKey("SERVER3_data")) {
-                JSONObject server3Data = (JSONObject) rawData.get("SERVER3_data");
-                customerInfo.put("Customer Name", server3Data.optString("customerName", "N/A"));
-                customerInfo.put("Father Name", server3Data.optString("fatherName", "N/A"));
-                customerInfo.put("Customer Address", server3Data.optString("customerAddr", "N/A"));
-                customerInfo.put("Location Code", server3Data.optString("locationCode", "N/A"));
-                customerInfo.put("Area Code", server3Data.optString("areaCode", "N/A"));
-                customerInfo.put("Bill Group", server3Data.optString("billGroup", "N/A"));
-                customerInfo.put("Book Number", server3Data.optString("bookNumber", "N/A"));
-                customerInfo.put("Tariff Description", server3Data.optString("tariffDesc", "N/A"));
-                customerInfo.put("Sanctioned Load", server3Data.optString("sanctionedLoad", "N/A"));
-                customerInfo.put("Walk Order", server3Data.optString("walkOrder", "N/A"));
+    private void extractSERVER2Data(JSONObject server2Data, Map<String, Object> result) {
+        try {
+            // Extract customer info from SERVER2
+            if (server2Data.has("customerInfo") && server2Data.getJSONArray("customerInfo").length() > 0) {
+                JSONArray customerInfoArray = server2Data.getJSONArray("customerInfo");
+                if (customerInfoArray.length() > 0 && customerInfoArray.getJSONArray(0).length() > 0) {
+                    JSONObject firstCustomer = customerInfoArray.getJSONArray(0).getJSONObject(0);
+                    
+                    Map<String, String> customerInfo = new HashMap<>();
+                    customerInfo.put("Customer Name", firstCustomer.optString("CUSTOMER_NAME", "N/A"));
+                    customerInfo.put("Address", firstCustomer.optString("ADDRESS", "N/A"));
+                    customerInfo.put("Tariff", firstCustomer.optString("TARIFF", "N/A"));
+                    customerInfo.put("Location Code", firstCustomer.optString("LOCATION_CODE", "N/A"));
+                    customerInfo.put("Bill Group", firstCustomer.optString("BILL_GROUP", "N/A"));
+                    customerInfo.put("Meter Number", firstCustomer.optString("METER_NUM", "N/A"));
+                    customerInfo.put("Meter Status", getMeterStatus(firstCustomer.optString("METER_STATUS")));
+                    
+                    result.put("customer_info", customerInfo);
+                }
             }
 
-            // Extract from SERVER1 data (for prepaid)
-            if (rawData.containsKey("customer_info") && rawData.get("customer_info") instanceof Map) {
-                Map<String, String> server1Info = (Map<String, String>) rawData.get("customer_info");
-                customerInfo.putAll(server1Info);
+            // Extract balance information
+            Map<String, String> balanceInfo = new HashMap<>();
+            if (server2Data.has("finalBalanceInfo")) {
+                String balanceString = server2Data.optString("finalBalanceInfo");
+                if (balanceString != null && !balanceString.equals("null") && !balanceString.isEmpty()) {
+                    balanceInfo.put("Total Balance", balanceString);
+                    balanceInfo.put("Arrear Amount", balanceString);
+                }
             }
-        }
-
-        result.put("customer_info", customerInfo);
-    }
-
-    private void extractBalanceInfo(Map<String, Object> rawData, Map<String, Object> result) {
-        Map<String, String> balanceInfo = new HashMap<>();
-
-        // Try to get balance info from merged data
-        if (rawData.containsKey("balance_info") && rawData.get("balance_info") instanceof Map) {
-            balanceInfo.putAll((Map<String, String>) rawData.get("balance_info"));
-        }
-
-        // If no balance info found, try to extract from SERVER3
-        if (balanceInfo.isEmpty() && rawData.containsKey("SERVER3_data")) {
-            JSONObject server3Data = (JSONObject) rawData.get("SERVER3_data");
-            String arrearAmount = server3Data.optString("arrearAmount", "");
-            if (!arrearAmount.isEmpty() && !arrearAmount.equals("0") && !arrearAmount.equals("0.00")) {
-                balanceInfo.put("Total Balance", arrearAmount);
-                balanceInfo.put("Arrear Amount", arrearAmount);
+            
+            if (!balanceInfo.isEmpty()) {
+                result.put("balance_info", balanceInfo);
             }
-        }
 
-        result.put("balance_info", balanceInfo);
-    }
-
-    private void extractBillInfo(Map<String, Object> rawData, Map<String, Object> result) {
-        List<Map<String, Object>> billInfo = new ArrayList<>();
-
-        // Try to get bill info from merged data
-        if (rawData.containsKey("bill_info_raw") && rawData.get("bill_info_raw") instanceof JSONArray) {
-            JSONArray billArray = (JSONArray) rawData.get("bill_info_raw");
-            for (int i = 0; i < billArray.length(); i++) {
-                try {
+            // Extract bill information
+            if (server2Data.has("billInfo")) {
+                JSONArray billArray = server2Data.getJSONArray("billInfo");
+                List<Map<String, Object>> billInfo = new ArrayList<>();
+                
+                for (int i = 0; i < billArray.length(); i++) {
                     JSONObject bill = billArray.getJSONObject(i);
                     Map<String, Object> billData = new HashMap<>();
-
+                    
                     billData.put("BILL_MONTH", bill.optString("BILL_MONTH", "N/A"));
                     billData.put("BILL_NO", bill.optString("BILL_NO", "N/A"));
                     billData.put("CONS_KWH_SR", bill.optDouble("CONS_KWH_SR", 0));
@@ -215,117 +187,161 @@ public class LookupDataHelper {
                     billData.put("PAID_AMT", bill.optDouble("PAID_AMT", 0));
                     billData.put("BALANCE", bill.optDouble("BALANCE", 0));
                     billData.put("INVOICE_DUE_DATE", bill.optString("INVOICE_DUE_DATE", "N/A"));
-
+                    
                     billInfo.add(billData);
-                } catch (Exception e) {
-                    // Skip invalid bill records
                 }
-            }
-        }
-
-        result.put("bill_info", billInfo);
-
-        // Also add bill summary
-        if (rawData.containsKey("bill_summary") && rawData.get("bill_summary") instanceof Map) {
-            result.put("bill_summary", rawData.get("bill_summary"));
-        } else {
-            // Create basic bill summary
-            Map<String, Object> billSummary = new HashMap<>();
-            billSummary.put("total_bills", billInfo.size());
-            if (!billInfo.isEmpty()) {
-                Map<String, Object> firstBill = billInfo.get(0);
-                Map<String, Object> lastBill = billInfo.get(billInfo.size() - 1);
-
-                billSummary.put("first_bill_period", formatBillMonth(String.valueOf(firstBill.get("BILL_MONTH"))));
-                billSummary.put("last_bill_period", formatBillMonth(String.valueOf(lastBill.get("BILL_MONTH"))));
-
-                double totalAmount = 0;
-                double totalPaid = 0;
-                for (Map<String, Object> bill : billInfo) {
-                    totalAmount += Double.parseDouble(String.valueOf(bill.getOrDefault("TOTAL_BILL", "0")));
-                    totalPaid += Double.parseDouble(String.valueOf(bill.getOrDefault("PAID_AMT", "0")));
+                
+                result.put("bill_info", billInfo);
+                
+                // Create bill summary
+                Map<String, Object> billSummary = new HashMap<>();
+                billSummary.put("total_bills", billInfo.size());
+                if (!billInfo.isEmpty()) {
+                    double totalAmount = 0;
+                    double totalPaid = 0;
+                    for (Map<String, Object> bill : billInfo) {
+                        totalAmount += Double.parseDouble(String.valueOf(bill.getOrDefault("TOTAL_BILL", "0")));
+                        totalPaid += Double.parseDouble(String.valueOf(bill.getOrDefault("PAID_AMT", "0")));
+                    }
+                    billSummary.put("total_amount", totalAmount);
+                    billSummary.put("total_paid", totalPaid);
+                    billSummary.put("arrears", totalAmount - totalPaid);
                 }
-                billSummary.put("total_amount", totalAmount);
-                billSummary.put("total_paid", totalPaid);
-                billSummary.put("arrears", totalAmount - totalPaid);
+                result.put("bill_summary", billSummary);
             }
-            result.put("bill_summary", billSummary);
+
+        } catch (Exception e) {
+            System.out.println("❌ Error extracting SERVER2 data: " + e.getMessage());
         }
     }
 
-    private void extractRechargeInfo(Map<String, Object> rawData, Map<String, Object> result) {
-        List<Map<String, String>> rechargeHistory = new ArrayList<>();
+    private void extractSERVER3Data(JSONObject server3Data, Map<String, Object> result) {
+        try {
+            // Get or create customer info
+            Map<String, String> customerInfo = (Map<String, String>) result.getOrDefault("customer_info", new HashMap<>());
+            
+            // Add SERVER3 customer info
+            customerInfo.put("Customer Name", server3Data.optString("customerName", customerInfo.getOrDefault("Customer Name", "N/A")));
+            customerInfo.put("Father Name", server3Data.optString("fatherName", "N/A"));
+            customerInfo.put("Customer Address", server3Data.optString("customerAddr", customerInfo.getOrDefault("Address", "N/A")));
+            customerInfo.put("Location Code", server3Data.optString("locationCode", customerInfo.getOrDefault("Location Code", "N/A")));
+            customerInfo.put("Area Code", server3Data.optString("areaCode", "N/A"));
+            customerInfo.put("Bill Group", server3Data.optString("billGroup", customerInfo.getOrDefault("Bill Group", "N/A")));
+            customerInfo.put("Book Number", server3Data.optString("bookNumber", "N/A"));
+            customerInfo.put("Tariff Description", server3Data.optString("tariffDesc", customerInfo.getOrDefault("Tariff", "N/A")));
+            customerInfo.put("Sanctioned Load", server3Data.optString("sanctionedLoad", "N/A"));
+            customerInfo.put("Walk Order", server3Data.optString("walkOrder", "N/A"));
+            customerInfo.put("Meter Number", server3Data.optString("meterNum", customerInfo.getOrDefault("Meter Number", "N/A")));
+            
+            result.put("customer_info", customerInfo);
 
-        // Try to get recharge transactions
-        if (rawData.containsKey("recent_transactions") && rawData.get("recent_transactions") instanceof List) {
-            rechargeHistory = (List<Map<String, String>>) rawData.get("recent_transactions");
-        }
-
-        result.put("recharge_history", rechargeHistory);
-        result.put("total_recharges", rechargeHistory.size());
-    }
-
-    private void extractMeterReadings(Map<String, Object> rawData, Map<String, Object> result) {
-        Map<String, String> meterReadings = new HashMap<>();
-
-        // Extract from customer info
-        if (rawData.containsKey("customer_info") && rawData.get("customer_info") instanceof Map) {
-            Map<String, String> customerInfo = (Map<String, String>) rawData.get("customer_info");
-
-            String[] readingKeys = {
-                "Current Reading SR", "Last Bill Reading SR", 
-                "Last Bill Reading OF PK", "Last Bill Reading PK"
-            };
-
-            for (String key : readingKeys) {
-                if (customerInfo.containsKey(key)) {
-                    meterReadings.put(key, customerInfo.get(key));
-                }
-            }
-        }
-
-        // Extract from SERVER3 data
-        if (rawData.containsKey("SERVER3_data")) {
-            JSONObject server3Data = (JSONObject) rawData.get("SERVER3_data");
-
+            // Add meter readings
+            Map<String, String> meterReadings = new HashMap<>();
             String lastReadingSr = server3Data.optString("lastBillReadingSr", "");
             if (!lastReadingSr.isEmpty() && !lastReadingSr.equals("null")) {
                 meterReadings.put("Last Bill Reading SR", lastReadingSr);
             }
+            result.put("meter_readings", meterReadings);
 
-            String lastReadingOfPk = server3Data.optString("lastBillReadingOfPk", "");
-            if (!lastReadingOfPk.isEmpty() && !lastReadingOfPk.equals("null")) {
-                meterReadings.put("Last Bill Reading OF PK", lastReadingOfPk);
-            }
-
-            String lastReadingPk = server3Data.optString("lastBillReadingPk", "");
-            if (!lastReadingPk.isEmpty() && !lastReadingPk.equals("null")) {
-                meterReadings.put("Last Bill Reading PK", lastReadingPk);
-            }
+        } catch (Exception e) {
+            System.out.println("❌ Error extracting SERVER3 data: " + e.getMessage());
         }
-
-        result.put("meter_readings", meterReadings);
     }
 
-    private String formatBillMonth(String dateStr) {
-        if (dateStr == null || dateStr.isEmpty() || dateStr.equals("null")) {
-            return "N/A";
+    private void extractSERVER1Data(Object server1DataObj, Map<String, Object> result) {
+        try {
+            if (server1DataObj instanceof String) {
+                String responseBody = (String) server1DataObj;
+                
+                // Extract tokens using your existing pattern
+                List<Map<String, String>> transactions = extractTransactionsWithExactPatterns(responseBody);
+                if (!transactions.isEmpty()) {
+                    result.put("recharge_history", transactions);
+                    result.put("total_recharges", transactions.size());
+                }
+                
+                // Extract customer info from SERVER1
+                Map<String, String> customerInfo = (Map<String, String>) result.getOrDefault("customer_info", new HashMap<>());
+                
+                // You can add more SERVER1 customer info extraction here if needed
+                result.put("customer_info", customerInfo);
+            }
+        } catch (Exception e) {
+            System.out.println("❌ Error extracting SERVER1 data: " + e.getMessage());
+        }
+    }
+
+    // Your existing token extraction method
+    private List<Map<String, String>> extractTransactionsWithExactPatterns(String response) {
+        List<Map<String, String>> transactions = new ArrayList<>();
+        
+        System.out.println("🔍 Looking for tokens with exact pattern...");
+
+        int index = 0;
+        int count = 0;
+
+        while (index != -1 && count < 3) {
+            index = response.indexOf("\"tokens\":{\"_text\":\"", index);
+            if (index == -1) break;
+
+            int valueStart = index + "\"tokens\":{\"_text\":\"".length();
+            int valueEnd = response.indexOf("\"", valueStart);
+
+            if (valueEnd != -1) {
+                String token = response.substring(valueStart, valueEnd);
+                System.out.println("🔑 FOUND TOKEN " + (count + 1) + ": " + token);
+
+                Map<String, String> transaction = extractTransactionFields(response, index);
+                transaction.put("Tokens", token);
+                transactions.add(transaction);
+                count++;
+            }
+
+            index = valueEnd + 1;
         }
 
-        try {
-            String[] parts = dateStr.substring(0, 10).split("-");
-            if (parts.length >= 2) {
-                int month = Integer.parseInt(parts[1]);
-                String[] monthNames = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+        return transactions;
+    }
 
-                if (month >= 1 && month <= 12) {
-                    return monthNames[month - 1] + "-" + parts[0];
+    private Map<String, String> extractTransactionFields(String response, int tokenPosition) {
+        Map<String, String> transaction = new HashMap<>();
+
+        int searchStart = Math.max(0, tokenPosition - 1000);
+        int searchEnd = Math.min(response.length(), tokenPosition + 200);
+        String searchArea = response.substring(searchStart, searchEnd);
+
+        transaction.put("Date", extractExactValue(searchArea, "date"));
+        transaction.put("Order Number", extractExactValue(searchArea, "orderNo"));
+        transaction.put("Amount", "৳" + extractExactValue(searchArea, "grossAmount"));
+        transaction.put("Energy Cost", "৳" + extractExactValue(searchArea, "energyCost"));
+        transaction.put("Operator", extractExactValue(searchArea, "operator"));
+        transaction.put("Sequence", extractExactValue(searchArea, "sequence"));
+
+        return transaction;
+    }
+
+    private String extractExactValue(String text, String fieldName) {
+        try {
+            String pattern = "\"" + fieldName + "\":{\"_text\":\"";
+            int start = text.indexOf(pattern);
+            if (start != -1) {
+                int valueStart = start + pattern.length();
+                int valueEnd = text.indexOf("\"", valueStart);
+                if (valueEnd != -1) {
+                    return text.substring(valueStart, valueEnd);
                 }
             }
-            return dateStr.substring(0, 7);
         } catch (Exception e) {
-            return dateStr.length() >= 7 ? dateStr.substring(0, 7) : dateStr;
+            // Ignore
         }
+        return "N/A";
+    }
+
+    private String getMeterStatus(String statusCode) {
+        Map<String, String> statusMap = new HashMap<>();
+        statusMap.put("1", "Active");
+        statusMap.put("2", "Inactive");
+        statusMap.put("3", "Disconnected");
+        return statusMap.getOrDefault(statusCode, "Unknown (" + statusCode + ")");
     }
 }
