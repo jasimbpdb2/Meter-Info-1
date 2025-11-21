@@ -2037,6 +2037,17 @@ private static String getSafeString(Map<String, Object> data, String key) {
     return value != null ? value.toString() : "N/A";
 }
 
+private static void addIfNotNull(Map<String, String> map, String key, String value) {
+    if (value != null && !value.equals("null") && !value.isEmpty()) {
+        map.put(key, value);
+    }
+}
+
+private static String getSafeString(Map<String, Object> data, String key) {
+    Object value = data.get(key);
+    return value != null ? value.toString() : "N/A";
+}
+
     // Storage permission methods
     private void checkStoragePermission() {
         if (isStoragePermissionGranted()) {
