@@ -54,8 +54,7 @@ public class LookupHtmlActivity extends AppCompatActivity {
             try {
                 Log.d(TAG, "Lookup requested → " + inputNumber + " (" + type + ")");
                 LookupDataHelper helper = new LookupDataHelper();
-                java.util.Map<String, Object> result = helper.fetchDataForLookup(inputNumber, type);
-
+                java.util.Map<String, Object> result = helper.fetchDataForLookup(inputNumber, type, "consumer_no");
                 return new org.json.JSONObject(result).toString();
 
             } catch (Exception e) {
