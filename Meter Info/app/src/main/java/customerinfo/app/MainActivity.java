@@ -1848,93 +1848,149 @@ public class MainActivity extends AppCompatActivity {
  public static Map<String, Object> getLookupData(Map<String, Object> rawData, String type) {
     Map<String, Object> result = new HashMap<>();
     
-    System.out.println("🔍 [DEBUG] Raw data keys: " + rawData.keySet());
+    System.out.println("🔍 [MAIN_DEBUG] Raw data keys: " + rawData.keySet());
     
     // Copy basic info
     result.put("type", type);
-    result.put("meter_number", rawData.get("meter_number"));
-    result.put("consumer_number", rawData.get("consumer_number"));
+    result.put("meter_number", getSafeString(rawData, "meter_number"));
+    result.put("consumer_number", getSafeString(rawData, "consumer_number"));
     
-    // Check what data we actually have in rawData
+    // Debug: Print all raw data to see what we actually have
     for (String key : rawData.keySet()) {
-        System.out.println("🔍 [DEBUG] Raw data - " + key + ": " + rawData.get(key));
+        Object value = rawData.get(key);
+        System.out.println("🔍 [MAIN_DEBUG] Raw - " + key + " = " + value + " (type: " + (value != null ? value.getClass().getSimpleName() : "null") + ")");
     }
     
-    // Try to extract customer info from different possible locations
-    Map<String, String> customerInfo = new HashMap<>();
-    
-    // Look for customer info in different possible keys
-    if (rawData.containsKey("customer_info") && rawData.get("customer_info") instanceof Map) {
-        customerInfo.putAll((Map<String, String>) rawData.get("customer_info"));
-    }
-    
-    // Look for SERVER3 data
-    if (rawData.containsKey("SERVER3_data")) {
-        try {
-            JSONObject server3Data = (JSONObject) rawData.get("SERVER3_data");
-            // Extract customer info from SERVER3
-            customerInfo.put("Customer Name", server3Data.optString("customerName", "N/A"));
-            customerInfo.put("Father Name", server3Data.optString("fatherName", "N/A"));
-            customerInfo.put("Customer Address", server3Data.optString("customerAddr", "N/A"));
-            customerInfo.put("Location Code", server3Data.optString("locationCode", "N/A"));
-            customerInfo.put("Area Code", server3Data.optString("areaCode", "N/A"));
-            customerInfo.put("Bill Group", server3Data.optString("billGroup", "N/A"));
-            customerInfo.put("Book Number", server3Data.optString("bookNumber", "N/A"));
-            customerInfo.put("Tariff Description", server3Data.optString("tariffDesc", "N/A"));
-            customerInfo.put("Sanctioned Load", server3Data.optString("sanctionedLoad", "N/A"));
-            customerInfo.put("Walk Order", server3Data.optString("walkOrder", "N/A"));
-        } catch (Exception e) {
-            System.out.println("❌ Error extracting SERVER3 data: " + e.getMessage());
-        }
-    }
-    
-    // Look for SERVER1 data (for prepaid)
-    if (rawData.containsKey("SERVER1_data")) {
-        try {
-            Object server1Data = rawData.get("SERVER1_data");
-            if (server1Data instanceof Map) {
-                Map<String, String> server1Map = (Map<String, String>) server1Data;
-                customerInfo.putAll(server1Map);
-            }
-        } catch (Exception e) {
-            System.out.println("❌ Error extracting SERVER1 data: " + e.getMessage());
-        }
-    }
-    
+    // Extract customer info - FIXED: Check for actual data locations
+    Map<String, String> customerInfo = extractCustomerInfo(rawData);
     if (!customerInfo.isEmpty()) {
         result.put("customer_info", customerInfo);
+        System.out.println("✅ [MAIN_DEBUG] Customer info extracted: " + customerInfo.size() + " items");
     }
     
-    // Extract balance info
-    Map<String, String> balanceInfo = new HashMap<>();
-    if (rawData.containsKey("balance_info") && rawData.get("balance_info") instanceof Map) {
-        balanceInfo.putAll((Map<String, String>) rawData.get("balance_info"));
-    }
-    
-    // Extract from SERVER3
-    if (rawData.containsKey("SERVER3_data")) {
-        try {
-            JSONObject server3Data = (JSONObject) rawData.get("SERVER3_data");
-            String arrearAmount = server3Data.optString("arrearAmount", "");
-            if (!arrearAmount.isEmpty() && !arrearAmount.equals("0") && !arrearAmount.equals("0.00")) {
-                balanceInfo.put("Total Balance", arrearAmount);
-                balanceInfo.put("Arrear Amount", arrearAmount);
-            }
-        } catch (Exception e) {
-            System.out.println("❌ Error extracting balance from SERVER3: " + e.getMessage());
-        }
-    }
-    
+    // Extract balance info - FIXED: Check for actual data locations
+    Map<String, String> balanceInfo = extractBalanceInfo(rawData);
     if (!balanceInfo.isEmpty()) {
         result.put("balance_info", balanceInfo);
+        System.out.println("✅ [MAIN_DEBUG] Balance info extracted: " + balanceInfo.size() + " items");
     }
     
     // Extract bill info
+    List<Map<String, Object>> billInfo = extractBillInfo(rawData);
+    if (!billInfo.isEmpty()) {
+        result.put("bill_info", billInfo);
+        System.out.println("✅ [MAIN_DEBUG] Bill info extracted: " + billInfo.size() + " items");
+    }
+    
+    // Extract recharge history for prepaid
+    if ("prepaid".equals(type)) {
+        List<Map<String, String>> rechargeHistory = extractRechargeInfo(rawData);
+        if (!rechargeHistory.isEmpty()) {
+            result.put("recharge_history", rechargeHistory);
+            System.out.println("✅ [MAIN_DEBUG] Recharge history extracted: " + rechargeHistory.size() + " items");
+        }
+    }
+    
+    System.out.println("🔍 [MAIN_DEBUG] Final result keys: " + result.keySet());
+    return result;
+}
+
+private static Map<String, String> extractCustomerInfo(Map<String, Object> rawData) {
+    Map<String, String> customerInfo = new HashMap<>();
+    
+    // Method 1: Check if customer_info already exists as a Map
+    if (rawData.containsKey("customer_info") && rawData.get("customer_info") instanceof Map) {
+        Map<?, ?> existingInfo = (Map<?, ?>) rawData.get("customer_info");
+        for (Map.Entry<?, ?> entry : existingInfo.entrySet()) {
+            if (entry.getValue() != null) {
+                customerInfo.put(String.valueOf(entry.getKey()), String.valueOf(entry.getValue()));
+            }
+        }
+    }
+    
+    // Method 2: Extract from SERVER3_data
+    if (rawData.containsKey("SERVER3_data")) {
+        try {
+            JSONObject server3Data = (JSONObject) rawData.get("SERVER3_data");
+            
+            // Extract individual fields from SERVER3
+            addIfNotNull(customerInfo, "Customer Name", server3Data.optString("customerName", null));
+            addIfNotNull(customerInfo, "Father Name", server3Data.optString("fatherName", null));
+            addIfNotNull(customerInfo, "Customer Address", server3Data.optString("customerAddr", null));
+            addIfNotNull(customerInfo, "Location Code", server3Data.optString("locationCode", null));
+            addIfNotNull(customerInfo, "Area Code", server3Data.optString("areaCode", null));
+            addIfNotNull(customerInfo, "Bill Group", server3Data.optString("billGroup", null));
+            addIfNotNull(customerInfo, "Book Number", server3Data.optString("bookNumber", null));
+            addIfNotNull(customerInfo, "Tariff Description", server3Data.optString("tariffDesc", null));
+            addIfNotNull(customerInfo, "Sanctioned Load", server3Data.optString("sanctionedLoad", null));
+            addIfNotNull(customerInfo, "Walk Order", server3Data.optString("walkOrder", null));
+            
+        } catch (Exception e) {
+            System.out.println("❌ [MAIN_DEBUG] Error extracting SERVER3 customer data: " + e.getMessage());
+        }
+    }
+    
+    // Method 3: Extract from individual fields in rawData
+    String[] customerFields = {
+        "customerName", "fatherName", "customerAddr", "locationCode", 
+        "areaCode", "billGroup", "bookNumber", "tariffDesc", "sanctionedLoad", "walkOrder"
+    };
+    
+    for (String field : customerFields) {
+        if (rawData.containsKey(field) && rawData.get(field) != null) {
+            String value = String.valueOf(rawData.get(field));
+            if (!value.equals("null") && !value.isEmpty()) {
+                customerInfo.put(field, value);
+            }
+        }
+    }
+    
+    return customerInfo;
+}
+
+private static Map<String, String> extractBalanceInfo(Map<String, Object> rawData) {
+    Map<String, String> balanceInfo = new HashMap<>();
+    
+    // Method 1: Check if balance_info already exists
+    if (rawData.containsKey("balance_info") && rawData.get("balance_info") instanceof Map) {
+        Map<?, ?> existingInfo = (Map<?, ?>) rawData.get("balance_info");
+        for (Map.Entry<?, ?> entry : existingInfo.entrySet()) {
+            if (entry.getValue() != null) {
+                String value = String.valueOf(entry.getValue());
+                if (!value.equals("null") && !value.equals("0") && !value.equals("0.00")) {
+                    balanceInfo.put(String.valueOf(entry.getKey()), value);
+                }
+            }
+        }
+    }
+    
+    // Method 2: Extract from SERVER3_data
+    if (rawData.containsKey("SERVER3_data")) {
+        try {
+            JSONObject server3Data = (JSONObject) rawData.get("SERVER3_data");
+            
+            String arrearAmount = server3Data.optString("arrearAmount", null);
+            if (arrearAmount != null && !arrearAmount.equals("null") && !arrearAmount.equals("0") && !arrearAmount.equals("0.00")) {
+                balanceInfo.put("Total Balance", arrearAmount);
+                balanceInfo.put("Arrear Amount", arrearAmount);
+            }
+            
+        } catch (Exception e) {
+            System.out.println("❌ [MAIN_DEBUG] Error extracting balance from SERVER3: " + e.getMessage());
+        }
+    }
+    
+    return balanceInfo;
+}
+
+private static List<Map<String, Object>> extractBillInfo(Map<String, Object> rawData) {
     List<Map<String, Object>> billInfo = new ArrayList<>();
+    
+    // Check for bill_info_raw (JSONArray)
     if (rawData.containsKey("bill_info_raw") && rawData.get("bill_info_raw") instanceof JSONArray) {
-        JSONArray billArray = (JSONArray) rawData.get("bill_info_raw");
-        for (int i = 0; i < billArray.length(); i++) {
-            try {
+        try {
+            JSONArray billArray = (JSONArray) rawData.get("bill_info_raw");
+            for (int i = 0; i < billArray.length(); i++) {
                 JSONObject bill = billArray.getJSONObject(i);
                 Map<String, Object> billData = new HashMap<>();
                 
@@ -1947,21 +2003,38 @@ public class MainActivity extends AppCompatActivity {
                 billData.put("INVOICE_DUE_DATE", bill.optString("INVOICE_DUE_DATE", "N/A"));
                 
                 billInfo.add(billData);
-            } catch (Exception e) {
-                System.out.println("❌ Error processing bill: " + e.getMessage());
             }
+        } catch (Exception e) {
+            System.out.println("❌ [MAIN_DEBUG] Error processing bill info: " + e.getMessage());
         }
-        result.put("bill_info", billInfo);
     }
     
-    // Extract recharge history for prepaid
-    if ("prepaid".equals(type) && rawData.containsKey("recent_transactions") && rawData.get("recent_transactions") instanceof List) {
-        result.put("recharge_history", rawData.get("recent_transactions"));
+    return billInfo;
+}
+
+private static List<Map<String, String>> extractRechargeInfo(Map<String, Object> rawData) {
+    List<Map<String, String>> rechargeHistory = new ArrayList<>();
+    
+    if (rawData.containsKey("recent_transactions") && rawData.get("recent_transactions") instanceof List) {
+        try {
+            rechargeHistory = (List<Map<String, String>>) rawData.get("recent_transactions");
+        } catch (Exception e) {
+            System.out.println("❌ [MAIN_DEBUG] Error extracting recharge history: " + e.getMessage());
+        }
     }
     
-    System.out.println("🔍 [DEBUG] Final result keys: " + result.keySet());
-    
-    return result;
+    return rechargeHistory;
+}
+
+private static void addIfNotNull(Map<String, String> map, String key, String value) {
+    if (value != null && !value.equals("null") && !value.isEmpty()) {
+        map.put(key, value);
+    }
+}
+
+private static String getSafeString(Map<String, Object> data, String key) {
+    Object value = data.get(key);
+    return value != null ? value.toString() : "N/A";
 }
 
     // Storage permission methods
