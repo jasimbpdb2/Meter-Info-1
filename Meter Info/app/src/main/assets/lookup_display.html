@@ -542,28 +542,38 @@ function updateInputPlaceholder() {
 
 
         function fetchData() {
-            const input = document.getElementById('searchInput').value.trim();
-            if (!input) {
-                showError('দয়া করে মিটার নং বা গ্রাহক নং লিখুন!');
-                return;
-            }
+    const input = document.getElementById('searchInput').value.trim();
+    if (!input) {
+        showError('দয়া করে মিটার নং বা গ্রাহক নং লিখুন!');
+        return;
+    }
 
-            showLoading();
+    // Validation
+    if (currentType === 'prepaid' && input.length !== 12) {
+        showError('প্রিপেইড মিটার নং ১২ ডিজিটের হতে হবে!');
+        return;
+    }
 
-            // Call Android interface
-            if (window.AndroidInterface) {
-                try {
-                    const result = AndroidInterface.fetchLookupData(input, currentType);
-                    const data = JSON.parse(result);
-                    console.log("📊 Received data from Android:", data);
-                    displayData(data);
-                } catch (err) {
-                    showError('ডেটা লোড করতে সমস্যা হয়েছে: ' + err.message);
-                }
-            } else {
-                showError('AndroidInterface পাওয়া যায়নি');
-            }
+    showLoading();
+
+    // Call Android interface
+    if (window.AndroidInterface) {
+        try {
+            // Pass subType parameter for postpaid
+            const result = currentType === 'postpaid' 
+                ? AndroidInterface.fetchLookupData(input, currentType, postpaidSubType)
+                : AndroidInterface.fetchLookupData(input, currentType, "none");
+                
+            const data = JSON.parse(result);
+            console.log("📊 Received data from Android:", data);
+            displayData(data);
+        } catch (err) {
+            showError('ডেটা লোড করতে সমস্যা হয়েছে: ' + err.message);
         }
+    } else {
+        showError('AndroidInterface পাওয়া যায়নি');
+    }
+}
 
         function displayData(data) {
             hideLoading();
