@@ -1845,43 +1845,43 @@ public class MainActivity extends AppCompatActivity {
         runOnUiThread(() -> resultView.setText(message));
     }
 
- public static Map<String, Object> getLookupData(Map<String, Object> rawData, String type) {
+ public Map<String, Object> getLookupData(Map<String, Object> rawData, String type) {
     Map<String, Object> result = new HashMap<>();
-    
+
     System.out.println("🔍 [MAIN_DEBUG] Raw data keys: " + rawData.keySet());
-    
+
     // Copy basic info
     result.put("type", type);
     result.put("meter_number", getSafeString(rawData, "meter_number"));
     result.put("consumer_number", getSafeString(rawData, "consumer_number"));
-    
+
     // Debug: Print all raw data to see what we actually have
     for (String key : rawData.keySet()) {
         Object value = rawData.get(key);
         System.out.println("🔍 [MAIN_DEBUG] Raw - " + key + " = " + value + " (type: " + (value != null ? value.getClass().getSimpleName() : "null") + ")");
     }
-    
+
     // Extract customer info - FIXED: Check for actual data locations
     Map<String, String> customerInfo = extractCustomerInfo(rawData);
     if (!customerInfo.isEmpty()) {
         result.put("customer_info", customerInfo);
         System.out.println("✅ [MAIN_DEBUG] Customer info extracted: " + customerInfo.size() + " items");
     }
-    
+
     // Extract balance info - FIXED: Check for actual data locations
     Map<String, String> balanceInfo = extractBalanceInfo(rawData);
     if (!balanceInfo.isEmpty()) {
         result.put("balance_info", balanceInfo);
         System.out.println("✅ [MAIN_DEBUG] Balance info extracted: " + balanceInfo.size() + " items");
     }
-    
+
     // Extract bill info
     List<Map<String, Object>> billInfo = extractBillInfo(rawData);
     if (!billInfo.isEmpty()) {
         result.put("bill_info", billInfo);
         System.out.println("✅ [MAIN_DEBUG] Bill info extracted: " + billInfo.size() + " items");
     }
-    
+
     // Extract recharge history for prepaid
     if ("prepaid".equals(type)) {
         List<Map<String, String>> rechargeHistory = extractRechargeInfo(rawData);
@@ -1890,14 +1890,14 @@ public class MainActivity extends AppCompatActivity {
             System.out.println("✅ [MAIN_DEBUG] Recharge history extracted: " + rechargeHistory.size() + " items");
         }
     }
-    
+
     System.out.println("🔍 [MAIN_DEBUG] Final result keys: " + result.keySet());
     return result;
 }
 
-private static Map<String, String> extractCustomerInfo(Map<String, Object> rawData) {
+private Map<String, String> extractCustomerInfo(Map<String, Object> rawData) {
     Map<String, String> customerInfo = new HashMap<>();
-    
+
     // Method 1: Check if customer_info already exists as a Map
     if (rawData.containsKey("customer_info") && rawData.get("customer_info") instanceof Map) {
         Map<?, ?> existingInfo = (Map<?, ?>) rawData.get("customer_info");
@@ -1907,12 +1907,12 @@ private static Map<String, String> extractCustomerInfo(Map<String, Object> rawDa
             }
         }
     }
-    
+
     // Method 2: Extract from SERVER3_data
     if (rawData.containsKey("SERVER3_data")) {
         try {
             JSONObject server3Data = (JSONObject) rawData.get("SERVER3_data");
-            
+
             // Extract individual fields from SERVER3
             addIfNotNull(customerInfo, "Customer Name", server3Data.optString("customerName", null));
             addIfNotNull(customerInfo, "Father Name", server3Data.optString("fatherName", null));
@@ -1924,18 +1924,18 @@ private static Map<String, String> extractCustomerInfo(Map<String, Object> rawDa
             addIfNotNull(customerInfo, "Tariff Description", server3Data.optString("tariffDesc", null));
             addIfNotNull(customerInfo, "Sanctioned Load", server3Data.optString("sanctionedLoad", null));
             addIfNotNull(customerInfo, "Walk Order", server3Data.optString("walkOrder", null));
-            
+
         } catch (Exception e) {
             System.out.println("❌ [MAIN_DEBUG] Error extracting SERVER3 customer data: " + e.getMessage());
         }
     }
-    
+
     // Method 3: Extract from individual fields in rawData
     String[] customerFields = {
         "customerName", "fatherName", "customerAddr", "locationCode", 
         "areaCode", "billGroup", "bookNumber", "tariffDesc", "sanctionedLoad", "walkOrder"
     };
-    
+
     for (String field : customerFields) {
         if (rawData.containsKey(field) && rawData.get(field) != null) {
             String value = String.valueOf(rawData.get(field));
@@ -1944,13 +1944,13 @@ private static Map<String, String> extractCustomerInfo(Map<String, Object> rawDa
             }
         }
     }
-    
+
     return customerInfo;
 }
 
-private static Map<String, String> extractBalanceInfo(Map<String, Object> rawData) {
+private Map<String, String> extractBalanceInfo(Map<String, Object> rawData) {
     Map<String, String> balanceInfo = new HashMap<>();
-    
+
     // Method 1: Check if balance_info already exists
     if (rawData.containsKey("balance_info") && rawData.get("balance_info") instanceof Map) {
         Map<?, ?> existingInfo = (Map<?, ?>) rawData.get("balance_info");
@@ -1963,29 +1963,29 @@ private static Map<String, String> extractBalanceInfo(Map<String, Object> rawDat
             }
         }
     }
-    
+
     // Method 2: Extract from SERVER3_data
     if (rawData.containsKey("SERVER3_data")) {
         try {
             JSONObject server3Data = (JSONObject) rawData.get("SERVER3_data");
-            
+
             String arrearAmount = server3Data.optString("arrearAmount", null);
             if (arrearAmount != null && !arrearAmount.equals("null") && !arrearAmount.equals("0") && !arrearAmount.equals("0.00")) {
                 balanceInfo.put("Total Balance", arrearAmount);
                 balanceInfo.put("Arrear Amount", arrearAmount);
             }
-            
+
         } catch (Exception e) {
             System.out.println("❌ [MAIN_DEBUG] Error extracting balance from SERVER3: " + e.getMessage());
         }
     }
-    
+
     return balanceInfo;
 }
 
-private static List<Map<String, Object>> extractBillInfo(Map<String, Object> rawData) {
+private List<Map<String, Object>> extractBillInfo(Map<String, Object> rawData) {
     List<Map<String, Object>> billInfo = new ArrayList<>();
-    
+
     // Check for bill_info_raw (JSONArray)
     if (rawData.containsKey("bill_info_raw") && rawData.get("bill_info_raw") instanceof JSONArray) {
         try {
@@ -1993,7 +1993,7 @@ private static List<Map<String, Object>> extractBillInfo(Map<String, Object> raw
             for (int i = 0; i < billArray.length(); i++) {
                 JSONObject bill = billArray.getJSONObject(i);
                 Map<String, Object> billData = new HashMap<>();
-                
+
                 billData.put("BILL_MONTH", bill.optString("BILL_MONTH", "N/A"));
                 billData.put("BILL_NO", bill.optString("BILL_NO", "N/A"));
                 billData.put("CONS_KWH_SR", bill.optDouble("CONS_KWH_SR", 0));
@@ -2001,20 +2001,20 @@ private static List<Map<String, Object>> extractBillInfo(Map<String, Object> raw
                 billData.put("PAID_AMT", bill.optDouble("PAID_AMT", 0));
                 billData.put("BALANCE", bill.optDouble("BALANCE", 0));
                 billData.put("INVOICE_DUE_DATE", bill.optString("INVOICE_DUE_DATE", "N/A"));
-                
+
                 billInfo.add(billData);
             }
         } catch (Exception e) {
             System.out.println("❌ [MAIN_DEBUG] Error processing bill info: " + e.getMessage());
         }
     }
-    
+
     return billInfo;
 }
 
-private static List<Map<String, String>> extractRechargeInfo(Map<String, Object> rawData) {
+private List<Map<String, String>> extractRechargeInfo(Map<String, Object> rawData) {
     List<Map<String, String>> rechargeHistory = new ArrayList<>();
-    
+
     if (rawData.containsKey("recent_transactions") && rawData.get("recent_transactions") instanceof List) {
         try {
             rechargeHistory = (List<Map<String, String>>) rawData.get("recent_transactions");
@@ -2022,8 +2022,54 @@ private static List<Map<String, String>> extractRechargeInfo(Map<String, Object>
             System.out.println("❌ [MAIN_DEBUG] Error extracting recharge history: " + e.getMessage());
         }
     }
-    
+
     return rechargeHistory;
+}
+
+// ==================================================================
+// PUBLIC WRAPPER METHODS - ADD THESE AT THE END OF YOUR CLASS
+// ==================================================================
+
+/**
+ * Public wrapper for displayResult - for HTML/JavaScript access
+ */
+public String getDisplayResult(Map<String, Object> result, String billType) {
+    return displayResult(result, billType);
+}
+
+/**
+ * Public wrapper for cleanSERVER1Data
+ */
+public Map<String, Object> getCleanedSERVER1Data(Object SERVER1DataObj) {
+    return cleanSERVER1Data(SERVER1DataObj);
+}
+
+/**
+ * Public wrapper for mergeSERVERData
+ */
+public Map<String, Object> getMergedSERVERData(Map<String, Object> result) {
+    return mergeSERVERData(result);
+}
+
+/**
+ * Public wrapper for formatPrepaidDisplay
+ */
+public String getFormattedPrepaidDisplay(Map<String, Object> cleanedData) {
+    return formatPrepaidDisplay(cleanedData);
+}
+
+/**
+ * Public wrapper for formatMergedDisplayWithoutTable
+ */
+public String getFormattedMergedDisplay(Map<String, Object> mergedData) {
+    return formatMergedDisplayWithoutTable(mergedData);
+}
+
+/**
+ * Public wrapper for cleanSERVER1Data (alternative name)
+ */
+public Map<String, Object> getCleanSERVER1Data(Object SERVER1DataObj) {
+    return cleanSERVER1Data(SERVER1DataObj);
 }
 
 private static void addIfNotNull(Map<String, String> map, String key, String value) {
