@@ -12,26 +12,26 @@ public class LookupDataHelper {
         // Empty constructor
     }
 
-    public Map<String, Object> fetchDataForLookup(String inputNumber, String type) {
-        Map<String, Object> result = new HashMap<>();
-        this.currentType = type;
+    public Map<String, Object> fetchDataForLookup(String inputNumber, String type, String subType) {
+    Map<String, Object> result = new HashMap<>();
+    this.currentType = type;
 
-        try {
-            System.out.println("🔍 LOOKUP DATA HELPER: Fetching " + type + " data for: " + inputNumber);
+    try {
+        System.out.println("🔍 LOOKUP DATA HELPER: Fetching " + type + " data for: " + inputNumber + ", subType: " + subType);
 
-            if ("prepaid".equals(type)) {
-                result = fetchPrepaidDataForLookup(inputNumber);
-            } else {
-                result = fetchPostpaidDataForLookup(inputNumber);
-            }
-
-        } catch (Exception e) {
-            System.out.println("❌ LOOKUP DATA HELPER ERROR: " + e.getMessage());
-            result.put("error", "Data fetch failed: " + e.getMessage());
+        if ("prepaid".equals(type)) {
+            result = fetchPrepaidDataForLookup(inputNumber);
+        } else {
+            result = fetchPostpaidDataForLookup(inputNumber, subType);
         }
 
-        return result;
+    } catch (Exception e) {
+        System.out.println("❌ LOOKUP DATA HELPER ERROR: " + e.getMessage());
+        result.put("error", "Data fetch failed: " + e.getMessage());
     }
+
+    return result;
+}
 
     private Map<String, Object> fetchPrepaidDataForLookup(String meterNumber) {
         Map<String, Object> result = new HashMap<>();
@@ -75,11 +75,12 @@ public class LookupDataHelper {
         return result;
     }
 
-    private Map<String, Object> fetchPostpaidDataForLookup(String inputNumber) {
-        Map<String, Object> result = new HashMap<>();
+ private Map<String, Object> fetchPostpaidDataForLookup(String inputNumber, String subType) {
+    Map<String, Object> result = new HashMap<>();
 
-        try {
-            // For postpaid, directly use SERVER3 lookup
+    try {
+        if ("consumer_no".equals(subType)) {
+            // ✅ Existing logic for consumer number
             Map<String, Object> server3Result = MainActivity.SERVER3Lookup(inputNumber);
 
             if (server3Result.containsKey("error")) {
@@ -95,12 +96,53 @@ public class LookupDataHelper {
             // Process data for HTML display
             result = processDataForHTML(combinedResult, "postpaid");
 
-        } catch (Exception e) {
-            result.put("error", "ডেটা প্রসেসিং ব্যর্থ: " + e.getMessage());
+        } else {
+            // ✅ NEW logic for meter number
+            // Step 1: Get customer numbers from meter number
+            Map<String, Object> meterLookupResult = MainActivity.getCustomerNumbersByMeter(inputNumber);
+
+            if (meterLookupResult.containsKey("error")) {
+                result.put("error", "মিটার নং ভুল বা ডেটা পাওয়া যায়নি: " + meterLookupResult.get("error"));
+                return result;
+            }
+
+            List<String> customerNumbers = (List<String>) meterLookupResult.get("customer_numbers");
+            if (customerNumbers == null || customerNumbers.isEmpty()) {
+                result.put("error", "এই মিটার নং এর জন্য কোন গ্রাহক পাওয়া যায়নি");
+                return result;
+            }
+
+            // Step 2: Get detailed data for the first customer
+            String firstCustomerNumber = customerNumbers.get(0);
+            Map<String, Object> server3Result = MainActivity.SERVER3Lookup(firstCustomerNumber);
+
+            if (server3Result.containsKey("error")) {
+                result.put("error", "গ্রাহক তথ্য পাওয়া যায়নি: " + server3Result.get("error"));
+                return result;
+            }
+
+            // Create combined result with all data
+            Map<String, Object> combinedResult = new HashMap<>();
+            combinedResult.putAll(server3Result);
+            combinedResult.put("meter_number", inputNumber);
+            combinedResult.put("customer_number", firstCustomerNumber);
+            combinedResult.put("all_customer_numbers", customerNumbers);
+
+            // Add meter lookup data
+            if (meterLookupResult.containsKey("meter_api_data")) {
+                combinedResult.put("meter_api_data", meterLookupResult.get("meter_api_data"));
+            }
+
+            // Process data for HTML display
+            result = processDataForHTML(combinedResult, "postpaid");
         }
 
-        return result;
+    } catch (Exception e) {
+        result.put("error", "ডেটা প্রসেসিং ব্যর্থ: " + e.getMessage());
     }
+
+    return result;
+}
 
     private Map<String, Object> processDataForHTML(Map<String, Object> rawData, String type) {
         Map<String, Object> result = new HashMap<>();
