@@ -1845,7 +1845,7 @@ public class MainActivity extends AppCompatActivity {
         runOnUiThread(() -> resultView.setText(message));
     }
 
- public Map<String, Object> getLookupData(Map<String, Object> rawData, String type) {
+ public static Map<String, Object> getLookupData(Map<String, Object> rawData, String type) {
     Map<String, Object> result = new HashMap<>();
 
     System.out.println("🔍 [MAIN_DEBUG] Raw data keys: " + rawData.keySet());
