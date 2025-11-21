@@ -445,6 +445,21 @@
                 <button class="type-btn" id="postpaidBtn" onclick="selectType('postpaid')">
                     💳 পোস্টপেইড মিটার
                 </button>
+                </div>
+
+<!-- ADD POSTPAID OPTIONS HERE -->
+<div class="postpaid-options" id="postpaidOptions" style="display: none; margin-bottom: 15px;">
+    <div class="type-selector">
+        <button class="type-btn active" id="consumerNoOption" onclick="selectPostpaidType('consumer_no')">
+            👤 গ্রাহক নং
+        </button>
+        <button class="type-btn" id="meterNoOption" onclick="selectPostpaidType('meter_no')">
+            🔢 মিটার নং
+        </button>
+    </div>
+</div>
+
+<div class="search-row">
             </div>
 
             <div class="search-row">
@@ -489,24 +504,42 @@
     <script>
         let currentType = 'prepaid';
 
+// ADD THESE LINES HERE
+let postpaidSubType = 'consumer_no';
+
+function selectPostpaidType(subType) {
+    postpaidSubType = subType;
+    document.getElementById('consumerNoOption').classList.toggle('active', subType === 'consumer_no');
+    document.getElementById('meterNoOption').classList.toggle('active', subType === 'meter_no');
+    updateInputPlaceholder();
+}
+
+function updateInputPlaceholder() {
+    const input = document.getElementById('searchInput');
+    if (currentType === 'prepaid') {
+        input.placeholder = '১২ ডিজিটের মিটার নং লিখুন';
+    } else {
+        input.placeholder = postpaidSubType === 'consumer_no' ? 'গ্রাহক নং লিখুন' : 'মিটার নং লিখুন';
+    }
+}
+
         function selectType(type) {
-            currentType = type;
+    currentType = type;
 
-            // Update button states
-            document.getElementById('prepaidBtn').classList.toggle('active', type === 'prepaid');
-            document.getElementById('postpaidBtn').classList.toggle('active', type === 'postpaid');
+    // Update button states
+    document.getElementById('prepaidBtn').classList.toggle('active', type === 'prepaid');
+    document.getElementById('postpaidBtn').classList.toggle('active', type === 'postpaid');
 
-            // Update placeholder
-            const input = document.getElementById('searchInput');
-            if (type === 'prepaid') {
-                input.placeholder = '১২ ডিজিটের মিটার নং লিখুন';
-            } else {
-                input.placeholder = 'গ্রাহক নং লিখুন';
-            }
+    // NEW: Show/hide postpaid options
+    document.getElementById('postpaidOptions').style.display = type === 'postpaid' ? 'block' : 'none';
+    
+    // NEW: Update placeholder
+    updateInputPlaceholder();
 
-            // Clear previous results
-            clearResults();
-        }
+    // Clear previous results
+    clearResults();
+}
+
 
         function fetchData() {
             const input = document.getElementById('searchInput').value.trim();
