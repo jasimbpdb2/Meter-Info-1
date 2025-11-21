@@ -59,7 +59,7 @@ public class LookupDataHelper {
             combinedResult.putAll(server3Result);
             combinedResult.put("meter_number", meterNumber);
             combinedResult.put("consumer_number", consumerNumber);
-            
+
             // Add SERVER1 data
             if (server1Result.containsKey("SERVER1_data")) {
                 combinedResult.put("SERVER1_data", server1Result.get("SERVER1_data"));
@@ -111,21 +111,36 @@ public class LookupDataHelper {
             result.put("meter_number", rawData.getOrDefault("meter_number", "N/A"));
             result.put("consumer_number", rawData.getOrDefault("consumer_number", rawData.get("customer_number")));
 
+            // DEBUG: Show what raw data we have
+            result.put("debug_raw_keys", getKeysAsString(rawData));
+            
             // Extract SERVER2 data for customer info, balance, and bills
             if (rawData.containsKey("SERVER2_data")) {
                 JSONObject server2Data = (JSONObject) rawData.get("SERVER2_data");
+                
+                // DEBUG: Show SERVER2 structure
+                result.put("debug_server2_keys", getJSONKeys(server2Data));
+                
                 extractSERVER2Data(server2Data, result);
+            } else {
+                result.put("debug_server2", "NO SERVER2 DATA");
             }
 
             // Extract SERVER3 data for additional customer info
             if (rawData.containsKey("SERVER3_data")) {
                 JSONObject server3Data = (JSONObject) rawData.get("SERVER3_data");
+                result.put("debug_server3_keys", getJSONKeys(server3Data));
                 extractSERVER3Data(server3Data, result);
+            } else {
+                result.put("debug_server3", "NO SERVER3 DATA");
             }
 
             // Extract SERVER1 data for prepaid (tokens and customer info)
             if ("prepaid".equals(type) && rawData.containsKey("SERVER1_data")) {
+                result.put("debug_server1", "HAS SERVER1 DATA");
                 extractSERVER1Data(rawData.get("SERVER1_data"), result);
+            } else {
+                result.put("debug_server1", "NO SERVER1 DATA");
             }
 
         } catch (Exception e) {
@@ -136,6 +151,24 @@ public class LookupDataHelper {
         return result;
     }
 
+    // Debug helper methods
+    private String getKeysAsString(Map<String, Object> map) {
+        return String.join(", ", map.keySet());
+    }
+
+    private String getJSONKeys(JSONObject json) {
+        try {
+            Iterator<String> keys = json.keys();
+            List<String> keyList = new ArrayList<>();
+            while (keys.hasNext()) {
+                keyList.add(keys.next());
+            }
+            return String.join(", ", keyList);
+        } catch (Exception e) {
+            return "Error getting keys: " + e.getMessage();
+        }
+    }
+
     private void extractSERVER2Data(JSONObject server2Data, Map<String, Object> result) {
         try {
             // Extract customer info from SERVER2
@@ -143,7 +176,7 @@ public class LookupDataHelper {
                 JSONArray customerInfoArray = server2Data.getJSONArray("customerInfo");
                 if (customerInfoArray.length() > 0 && customerInfoArray.getJSONArray(0).length() > 0) {
                     JSONObject firstCustomer = customerInfoArray.getJSONArray(0).getJSONObject(0);
-                    
+
                     Map<String, String> customerInfo = new HashMap<>();
                     customerInfo.put("Customer Name", firstCustomer.optString("CUSTOMER_NAME", "N/A"));
                     customerInfo.put("Address", firstCustomer.optString("ADDRESS", "N/A"));
@@ -152,7 +185,7 @@ public class LookupDataHelper {
                     customerInfo.put("Bill Group", firstCustomer.optString("BILL_GROUP", "N/A"));
                     customerInfo.put("Meter Number", firstCustomer.optString("METER_NUM", "N/A"));
                     customerInfo.put("Meter Status", getMeterStatus(firstCustomer.optString("METER_STATUS")));
-                    
+
                     result.put("customer_info", customerInfo);
                 }
             }
@@ -166,7 +199,7 @@ public class LookupDataHelper {
                     balanceInfo.put("Arrear Amount", balanceString);
                 }
             }
-            
+
             if (!balanceInfo.isEmpty()) {
                 result.put("balance_info", balanceInfo);
             }
@@ -175,11 +208,11 @@ public class LookupDataHelper {
             if (server2Data.has("billInfo")) {
                 JSONArray billArray = server2Data.getJSONArray("billInfo");
                 List<Map<String, Object>> billInfo = new ArrayList<>();
-                
+
                 for (int i = 0; i < billArray.length(); i++) {
                     JSONObject bill = billArray.getJSONObject(i);
                     Map<String, Object> billData = new HashMap<>();
-                    
+
                     billData.put("BILL_MONTH", bill.optString("BILL_MONTH", "N/A"));
                     billData.put("BILL_NO", bill.optString("BILL_NO", "N/A"));
                     billData.put("CONS_KWH_SR", bill.optDouble("CONS_KWH_SR", 0));
@@ -187,12 +220,12 @@ public class LookupDataHelper {
                     billData.put("PAID_AMT", bill.optDouble("PAID_AMT", 0));
                     billData.put("BALANCE", bill.optDouble("BALANCE", 0));
                     billData.put("INVOICE_DUE_DATE", bill.optString("INVOICE_DUE_DATE", "N/A"));
-                    
+
                     billInfo.add(billData);
                 }
-                
+
                 result.put("bill_info", billInfo);
-                
+
                 // Create bill summary
                 Map<String, Object> billSummary = new HashMap<>();
                 billSummary.put("total_bills", billInfo.size());
@@ -219,7 +252,7 @@ public class LookupDataHelper {
         try {
             // Get or create customer info
             Map<String, String> customerInfo = (Map<String, String>) result.getOrDefault("customer_info", new HashMap<>());
-            
+
             // Add SERVER3 customer info
             customerInfo.put("Customer Name", server3Data.optString("customerName", customerInfo.getOrDefault("Customer Name", "N/A")));
             customerInfo.put("Father Name", server3Data.optString("fatherName", "N/A"));
@@ -232,7 +265,7 @@ public class LookupDataHelper {
             customerInfo.put("Sanctioned Load", server3Data.optString("sanctionedLoad", "N/A"));
             customerInfo.put("Walk Order", server3Data.optString("walkOrder", "N/A"));
             customerInfo.put("Meter Number", server3Data.optString("meterNum", customerInfo.getOrDefault("Meter Number", "N/A")));
-            
+
             result.put("customer_info", customerInfo);
 
             // Add meter readings
@@ -252,17 +285,17 @@ public class LookupDataHelper {
         try {
             if (server1DataObj instanceof String) {
                 String responseBody = (String) server1DataObj;
-                
+
                 // Extract tokens using your existing pattern
                 List<Map<String, String>> transactions = extractTransactionsWithExactPatterns(responseBody);
                 if (!transactions.isEmpty()) {
                     result.put("recharge_history", transactions);
                     result.put("total_recharges", transactions.size());
                 }
-                
+
                 // Extract customer info from SERVER1
                 Map<String, String> customerInfo = (Map<String, String>) result.getOrDefault("customer_info", new HashMap<>());
-                
+
                 // You can add more SERVER1 customer info extraction here if needed
                 result.put("customer_info", customerInfo);
             }
@@ -274,7 +307,7 @@ public class LookupDataHelper {
     // Your existing token extraction method
     private List<Map<String, String>> extractTransactionsWithExactPatterns(String response) {
         List<Map<String, String>> transactions = new ArrayList<>();
-        
+
         System.out.println("🔍 Looking for tokens with exact pattern...");
 
         int index = 0;
