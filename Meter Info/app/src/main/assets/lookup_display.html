@@ -520,6 +520,30 @@
                         </div>
                     </div>`;
 
+            // DEBUG SECTION
+            html += `<div class="section-title" style="background: #ff9800;">
+                        <span class="emoji">🐛</span> ডিবাগ তথ্য
+                    </div>`;
+            
+            html += `<div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">RAW Keys:</span>
+                            <span class="info-value">${data.debug_raw_keys || 'N/A'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">SERVER2 Keys:</span>
+                            <span class="info-value">${data.debug_server2_keys || data.debug_server2 || 'N/A'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">SERVER3 Keys:</span>
+                            <span class="info-value">${data.debug_server3_keys || data.debug_server3 || 'N/A'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">SERVER1:</span>
+                            <span class="info-value">${data.debug_server1 || 'N/A'}</span>
+                        </div>
+                    </div>`;
+
             // Customer Information
             if (data.customer_info && Object.keys(data.customer_info).length > 0) {
                 html += `<div class="section-title">
