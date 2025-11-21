@@ -172,21 +172,28 @@ public class LookupDataHelper {
     private void extractSERVER2Data(JSONObject server2Data, Map<String, Object> result) {
         try {
             // Extract customer info from SERVER2
-            if (server2Data.has("customerInfo") && server2Data.getJSONArray("customerInfo").length() > 0) {
-                JSONArray customerInfoArray = server2Data.getJSONArray("customerInfo");
-                if (customerInfoArray.length() > 0 && customerInfoArray.getJSONArray(0).length() > 0) {
-                    JSONObject firstCustomer = customerInfoArray.getJSONArray(0).getJSONObject(0);
-
-                    Map<String, String> customerInfo = new HashMap<>();
-                    customerInfo.put("Customer Name", firstCustomer.optString("CUSTOMER_NAME", "N/A"));
-                    customerInfo.put("Address", firstCustomer.optString("ADDRESS", "N/A"));
-                    customerInfo.put("Tariff", firstCustomer.optString("TARIFF", "N/A"));
-                    customerInfo.put("Location Code", firstCustomer.optString("LOCATION_CODE", "N/A"));
-                    customerInfo.put("Bill Group", firstCustomer.optString("BILL_GROUP", "N/A"));
-                    customerInfo.put("Meter Number", firstCustomer.optString("METER_NUM", "N/A"));
-                    customerInfo.put("Meter Status", getMeterStatus(firstCustomer.optString("METER_STATUS")));
-
-                    result.put("customer_info", customerInfo);
+            if (server2Data.has("customerInfo")) {
+                Object customerInfoObj = server2Data.get("customerInfo");
+                System.out.println("🔍 SERVER2 customerInfo type: " + customerInfoObj.getClass().getSimpleName());
+                
+                if (customerInfoObj instanceof JSONArray) {
+                    JSONArray customerInfoArray = (JSONArray) customerInfoObj;
+                    System.out.println("🔍 SERVER2 customerInfo array length: " + customerInfoArray.length());
+                    
+                    if (customerInfoArray.length() > 0) {
+                        // Get the first element which should contain customer data
+                        Object firstElement = customerInfoArray.get(0);
+                        
+                        if (firstElement instanceof JSONArray) {
+                            JSONArray innerArray = (JSONArray) firstElement;
+                            if (innerArray.length() > 0) {
+                                JSONObject customerData = innerArray.getJSONObject(0);
+                                extractCustomerInfoFromSERVER2(customerData, result);
+                            }
+                        } else if (firstElement instanceof JSONObject) {
+                            extractCustomerInfoFromSERVER2((JSONObject) firstElement, result);
+                        }
+                    }
                 }
             }
 
@@ -195,8 +202,14 @@ public class LookupDataHelper {
             if (server2Data.has("finalBalanceInfo")) {
                 String balanceString = server2Data.optString("finalBalanceInfo");
                 if (balanceString != null && !balanceString.equals("null") && !balanceString.isEmpty()) {
-                    balanceInfo.put("Total Balance", balanceString);
-                    balanceInfo.put("Arrear Amount", balanceString);
+                    try {
+                        double balance = Double.parseDouble(balanceString);
+                        balanceInfo.put("Total Balance", String.format("৳ %.2f", balance));
+                        balanceInfo.put("Arrear Amount", String.format("৳ %.2f", balance));
+                    } catch (NumberFormatException e) {
+                        balanceInfo.put("Total Balance", balanceString);
+                        balanceInfo.put("Arrear Amount", balanceString);
+                    }
                 }
             }
 
@@ -245,6 +258,32 @@ public class LookupDataHelper {
 
         } catch (Exception e) {
             System.out.println("❌ Error extracting SERVER2 data: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private void extractCustomerInfoFromSERVER2(JSONObject customerData, Map<String, Object> result) {
+        try {
+            Map<String, String> customerInfo = (Map<String, String>) result.getOrDefault("customer_info", new HashMap<>());
+
+            // Extract all available fields from SERVER2
+            customerInfo.put("Customer Name", getStringValue(customerData, "CUSTOMER_NAME"));
+            customerInfo.put("Address", getStringValue(customerData, "ADDRESS"));
+            customerInfo.put("Tariff", getStringValue(customerData, "TARIFF"));
+            customerInfo.put("Location Code", getStringValue(customerData, "LOCATION_CODE"));
+            customerInfo.put("Bill Group", getStringValue(customerData, "BILL_GROUP"));
+            customerInfo.put("Meter Number", getStringValue(customerData, "METER_NUM"));
+            customerInfo.put("Meter Status", getMeterStatus(getStringValue(customerData, "METER_STATUS")));
+
+            // Remove null values
+            customerInfo.entrySet().removeIf(entry -> entry.getValue() == null || entry.getValue().equals("N/A"));
+            
+            if (!customerInfo.isEmpty()) {
+                result.put("customer_info", customerInfo);
+            }
+
+        } catch (Exception e) {
+            System.out.println("❌ Error extracting customer info from SERVER2: " + e.getMessage());
         }
     }
 
@@ -253,28 +292,40 @@ public class LookupDataHelper {
             // Get or create customer info
             Map<String, String> customerInfo = (Map<String, String>) result.getOrDefault("customer_info", new HashMap<>());
 
-            // Add SERVER3 customer info
-            customerInfo.put("Customer Name", server3Data.optString("customerName", customerInfo.getOrDefault("Customer Name", "N/A")));
-            customerInfo.put("Father Name", server3Data.optString("fatherName", "N/A"));
-            customerInfo.put("Customer Address", server3Data.optString("customerAddr", customerInfo.getOrDefault("Address", "N/A")));
-            customerInfo.put("Location Code", server3Data.optString("locationCode", customerInfo.getOrDefault("Location Code", "N/A")));
-            customerInfo.put("Area Code", server3Data.optString("areaCode", "N/A"));
-            customerInfo.put("Bill Group", server3Data.optString("billGroup", customerInfo.getOrDefault("Bill Group", "N/A")));
-            customerInfo.put("Book Number", server3Data.optString("bookNumber", "N/A"));
-            customerInfo.put("Tariff Description", server3Data.optString("tariffDesc", customerInfo.getOrDefault("Tariff", "N/A")));
-            customerInfo.put("Sanctioned Load", server3Data.optString("sanctionedLoad", "N/A"));
-            customerInfo.put("Walk Order", server3Data.optString("walkOrder", "N/A"));
-            customerInfo.put("Meter Number", server3Data.optString("meterNum", customerInfo.getOrDefault("Meter Number", "N/A")));
+            // Add SERVER3 customer info - use optString with fallback to existing values
+            customerInfo.put("Customer Name", getStringValue(server3Data, "customerName", customerInfo.get("Customer Name")));
+            customerInfo.put("Father Name", getStringValue(server3Data, "fatherName"));
+            customerInfo.put("Customer Address", getStringValue(server3Data, "customerAddr", customerInfo.get("Address")));
+            customerInfo.put("Location Code", getStringValue(server3Data, "locationCode", customerInfo.get("Location Code")));
+            customerInfo.put("Area Code", getStringValue(server3Data, "areaCode"));
+            customerInfo.put("Bill Group", getStringValue(server3Data, "billGroup", customerInfo.get("Bill Group")));
+            customerInfo.put("Book Number", getStringValue(server3Data, "bookNumber"));
+            customerInfo.put("Tariff Description", getStringValue(server3Data, "tariffDesc", customerInfo.get("Tariff")));
+            customerInfo.put("Sanctioned Load", getStringValue(server3Data, "sanctionedLoad"));
+            customerInfo.put("Walk Order", getStringValue(server3Data, "walkOrder"));
+            customerInfo.put("Meter Number", getStringValue(server3Data, "meterNum", customerInfo.get("Meter Number")));
+            customerInfo.put("Usage Type", getStringValue(server3Data, "usageType"));
+            customerInfo.put("Description", getStringValue(server3Data, "description"));
+            customerInfo.put("Start Bill Cycle", getStringValue(server3Data, "startBillCycle"));
+            customerInfo.put("Meter Condition", getStringValue(server3Data, "meterConditionDesc"));
 
-            result.put("customer_info", customerInfo);
+            // Remove null values
+            customerInfo.entrySet().removeIf(entry -> entry.getValue() == null || entry.getValue().equals("N/A"));
+            
+            if (!customerInfo.isEmpty()) {
+                result.put("customer_info", customerInfo);
+            }
 
             // Add meter readings
             Map<String, String> meterReadings = new HashMap<>();
-            String lastReadingSr = server3Data.optString("lastBillReadingSr", "");
-            if (!lastReadingSr.isEmpty() && !lastReadingSr.equals("null")) {
+            String lastReadingSr = getStringValue(server3Data, "lastBillReadingSr");
+            if (!lastReadingSr.equals("N/A")) {
                 meterReadings.put("Last Bill Reading SR", lastReadingSr);
             }
-            result.put("meter_readings", meterReadings);
+            
+            if (!meterReadings.isEmpty()) {
+                result.put("meter_readings", meterReadings);
+            }
 
         } catch (Exception e) {
             System.out.println("❌ Error extracting SERVER3 data: " + e.getMessage());
@@ -293,15 +344,36 @@ public class LookupDataHelper {
                     result.put("total_recharges", transactions.size());
                 }
 
-                // Extract customer info from SERVER1
+                // Extract customer info from SERVER1 if available
                 Map<String, String> customerInfo = (Map<String, String>) result.getOrDefault("customer_info", new HashMap<>());
-
-                // You can add more SERVER1 customer info extraction here if needed
-                result.put("customer_info", customerInfo);
+                
+                // You can add SERVER1 specific customer info extraction here if needed
+                // For now, we'll rely on SERVER2 and SERVER3 for customer info
+                
+                if (!customerInfo.isEmpty()) {
+                    result.put("customer_info", customerInfo);
+                }
             }
         } catch (Exception e) {
             System.out.println("❌ Error extracting SERVER1 data: " + e.getMessage());
         }
+    }
+
+    // Helper methods for safe value extraction
+    private String getStringValue(JSONObject json, String key) {
+        return getStringValue(json, key, "N/A");
+    }
+
+    private String getStringValue(JSONObject json, String key, String defaultValue) {
+        try {
+            if (json.has(key)) {
+                String value = json.optString(key, defaultValue);
+                return (value == null || value.equals("null") || value.isEmpty()) ? defaultValue : value;
+            }
+        } catch (Exception e) {
+            // Ignore and return default
+        }
+        return defaultValue;
     }
 
     // Your existing token extraction method
@@ -371,6 +443,9 @@ public class LookupDataHelper {
     }
 
     private String getMeterStatus(String statusCode) {
+        if (statusCode == null || statusCode.equals("N/A")) {
+            return "N/A";
+        }
         Map<String, String> statusMap = new HashMap<>();
         statusMap.put("1", "Active");
         statusMap.put("2", "Inactive");
