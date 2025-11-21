@@ -104,7 +104,7 @@ public class LookupDataHelper {
 
     private Map<String, Object> processDataForHTML(Map<String, Object> rawData, String type) {
         Map<String, Object> result = new HashMap<>();
-        
+
         try {
             // Basic information
             result.put("type", type);
@@ -113,14 +113,14 @@ public class LookupDataHelper {
 
             // DEBUG: Show what raw data we have
             result.put("debug_raw_keys", getKeysAsString(rawData));
-            
+
             // Extract SERVER2 data for customer info, balance, and bills
             if (rawData.containsKey("SERVER2_data")) {
                 JSONObject server2Data = (JSONObject) rawData.get("SERVER2_data");
-                
+
                 // DEBUG: Show SERVER2 structure
                 result.put("debug_server2_keys", getJSONKeys(server2Data));
-                
+
                 extractSERVER2Data(server2Data, result);
             } else {
                 result.put("debug_server2", "NO SERVER2 DATA");
@@ -143,6 +143,9 @@ public class LookupDataHelper {
                 result.put("debug_server1", "NO SERVER1 DATA");
             }
 
+            // Process bill information for table display
+            processBillInformation(result);
+
         } catch (Exception e) {
             System.out.println("❌ Error processing data for HTML: " + e.getMessage());
             result.put("error", "Data processing failed: " + e.getMessage());
@@ -151,21 +154,45 @@ public class LookupDataHelper {
         return result;
     }
 
-    // Debug helper methods
-    private String getKeysAsString(Map<String, Object> map) {
-        return String.join(", ", map.keySet());
-    }
-
-    private String getJSONKeys(JSONObject json) {
+    private void processBillInformation(Map<String, Object> result) {
         try {
-            Iterator<String> keys = json.keys();
-            List<String> keyList = new ArrayList<>();
-            while (keys.hasNext()) {
-                keyList.add(keys.next());
+            if (result.containsKey("bill_info")) {
+                List<Map<String, Object>> billInfo = (List<Map<String, Object>>) result.get("bill_info");
+                
+                // Calculate bill summary
+                Map<String, Object> billSummary = new HashMap<>();
+                int totalBills = billInfo.size();
+                double totalAmount = 0;
+                double totalPaid = 0;
+                double totalArrears = 0;
+
+                for (Map<String, Object> bill : billInfo) {
+                    double billAmount = getDoubleValue(bill, "TOTAL_BILL");
+                    double paidAmount = getDoubleValue(bill, "PAID_AMT");
+                    double balance = getDoubleValue(bill, "BALANCE");
+
+                    totalAmount += billAmount;
+                    totalPaid += paidAmount;
+                    totalArrears += balance;
+                }
+
+                billSummary.put("total_bills", totalBills);
+                billSummary.put("total_amount", totalAmount);
+                billSummary.put("total_paid", totalPaid);
+                billSummary.put("arrears", totalArrears);
+
+                result.put("bill_summary", billSummary);
+
+                // Format bill dates for display
+                for (Map<String, Object> bill : billInfo) {
+                    if (bill.containsKey("BILL_MONTH")) {
+                        String billMonth = bill.get("BILL_MONTH").toString();
+                        bill.put("formatted_month", formatBillMonth(billMonth));
+                    }
+                }
             }
-            return String.join(", ", keyList);
         } catch (Exception e) {
-            return "Error getting keys: " + e.getMessage();
+            System.out.println("❌ Error processing bill information: " + e.getMessage());
         }
     }
 
@@ -175,15 +202,13 @@ public class LookupDataHelper {
             if (server2Data.has("customerInfo")) {
                 Object customerInfoObj = server2Data.get("customerInfo");
                 System.out.println("🔍 SERVER2 customerInfo type: " + customerInfoObj.getClass().getSimpleName());
-                
+
                 if (customerInfoObj instanceof JSONArray) {
                     JSONArray customerInfoArray = (JSONArray) customerInfoObj;
                     System.out.println("🔍 SERVER2 customerInfo array length: " + customerInfoArray.length());
-                    
+
                     if (customerInfoArray.length() > 0) {
-                        // Get the first element which should contain customer data
                         Object firstElement = customerInfoArray.get(0);
-                        
                         if (firstElement instanceof JSONArray) {
                             JSONArray innerArray = (JSONArray) firstElement;
                             if (innerArray.length() > 0) {
@@ -217,7 +242,7 @@ public class LookupDataHelper {
                 result.put("balance_info", balanceInfo);
             }
 
-            // Extract bill information
+            // Extract bill information - ENHANCED FOR TABLE DISPLAY
             if (server2Data.has("billInfo")) {
                 JSONArray billArray = server2Data.getJSONArray("billInfo");
                 List<Map<String, Object>> billInfo = new ArrayList<>();
@@ -226,6 +251,7 @@ public class LookupDataHelper {
                     JSONObject bill = billArray.getJSONObject(i);
                     Map<String, Object> billData = new HashMap<>();
 
+                    // Extract all bill fields for table display
                     billData.put("BILL_MONTH", bill.optString("BILL_MONTH", "N/A"));
                     billData.put("BILL_NO", bill.optString("BILL_NO", "N/A"));
                     billData.put("CONS_KWH_SR", bill.optDouble("CONS_KWH_SR", 0));
@@ -233,27 +259,13 @@ public class LookupDataHelper {
                     billData.put("PAID_AMT", bill.optDouble("PAID_AMT", 0));
                     billData.put("BALANCE", bill.optDouble("BALANCE", 0));
                     billData.put("INVOICE_DUE_DATE", bill.optString("INVOICE_DUE_DATE", "N/A"));
+                    billData.put("CURRENT_BILL", bill.optDouble("CURRENT_BILL", 0));
+                    billData.put("ARREAR_BILL", bill.optDouble("ARREAR_BILL", 0));
 
                     billInfo.add(billData);
                 }
 
                 result.put("bill_info", billInfo);
-
-                // Create bill summary
-                Map<String, Object> billSummary = new HashMap<>();
-                billSummary.put("total_bills", billInfo.size());
-                if (!billInfo.isEmpty()) {
-                    double totalAmount = 0;
-                    double totalPaid = 0;
-                    for (Map<String, Object> bill : billInfo) {
-                        totalAmount += Double.parseDouble(String.valueOf(bill.getOrDefault("TOTAL_BILL", "0")));
-                        totalPaid += Double.parseDouble(String.valueOf(bill.getOrDefault("PAID_AMT", "0")));
-                    }
-                    billSummary.put("total_amount", totalAmount);
-                    billSummary.put("total_paid", totalPaid);
-                    billSummary.put("arrears", totalAmount - totalPaid);
-                }
-                result.put("bill_summary", billSummary);
             }
 
         } catch (Exception e) {
@@ -274,10 +286,13 @@ public class LookupDataHelper {
             customerInfo.put("Bill Group", getStringValue(customerData, "BILL_GROUP"));
             customerInfo.put("Meter Number", getStringValue(customerData, "METER_NUM"));
             customerInfo.put("Meter Status", getMeterStatus(getStringValue(customerData, "METER_STATUS")));
+            customerInfo.put("Usage Type", getStringValue(customerData, "USAGE_TYPE"));
+            customerInfo.put("Description", getStringValue(customerData, "DESCR"));
+            customerInfo.put("Start Bill Cycle", getStringValue(customerData, "START_BILL_CYCLE"));
 
             // Remove null values
             customerInfo.entrySet().removeIf(entry -> entry.getValue() == null || entry.getValue().equals("N/A"));
-            
+
             if (!customerInfo.isEmpty()) {
                 result.put("customer_info", customerInfo);
             }
@@ -311,7 +326,7 @@ public class LookupDataHelper {
 
             // Remove null values
             customerInfo.entrySet().removeIf(entry -> entry.getValue() == null || entry.getValue().equals("N/A"));
-            
+
             if (!customerInfo.isEmpty()) {
                 result.put("customer_info", customerInfo);
             }
@@ -322,7 +337,17 @@ public class LookupDataHelper {
             if (!lastReadingSr.equals("N/A")) {
                 meterReadings.put("Last Bill Reading SR", lastReadingSr);
             }
-            
+
+            String lastReadingOfPk = getStringValue(server3Data, "lastBillReadingOfPk");
+            if (!lastReadingOfPk.equals("N/A")) {
+                meterReadings.put("Last Bill Reading OF PK", lastReadingOfPk);
+            }
+
+            String lastReadingPk = getStringValue(server3Data, "lastBillReadingPk");
+            if (!lastReadingPk.equals("N/A")) {
+                meterReadings.put("Last Bill Reading PK", lastReadingPk);
+            }
+
             if (!meterReadings.isEmpty()) {
                 result.put("meter_readings", meterReadings);
             }
@@ -346,10 +371,29 @@ public class LookupDataHelper {
 
                 // Extract customer info from SERVER1 if available
                 Map<String, String> customerInfo = (Map<String, String>) result.getOrDefault("customer_info", new HashMap<>());
-                
-                // You can add SERVER1 specific customer info extraction here if needed
-                // For now, we'll rely on SERVER2 and SERVER3 for customer info
-                
+
+                // Add SERVER1 specific customer info
+                customerInfo.put("Consumer Number", extractValueFromSERVER1(responseBody, "customerAccountNo"));
+                customerInfo.put("Name", extractValueFromSERVER1(responseBody, "customerName"));
+                customerInfo.put("Address", extractValueFromSERVER1(responseBody, "customerAddress"));
+                customerInfo.put("Phone", extractValueFromSERVER1(responseBody, "customerPhone"));
+                customerInfo.put("Division", extractValueFromSERVER1(responseBody, "division"));
+                customerInfo.put("Sub Division", extractValueFromSERVER1(responseBody, "sndDivision"));
+                customerInfo.put("Tariff Category", extractValueFromSERVER1(responseBody, "tariffCategory"));
+                customerInfo.put("Connection Category", extractValueFromSERVER1(responseBody, "connectionCategory"));
+                customerInfo.put("Account Type", extractValueFromSERVER1(responseBody, "accountType"));
+                customerInfo.put("Meter Type", extractValueFromSERVER1(responseBody, "meterType"));
+                customerInfo.put("Sanctioned Load", extractValueFromSERVER1(responseBody, "sanctionLoad"));
+                customerInfo.put("Meter Number", extractValueFromSERVER1(responseBody, "meterNumber"));
+                customerInfo.put("Last Recharge Amount", extractValueFromSERVER1(responseBody, "lastRechargeAmount"));
+                customerInfo.put("Last Recharge Time", extractValueFromSERVER1(responseBody, "lastRechargeTime"));
+                customerInfo.put("Installation Date", extractValueFromSERVER1(responseBody, "installationDate"));
+                customerInfo.put("Lock Status", extractValueFromSERVER1(responseBody, "lockStatus"));
+                customerInfo.put("Total Recharge This Month", extractValueFromSERVER1(responseBody, "totalRechargeThisMonth"));
+
+                // Remove null values
+                customerInfo.entrySet().removeIf(entry -> entry.getValue() == null || entry.getValue().equals("N/A"));
+
                 if (!customerInfo.isEmpty()) {
                     result.put("customer_info", customerInfo);
                 }
@@ -374,6 +418,38 @@ public class LookupDataHelper {
             // Ignore and return default
         }
         return defaultValue;
+    }
+
+    private double getDoubleValue(Map<String, Object> map, String key) {
+        try {
+            Object value = map.get(key);
+            if (value instanceof Number) {
+                return ((Number) value).doubleValue();
+            } else if (value instanceof String) {
+                return Double.parseDouble((String) value);
+            }
+        } catch (Exception e) {
+            // Ignore
+        }
+        return 0.0;
+    }
+
+    private String extractValueFromSERVER1(String responseBody, String fieldName) {
+        try {
+            String pattern = "\"" + fieldName + "\":{\"_text\":\"";
+            int start = responseBody.indexOf(pattern);
+            if (start != -1) {
+                int valueStart = start + pattern.length();
+                int valueEnd = responseBody.indexOf("\"", valueStart);
+                if (valueEnd != -1) {
+                    String value = responseBody.substring(valueStart, valueEnd);
+                    return (value == null || value.isEmpty() || value.equals("{}")) ? "N/A" : value;
+                }
+            }
+        } catch (Exception e) {
+            // Ignore
+        }
+        return "N/A";
     }
 
     // Your existing token extraction method
@@ -451,5 +527,43 @@ public class LookupDataHelper {
         statusMap.put("2", "Inactive");
         statusMap.put("3", "Disconnected");
         return statusMap.getOrDefault(statusCode, "Unknown (" + statusCode + ")");
+    }
+
+    private String formatBillMonth(String dateStr) {
+        if (dateStr == null || dateStr.equals("N/A")) return "N/A";
+        
+        try {
+            String[] parts = dateStr.split("-");
+            if (parts.length >= 2) {
+                int month = Integer.parseInt(parts[1]);
+                String[] monthNames = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+                
+                if (month >= 1 && month <= 12) {
+                    return monthNames[month - 1] + "-" + parts[0];
+                }
+            }
+            return dateStr;
+        } catch (Exception e) {
+            return dateStr;
+        }
+    }
+
+    // Debug helper methods
+    private String getKeysAsString(Map<String, Object> map) {
+        return String.join(", ", map.keySet());
+    }
+
+    private String getJSONKeys(JSONObject json) {
+        try {
+            Iterator<String> keys = json.keys();
+            List<String> keyList = new ArrayList<>();
+            while (keys.hasNext()) {
+                keyList.add(keys.next());
+            }
+            return String.join(", ", keyList);
+        } catch (Exception e) {
+            return "Error getting keys: " + e.getMessage();
+        }
     }
 }
