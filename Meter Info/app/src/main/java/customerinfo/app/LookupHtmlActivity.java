@@ -50,19 +50,21 @@ public class LookupHtmlActivity extends AppCompatActivity {
     public class WebAppInterface {
 
         @JavascriptInterface
-        public String fetchLookupData(String inputNumber, String type) {
-            try {
-                Log.d(TAG, "Lookup requested → " + inputNumber + " (" + type + ")");
-                LookupDataHelper helper = new LookupDataHelper();
-                java.util.Map<String, Object> result = helper.fetchDataForLookup(inputNumber, type, "consumer_no");
-                return new org.json.JSONObject(result).toString();
+public String fetchLookupData(String inputNumber, String type, String subType) {
+    try {
+        Log.d(TAG, "Lookup requested → " + inputNumber + " (" + type + ", " + subType + ")");
+        LookupDataHelper helper = new LookupDataHelper();
+        
+        // Use the subType from JavaScript
+        java.util.Map<String, Object> result = helper.fetchDataForLookup(inputNumber, type, subType);
+        
+        return new org.json.JSONObject(result).toString();
 
-            } catch (Exception e) {
-                Log.e(TAG, "Lookup fetch error: " + e.getMessage());
-                return "{\"error\":\"Data fetch failed: " + e.getMessage() + "\"}";
-            }
-        }
-
+    } catch (Exception e) {
+        Log.e(TAG, "Lookup fetch error: " + e.getMessage());
+        return "{\"error\":\"Data fetch failed: " + e.getMessage() + "\"}";
+    }
+}
         @JavascriptInterface
         public void saveAsPDF() {
             runOnUiThread(() -> {
