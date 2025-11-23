@@ -685,23 +685,6 @@
 
             console.log("🔍 Generating HTML for data:", data);
 
-            // METER INFO SECTION
-            html += `<div class="terminal-section">
-                        <div class="section-title">
-                            📊 ${(data.type || 'UNKNOWN').toUpperCase()} METER INFO
-                        </div>
-                        <div class="info-grid">
-                            <div class="info-item">
-                                <span class="info-label">🔢 Meter Number:</span>
-                                <span class="info-value">${data.meter_number || 'N/A'}</span>
-                            </div>
-                            <div class="info-item">
-                                <span class="info-label">👤 Consumer Number:</span>
-                                <span class="info-value">${data.consumer_number || data.customer_number || 'N/A'}</span>
-                            </div>
-                        </div>
-                    </div>`;
-
             // PREPAID CUSTOMER DETAILS
             if (data.prepaid_customer_details && Object.keys(data.prepaid_customer_details).length > 0) {
                 html += `<div class="terminal-section">
@@ -752,52 +735,64 @@
             }
 
              // CUSTOMER INFORMATION - SINGLE FLAT VIEW
- if (data.customer_info && Object.keys(data.customer_info).length > 0) {
-     html += `<div class="terminal-section">
-                 <div class="section-title">👤 CUSTOMER INFORMATION</div>
-                 <div class="info-grid">`;
+ // CUSTOMER INFORMATION - SINGLE FLAT VIEW
+if (data.customer_info && Object.keys(data.customer_info).length > 0) {
+    html += `<div class="terminal-section">
+                <div class="section-title">👤 POSTPAID CUSTOMER INFORMATION</div>
+                <div class="info-grid">`;
 
-     // All fields in logical order (single flat list)
-     const allFields = [
-         // Core Identification
-         'Customer Number', 'Customer Name', 'Father Name', 
-         
-         // Contact & Location
-         'Customer Address', 'Phone', 'Division', 'Sub Division',
-         
-         // Meter Details
-         'Meter Number', 'Meter Condition', 'Meter Status', 'Connection Date',
-         
-         // Billing Details  
-         'Location Code', 'Area Code', 'Bill Group', 'Book Number',
-         'Account_Number', 'Walk Order',
-         
-         // Tariff & Technical
-         'Tariff', 'Sanctioned Load', 'Connection Category', 'Account Type',
-         'Usage Type', 'Description', 'Start Bill Cycle',
-         
-         // Readings & Balance
-         'Current Reading SR', 'Last Bill Reading SR',
-         'Last Bill Reading OF PK', 'Last Bill Reading PK',
-         'Arrear Amount', 'Total Balance'
-     ];
+    const allFields = [
+        // Core Identification
+        'Customer Number', 'Customer Name', 'Father Name', 
+        
+        // Contact & Location
+        'Customer Address', 'Phone', 'Division', 'Sub Division',
+        
+        // Meter Details
+        'Meter Number', 'Meter Condition', 'Meter Status',
+        // 'Connection Date' - REMOVE THIS FROM THE ARRAY
+        
+        // Billing Details  
+        'Location Code', 'Area Code', 'Bill Group', 'Book Number',
+        'Account_Number', 'Walk Order',
+        
+        // Tariff & Technical
+        'Tariff', 'Sanctioned Load', 'Connection Category', 'Account Type',
+        'Usage Type', 'Description', 'Start Bill Cycle',
+        
+        // Readings & Balance
+        'Current Reading SR', 'Last Bill Reading SR',
+        'Last Bill Reading OF PK', 'Last Bill Reading PK',
+        'Arrear Amount', 'Total Balance'
+    ];
 
-     // Display all valid fields in single list
-     allFields.forEach(field => {
-         if (data.customer_info[field] && 
-             data.customer_info[field] !== 'N/A' && 
-             data.customer_info[field] !== 'null' &&
-             data.customer_info[field] !== '') {
-             
-             html += `<div class="info-item">
-                         <span class="info-label">• ${field}:</span>
-                         <span class="info-value">${data.customer_info[field]}</span>
-                      </div>`;
-         }
-     });
+    // Display all valid fields in single list
+    allFields.forEach(field => {
+        if (data.customer_info[field] && 
+            data.customer_info[field] !== 'N/A' && 
+            data.customer_info[field] !== 'null' &&
+            data.customer_info[field] !== '') {
 
-     html += `</div></div>`;
- }
+            html += `<div class="info-item">
+                        <span class="info-label">• ${field}:</span>
+                        <span class="info-value">${data.customer_info[field]}</span>
+                     </div>`;
+        }
+    });
+
+    // SPECIAL HANDLING FOR CONNECTION DATE ONLY
+    if (data.customer_info['Connection Date'] && data.customer_info['Connection Date'] !== 'N/A') {
+        const connectionDate = data.customer_info['Connection Date'];
+        const formattedDate = connectionDate.includes('T') ? connectionDate.split('T')[0] : connectionDate;
+        
+        html += `<div class="info-item">
+                    <span class="info-label">• Connection Date:</span>
+                    <span class="info-value">${formattedDate}</span>
+                 </div>`;
+    }
+
+    html += `</div></div>`;
+}
 
  // METER READING DETAILS FROM API
  if (data.meter_readings && Object.keys(data.meter_readings).length > 0) {
