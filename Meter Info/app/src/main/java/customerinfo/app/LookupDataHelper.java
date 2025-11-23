@@ -643,8 +643,16 @@ public class LookupDataHelper {
                 String value = entry.getValue();
                 switch (entry.getKey()) {
                     case "Lock Status":
-                        value = value.equals("0") ? "UNLOCKED" : "LOCKED";
-                        break;
+    if (value.equals("{}")) {
+        value = "UNLOCKED";
+    } else if (value.contains("UNLOCKED")) {
+        value = "UNLOCKED"; 
+    } else if (value.contains("LOCKED")) {
+        value = "LOCKED";
+    } else {
+        value = "UNKNOWN"; // Fallback
+    }
+    break;
                     case "Account Type":
                         value = "Active (Prepaid)";
                         break;
