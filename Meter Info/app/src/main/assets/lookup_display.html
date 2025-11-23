@@ -13,8 +13,8 @@
 
         body {
             font-family: 'Courier New', monospace;
-            background: #1a1a1a;
-            color: #e0e0e0;
+            background: #ffffff;
+            color: #333333;
             line-height: 1.6;
             padding: 10px;
         }
@@ -27,33 +27,44 @@
         .header {
             text-align: center;
             margin-bottom: 20px;
-            padding: 15px;
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-            color: white;
-            border-radius: 0;
-            border: 2px solid #3498db;
+            padding: 20px 15px;
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+            color: #000000;
+            border-radius: 8px;
+            border: none;
+            box-shadow: 0 4px 8px rgba(255, 255, 255, 0.3);
         }
 
         .header h1 {
-            font-size: 20px;
-            margin-bottom: 5px;
+            font-size: 22px;
+            margin-bottom: 8px;
             font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
+        }
+
+        .header p {
+            font-size: 14px;
+            color: #000000;
+            text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.6);
+            font-weight: 500;
         }
 
         .search-section {
-            background: #2c3e50;
+            background: #f8f9fa;
             padding: 20px;
-            border-radius: 0;
+            border-radius: 8px;
             margin-bottom: 20px;
-            border: 1px solid #34495e;
+            border: 1px solid #dee2e6;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .type-selector {
             display: flex;
             margin-bottom: 15px;
-            border: 1px solid #34495e;
-            border-radius: 0;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
             overflow: hidden;
+            background: #ffffff;
         }
 
         .type-btn {
@@ -61,18 +72,27 @@
             padding: 12px;
             text-align: center;
             cursor: pointer;
-            background: #34495e;
+            background: #ffffff;
             border: none;
             font-size: 14px;
             font-family: 'Courier New', monospace;
-            color: #bdc3c7;
+            color: #6c757d;
             transition: all 0.3s ease;
+            border-right: 1px solid #ced4da;
+        }
+
+        .type-btn:last-child {
+            border-right: none;
         }
 
         .type-btn.active {
             background: #3498db;
             color: white;
             font-weight: bold;
+        }
+
+        .postpaid-options {
+            margin-bottom: 15px;
         }
 
         .search-row {
@@ -84,12 +104,19 @@
         .search-input {
             flex: 1;
             padding: 12px;
-            border: 1px solid #34495e;
-            border-radius: 0;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
             font-size: 14px;
             font-family: 'Courier New', monospace;
-            background: #2c3e50;
-            color: #e0e0e0;
+            background: #ffffff;
+            color: #333333;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
         }
 
         .search-btn {
@@ -97,105 +124,125 @@
             background: #27ae60;
             color: white;
             border: none;
-            border-radius: 0;
+            border-radius: 6px;
             cursor: pointer;
             font-size: 14px;
             font-family: 'Courier New', monospace;
             font-weight: bold;
-            transition: background 0.3s ease;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .search-btn:hover {
             background: #219a52;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
         }
 
         .search-btn:disabled {
-            background: #7f8c8d;
+            background: #95a5a6;
             cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
         .loading {
             display: none;
             text-align: center;
             color: #3498db;
-            padding: 10px;
+            padding: 15px;
             font-size: 14px;
             font-family: 'Courier New', monospace;
+            background: #e8f4fd;
+            border-radius: 6px;
+            margin-top: 10px;
         }
 
         .error {
             display: none;
-            color: #e74c3c;
-            background: #c0392b;
+            color: #721c24;
+            background: #f8d7da;
             padding: 12px;
-            border-radius: 0;
+            border-radius: 6px;
             margin-top: 10px;
-            border: 1px solid #e74c3c;
+            border: 1px solid #f5c6cb;
             font-family: 'Courier New', monospace;
         }
 
         .data-section {
             display: none;
-            background: #1a1a1a;
-            border-radius: 0;
+            background: #ffffff;
+            border-radius: 8px;
             padding: 0;
             margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
         .section-title {
-            background: #2c3e50;
-            color: #3498db;
-            padding: 12px 15px;
-            margin: 20px 0 15px 0;
-            border-radius: 0;
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+            color: #000000;
+            padding: 15px 20px;
+            margin: 0 0 20px 0;
+            border-radius: 8px 8px 0 0;
             font-weight: bold;
-            font-size: 16px;
-            border: 2px solid #3498db;
+            font-size: 18px;
+            border: none;
             text-align: center;
             font-family: 'Courier New', monospace;
+            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .subsection-title {
-            background: #34495e;
-            color: #bdc3c7;
-            padding: 10px 15px;
-            margin: 15px 0 10px 0;
-            border-radius: 0;
+            background: #e9ecef;
+            color: #2c3e50;
+            padding: 12px 20px;
+            margin: 20px 0 15px 0;
+            border-radius: 6px;
             font-weight: bold;
-            border-left: 4px solid #3498db;
+            border-left: 4px solid #27ae60;
             font-family: 'Courier New', monospace;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
         .info-grid {
             display: block;
             margin: 10px 0;
+            background: #ffffff;
         }
 
         .info-item {
             display: flex;
             justify-content: space-between;
-            padding: 8px 12px;
-            border-bottom: 1px solid #34495e;
+            padding: 10px 15px;
+            border-bottom: 1px solid #e9ecef;
             font-family: 'Courier New', monospace;
+            transition: background-color 0.2s ease;
+        }
+
+        .info-item:hover {
+            background: #f8f9fa;
         }
 
         .info-label {
             font-weight: bold;
-            color: #3498db;
+            color: #2c3e50;
             min-width: 200px;
         }
 
         .info-value {
-            color: #e0e0e0;
+            color: #34495e;
             text-align: right;
             flex: 1;
+            font-weight: 500;
         }
 
         .table-container {
             overflow-x: auto;
             margin: 15px 0;
-            border: 1px solid #34495e;
-            border-radius: 0;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
         .data-table {
@@ -203,30 +250,32 @@
             border-collapse: collapse;
             font-size: 12px;
             font-family: 'Courier New', monospace;
+            background: #ffffff;
         }
 
         .data-table th {
-            background: #2c3e50;
-            color: #3498db;
+            background: #27ae60;
+            color: #000000;
             padding: 12px 8px;
             text-align: left;
             font-weight: bold;
-            border: 1px solid #34495e;
+            border: 1px solid #dee2e6;
+            text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.6);
         }
 
         .data-table td {
             padding: 10px 8px;
-            border: 1px solid #34495e;
+            border: 1px solid #dee2e6;
             text-align: left;
-            color: #e0e0e0;
+            color: #2c3e50;
         }
 
         .data-table tr:nth-child(even) {
-            background: #2c3e50;
+            background: #f8f9fa;
         }
 
         .data-table tr:hover {
-            background: #34495e;
+            background: #e8f4fd;
         }
 
         .amount-positive {
@@ -244,12 +293,15 @@
             gap: 10px;
             margin-top: 25px;
             flex-wrap: wrap;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 0 0 8px 8px;
         }
 
         .btn {
             padding: 12px 20px;
             border: none;
-            border-radius: 0;
+            border-radius: 6px;
             cursor: pointer;
             font-size: 14px;
             font-family: 'Courier New', monospace;
@@ -261,6 +313,12 @@
             justify-content: center;
             gap: 8px;
             font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
         }
 
         .btn-print {
@@ -304,11 +362,12 @@
         }
 
         .summary-card {
-            background: #2c3e50;
+            background: #e8f4fd;
             border: 1px solid #3498db;
-            border-radius: 0;
+            border-radius: 6px;
             padding: 15px;
             margin: 15px 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
         .summary-grid {
@@ -320,59 +379,70 @@
         .summary-item {
             text-align: center;
             padding: 10px;
+            background: #ffffff;
+            border-radius: 6px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
 
         .summary-value {
             font-size: 18px;
             font-weight: bold;
-            color: #3498db;
+            color: #27ae60;
             margin: 5px 0;
         }
 
         .summary-label {
-            color: #bdc3c7;
+            color: #6c757d;
             font-size: 12px;
+            font-weight: 500;
         }
 
         /* Terminal-like styles */
         .terminal-line {
             margin: 5px 0;
             font-family: 'Courier New', monospace;
+            color: #333333;
         }
 
         .terminal-section {
-            border-top: 2px solid #3498db;
-            border-bottom: 2px solid #3498db;
+            border-top: 2px solid #27ae60;
+            border-bottom: 2px solid #27ae60;
             margin: 20px 0;
             padding: 15px 0;
+            background: #ffffff;
         }
 
         .token-section {
-            background: #2c3e50;
-            border: 1px solid #34495e;
+            background: #e8f4fd;
+            border: 1px solid #3498db;
             padding: 15px;
             margin: 10px 0;
+            border-radius: 6px;
         }
 
         .token-order {
             margin: 15px 0;
-            padding: 10px;
-            background: #34495e;
+            padding: 12px;
+            background: #ffffff;
             border-left: 4px solid #e74c3c;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
         .balance-section {
-            background: #c0392b;
+            background: #f8d7da;
             border: 2px solid #e74c3c;
             padding: 15px;
             margin: 15px 0;
+            border-radius: 6px;
+            color: #721c24;
         }
 
         .divider {
-            border-top: 2px solid #3498db;
+            border-top: 2px solid #27ae60;
             margin: 20px 0;
             text-align: center;
-            color: #3498db;
+            color: #27ae60;
             font-weight: bold;
             padding: 10px;
         }
@@ -399,6 +469,14 @@
             .summary-grid {
                 grid-template-columns: 1fr;
             }
+
+            .header h1 {
+                font-size: 18px;
+            }
+
+            .header p {
+                font-size: 12px;
+            }
         }
 
         @media print {
@@ -418,176 +496,185 @@
                 display: block !important;
                 box-shadow: none;
                 padding: 0;
+                background: white;
             }
 
             .section-title {
-                background: #333 !important;
-                color: white !important;
+                background: #27ae60 !important;
+                color: black !important;
                 -webkit-print-color-adjust: exact;
+            }
+
+            .info-item {
+                border-bottom: 1px solid #ddd;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Header Section -->
-        <div class="header">
-            <h1>📊 মিটার তথ্য লুকআপ সিস্টেম</h1>
-            <p>গ্রাহকের সম্পূর্ণ তথ্য দেখুন</p>
+<div class="container">
+    <!-- Header Section -->
+    <div class="header">
+        <h1>BANGLADESH POWER DEVELOPMENT BOARD (BPDB)</h1>
+        <p>Customer/Meter Information</p>
+    </div>
+
+    <!-- Search Section -->
+    <div class="search-section" id="searchSection">
+        <div class="type-selector">
+            <button class="type-btn active" id="prepaidBtn" onclick="selectType('prepaid')">
+                ⚡ প্রিপেইড মিটার
+            </button>
+            <button class="type-btn" id="postpaidBtn" onclick="selectType('postpaid')">
+                💳 পোস্টপেইড মিটার
+            </button>
         </div>
 
-        <!-- Search Section -->
-        <div class="search-section" id="searchSection">
+        <!-- Postpaid Options -->
+        <div class="postpaid-options" id="postpaidOptions" style="display: none; margin-bottom: 15px;">
             <div class="type-selector">
-                <button class="type-btn active" id="prepaidBtn" onclick="selectType('prepaid')">
-                    ⚡ প্রিপেইড মিটার
+                <button class="type-btn active" id="consumerNoOption" onclick="selectPostpaidType('consumer_no')">
+                    👤 গ্রাহক নং
                 </button>
-                <button class="type-btn" id="postpaidBtn" onclick="selectType('postpaid')">
-                    💳 পোস্টপেইড মিটার
+                <button class="type-btn" id="meterNoOption" onclick="selectPostpaidType('meter_no')">
+                    🔢 মিটার নং
                 </button>
-                </div>
+            </div>
+        </div>
 
-<!-- ADD POSTPAID OPTIONS HERE -->
-<div class="postpaid-options" id="postpaidOptions" style="display: none; margin-bottom: 15px;">
-    <div class="type-selector">
-        <button class="type-btn active" id="consumerNoOption" onclick="selectPostpaidType('consumer_no')">
-            👤 গ্রাহক নং
-        </button>
-        <button class="type-btn" id="meterNoOption" onclick="selectPostpaidType('meter_no')">
-            🔢 মিটার নং
-        </button>
+        <!-- Search Input Row -->
+        <div class="search-row">
+            <input type="text" id="searchInput" class="search-input"
+                   placeholder="১২ ডিজিটের মিটার নং লিখুন" autofocus>
+            <button onclick="fetchData()" id="searchBtn" class="search-btn">
+                🔍 খুঁজুন
+            </button>
+        </div>
+
+        <div class="loading" id="loading">
+            ⏳ ডেটা লোড হচ্ছে, অনুগ্রহ করে অপেক্ষা করুন...
+        </div>
+
+        <div class="error" id="error"></div>
+    </div>
+
+    <!-- Data Display Section -->
+    <div class="data-section" id="dataSection">
+        <div id="dataContent">
+            <!-- Data will be populated by JavaScript -->
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <button class="btn btn-print" onclick="window.print()">
+                🖨️ প্রিন্ট
+            </button>
+            <button class="btn btn-pdf" onclick="saveAsPDF()">
+                📄 PDF সেভ
+            </button>
+            <button class="btn btn-new-search" onclick="showSearchSection()">
+                🔄 নতুন খোঁজ
+            </button>
+            <button class="btn btn-close" onclick="closeLookup()">
+                ✕ বন্ধ
+            </button>
+        </div>
     </div>
 </div>
 
-<div class="search-row">
-            </div>
-
-            <div class="search-row">
-                <input type="text" id="searchInput" class="search-input" 
-                       placeholder="১২ ডিজিটের মিটার নং লিখুন" autofocus>
-                <button onclick="fetchData()" id="searchBtn" class="search-btn">
-                    🔍 খুঁজুন
-                </button>
-            </div>
-
-            <div class="loading" id="loading">
-                ⏳ ডেটা লোড হচ্ছে, অনুগ্রহ করে অপেক্ষা করুন...
-            </div>
-
-            <div class="error" id="error"></div>
-        </div>
-
-        <!-- Data Display Section -->
-        <div class="data-section" id="dataSection">
-            <div id="dataContent">
-                <!-- Data will be populated by JavaScript -->
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="action-buttons">
-                <button class="btn btn-print" onclick="window.print()">
-                    🖨️ প্রিন্ট
-                </button>
-                <button class="btn btn-pdf" onclick="saveAsPDF()">
-                    📄 PDF সেভ
-                </button>
-                <button class="btn btn-new-search" onclick="showSearchSection()">
-                    🔄 নতুন খোঁজ
-                </button>
-                <button class="btn btn-close" onclick="closeLookup()">
-                    ✕ বন্ধ
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <script>
+<script>
         let currentType = 'prepaid';
+        let postpaidSubType = 'consumer_no';
 
-// ADD THESE LINES HERE
-let postpaidSubType = 'consumer_no';
+        function selectPostpaidType(subType) {
+            postpaidSubType = subType;
+            document.getElementById('consumerNoOption').classList.toggle('active', subType === 'consumer_no');
+            document.getElementById('meterNoOption').classList.toggle('active', subType === 'meter_no');
+            updateInputPlaceholder();
+        }
 
-function selectPostpaidType(subType) {
-    postpaidSubType = subType;
-    document.getElementById('consumerNoOption').classList.toggle('active', subType === 'consumer_no');
-    document.getElementById('meterNoOption').classList.toggle('active', subType === 'meter_no');
-    updateInputPlaceholder();
-}
-
-function updateInputPlaceholder() {
-    const input = document.getElementById('searchInput');
-    if (currentType === 'prepaid') {
-        input.placeholder = '১২ ডিজিটের মিটার নং লিখুন';
-    } else {
-        input.placeholder = postpaidSubType === 'consumer_no' ? 'গ্রাহক নং লিখুন' : 'মিটার নং লিখুন';
-    }
-}
+        function updateInputPlaceholder() {
+            const input = document.getElementById('searchInput');
+            if (currentType === 'prepaid') {
+                input.placeholder = '১২ ডিজিটের মিটার নং লিখুন';
+            } else {
+                input.placeholder = postpaidSubType === 'consumer_no' ? 'গ্রাহক নং লিখুন' : 'মিটার নং লিখুন';
+            }
+        }
 
         function selectType(type) {
-    currentType = type;
+            currentType = type;
 
-    // Update button states
-    document.getElementById('prepaidBtn').classList.toggle('active', type === 'prepaid');
-    document.getElementById('postpaidBtn').classList.toggle('active', type === 'postpaid');
+            // Update button states
+            document.getElementById('prepaidBtn').classList.toggle('active', type === 'prepaid');
+            document.getElementById('postpaidBtn').classList.toggle('active', type === 'postpaid');
 
-    // NEW: Show/hide postpaid options
-    document.getElementById('postpaidOptions').style.display = type === 'postpaid' ? 'block' : 'none';
-    
-    // NEW: Update placeholder
-    updateInputPlaceholder();
+            // Show/hide postpaid options
+            document.getElementById('postpaidOptions').style.display = type === 'postpaid' ? 'block' : 'none';
 
-    // Clear previous results
-    clearResults();
-}
+            // Update placeholder
+            updateInputPlaceholder();
 
+            // Clear previous results
+            clearResults();
+        }
 
         function fetchData() {
-    const input = document.getElementById('searchInput').value.trim();
-    if (!input) {
-        showError('দয়া করে মিটার নং বা গ্রাহক নং লিখুন!');
-        return;
-    }
+            const input = document.getElementById('searchInput').value.trim();
+            if (!input) {
+                showError('দয়া করে মিটার নং বা গ্রাহক নং লিখুন!');
+                return;
+            }
 
-    // Validation
-    if (currentType === 'prepaid' && input.length !== 12) {
-        showError('প্রিপেইড মিটার নং ১২ ডিজিটের হতে হবে!');
-        return;
-    }
+            // Validation
+            if (currentType === 'prepaid' && input.length !== 12) {
+                showError('প্রিপেইড মিটার নং ১২ ডিজিটের হতে হবে!');
+                return;
+            }
 
-    showLoading();
+            showLoading();
 
-    // Call Android interface
-    if (window.AndroidInterface) {
-        try {
-            // Pass subType parameter for postpaid
-            const result = currentType === 'postpaid' 
-                ? AndroidInterface.fetchLookupData(input, currentType, postpaidSubType)
-                : AndroidInterface.fetchLookupData(input, currentType, "none");
-                
-            const data = JSON.parse(result);
-            console.log("📊 Received data from Android:", data);
-            displayData(data);
-        } catch (err) {
-            showError('ডেটা লোড করতে সমস্যা হয়েছে: ' + err.message);
+            // Call Android interface
+            if (window.AndroidInterface) {
+                try {
+                    // Pass subType parameter for postpaid
+                    const result = currentType === 'postpaid'
+                        ? AndroidInterface.fetchLookupData(input, currentType, postpaidSubType)
+                        : AndroidInterface.fetchLookupData(input, currentType, "none");
+
+                    const data = JSON.parse(result);
+                    console.log("📊 Received data from Android:", data);
+                    displayData(data);
+                } catch (err) {
+                    showError('ডেটা লোড করতে সমস্যা হয়েছে: ' + err.message);
+                }
+            } else {
+                showError('AndroidInterface পাওয়া যায়নি');
+            }
         }
-    } else {
-        showError('AndroidInterface পাওয়া যায়নি');
-    }
-}
 
         function displayData(data) {
             hideLoading();
+
+            // SIMPLE CONSOLE LOGS - These will show in PowerShell
+            console.log("=== FULL DATA DUMP ===");
+            console.log(JSON.stringify(data, null, 2));
+            console.log("=== METER READINGS CHECK ===");
+            console.log("meter_readings exists:", !!data.meter_readings);
+            if (data.meter_readings) {
+                console.log("meter_readings content:", JSON.stringify(data.meter_readings, null, 2));
+            }
+            console.log("=== ALL KEYS ===");
+            console.log(Object.keys(data).join(', '));
 
             if (data.error) {
                 showError(data.error);
                 return;
             }
 
-            // Show data section and hide search
             document.getElementById('searchSection').style.display = 'none';
             document.getElementById('dataSection').style.display = 'block';
 
-            // Generate and display formatted data
             const dataContent = document.getElementById('dataContent');
             dataContent.innerHTML = generateFormattedHTML(data);
         }
@@ -624,11 +711,10 @@ function updateInputPlaceholder() {
                             <div class="info-grid">`;
 
                 const prepaidFields = [
-                    'Address', 'Installation Date', 'Sanctioned Load', 'Sub Division', 
-                    'Lock Status', 'Name', 'Tariff Category', 'Total Recharge This Month',
-                    'Consumer Number', 'Phone', 'Meter Type', 'Connection Category', 
-                    'Division', 'Meter Number', 'Last Recharge Time', 'Account Type', 
-                    'Last Recharge Amount'
+                    'Name', 'Address', 'Sanctioned Load', 'Sub Division',
+                    'Tariff Category','Consumer Number', 'Phone', 'Meter Type', 'Connection Category',
+                    'Division', 'Meter Number','Lock Status', 'Installation Date', 'Last Recharge Time', 'Account Type',
+                    'Last Recharge Amount', 'Total Recharge This Month'
                 ];
 
                 prepaidFields.forEach(field => {
@@ -671,14 +757,14 @@ function updateInputPlaceholder() {
 
                 // Personal Information
                 const personalFields = ['Customer Name', 'Father Name', 'Customer Address'];
-                const hasPersonalInfo = personalFields.some(field => 
+                const hasPersonalInfo = personalFields.some(field =>
                     data.customer_info[field] && data.customer_info[field] !== 'N/A' && data.customer_info[field] !== 'null'
                 );
 
                 if (hasPersonalInfo) {
                     html += `<div class="subsection-title">📋 PERSONAL INFORMATION</div>
                              <div class="info-grid">`;
-                    
+
                     personalFields.forEach(field => {
                         if (data.customer_info[field] && data.customer_info[field] !== 'N/A' && data.customer_info[field] !== 'null') {
                             html += `<div class="info-item">
@@ -691,15 +777,18 @@ function updateInputPlaceholder() {
                 }
 
                 // Meter Information
-                const meterFields = ['Meter Number', 'Meter Status', 'Connection Date'];
-                const hasMeterInfo = meterFields.some(field => 
+                const meterFields = [
+                    'Meter Number', 'Meter Condition', 'Meter Status',
+                    'Connection Date'
+                ];
+                const hasMeterInfo = meterFields.some(field =>
                     data.customer_info[field] && data.customer_info[field] !== 'N/A' && data.customer_info[field] !== 'null'
                 );
 
                 if (hasMeterInfo) {
                     html += `<div class="subsection-title">🔧 METER INFORMATION</div>
                              <div class="info-grid">`;
-                    
+
                     meterFields.forEach(field => {
                         if (data.customer_info[field] && data.customer_info[field] !== 'N/A' && data.customer_info[field] !== 'null') {
                             html += `<div class="info-item">
@@ -712,15 +801,18 @@ function updateInputPlaceholder() {
                 }
 
                 // Billing Information
-                const billingFields = ['Customer Number', 'Location Code', 'Bill Group', 'Account_Number'];
-                const hasBillingInfo = billingFields.some(field => 
+                const billingFields = [
+                    'Customer Number', 'Location Code', 'Area Code', 'Bill Group',
+                    'Book Number', 'Account_Number', 'Walk Order'
+                ];
+                const hasBillingInfo = billingFields.some(field =>
                     data.customer_info[field] && data.customer_info[field] !== 'N/A' && data.customer_info[field] !== 'null'
                 );
 
                 if (hasBillingInfo) {
                     html += `<div class="subsection-title">💳 BILLING INFORMATION</div>
                              <div class="info-grid">`;
-                    
+
                     billingFields.forEach(field => {
                         if (data.customer_info[field] && data.customer_info[field] !== 'N/A' && data.customer_info[field] !== 'null') {
                             html += `<div class="info-item">
@@ -732,16 +824,42 @@ function updateInputPlaceholder() {
                     html += `</div>`;
                 }
 
+                // Tariff & Load Information
+                const tariffFields = [
+                    'Tariff','Sanctioned Load', 'Connection Category', 'Account Type'
+                ];
+                const hasTariffInfo = tariffFields.some(field =>
+                    data.customer_info[field] && data.customer_info[field] !== 'N/A' && data.customer_info[field] !== 'null'
+                );
+
+                if (hasTariffInfo) {
+                    html += `<div class="subsection-title">⚡ TARIFF & LOAD INFORMATION</div>
+                             <div class="info-grid">`;
+
+                    tariffFields.forEach(field => {
+                        if (data.customer_info[field] && data.customer_info[field] !== 'N/A' && data.customer_info[field] !== 'null') {
+                            html += `<div class="info-item">
+                                        <span class="info-label">• ${field}:</span>
+                                        <span class="info-value">${data.customer_info[field]}</span>
+                                     </div>`;
+                        }
+                    });
+                    html += `</div>`;
+                }
+
                 // Technical Information
-                const technicalFields = ['Usage Type', 'Description', 'Start Bill Cycle'];
-                const hasTechnicalInfo = technicalFields.some(field => 
+                const technicalFields = [
+                    'Usage Type', 'Description', 'Start Bill Cycle',
+                    'Division', 'Sub Division', 'Phone'
+                ];
+                const hasTechnicalInfo = technicalFields.some(field =>
                     data.customer_info[field] && data.customer_info[field] !== 'N/A' && data.customer_info[field] !== 'null'
                 );
 
                 if (hasTechnicalInfo) {
                     html += `<div class="subsection-title">⚙️ TECHNICAL INFORMATION</div>
                              <div class="info-grid">`;
-                    
+
                     technicalFields.forEach(field => {
                         if (data.customer_info[field] && data.customer_info[field] !== 'N/A' && data.customer_info[field] !== 'null') {
                             html += `<div class="info-item">
@@ -753,16 +871,20 @@ function updateInputPlaceholder() {
                     html += `</div>`;
                 }
 
-                // Meter Readings
-                const readingFields = ['Current Reading SR', 'Last Bill Reading SR', 'Last Bill Reading OF PK', 'Last Bill Reading PK'];
-                const hasReadings = readingFields.some(field => 
+                // Meter Readings & Balance
+                const readingFields = [
+                    'Current Reading SR', 'Last Bill Reading SR',
+                    'Last Bill Reading OF PK', 'Last Bill Reading PK',
+                    'Arrear Amount', 'Total Balance'
+                ];
+                const hasReadings = readingFields.some(field =>
                     data.customer_info[field] && data.customer_info[field] !== 'N/A' && data.customer_info[field] !== 'null'
                 );
 
                 if (hasReadings) {
-                    html += `<div class="subsection-title">📊 METER READINGS</div>
+                    html += `<div class="subsection-title">📊 METER READINGS & BALANCE</div>
                              <div class="info-grid">`;
-                    
+
                     readingFields.forEach(field => {
                         if (data.customer_info[field] && data.customer_info[field] !== 'N/A' && data.customer_info[field] !== 'null') {
                             html += `<div class="info-item">
@@ -774,51 +896,117 @@ function updateInputPlaceholder() {
                     html += `</div>`;
                 }
 
+                // METER READING DETAILS FROM API
+                if (data.meter_readings && Object.keys(data.meter_readings).length > 0) {
+                    html += `<div class="terminal-section">
+                                <div class="subsection-title">🔢 DETAILED METER READINGS</div>
+                                <div class="info-grid">`;
+
+                    const readings = data.meter_readings;
+
+                    // Current Readings
+                    if (readings.CLS_KWH_SR_RDNG && readings.CLS_KWH_SR_RDNG > 0) {
+                        html += `<div class="info-item">
+                                    <span class="info-label">• Current SR Reading:</span>
+                                    <span class="info-value">${readings.CLS_KWH_SR_RDNG} kWh</span>
+                                 </div>`;
+                    }
+
+                    if (readings.CLS_KWH_PK_RDNG && readings.CLS_KWH_PK_RDNG > 0) {
+                        html += `<div class="info-item">
+                                    <span class="info-label">• Current PK Reading:</span>
+                                    <span class="info-value">${readings.CLS_KWH_PK_RDNG} kWh</span>
+                                 </div>`;
+                    }
+
+                    if (readings.CLS_KWH_OFPK_RDNG && readings.CLS_KWH_OFPK_RDNG > 0) {
+                        html += `<div class="info-item">
+                                    <span class="info-label">• Current OFPK Reading:</span>
+                                    <span class="info-value">${readings.CLS_KWH_OFPK_RDNG} kWh</span>
+                                 </div>`;
+                    }
+
+                    // Reading Dates
+                    if (readings.PREV_READING_DATE && readings.PREV_READING_DATE !== 'N/A') {
+                        html += `<div class="info-item">
+                                    <span class="info-label">• Previous Reading Date:</span>
+                                    <span class="info-value">${formatDate(readings.PREV_READING_DATE)}</span>
+                                 </div>`;
+                    }
+
+                    if (readings.CURR_READING_DATE && readings.CURR_READING_DATE !== 'N/A') {
+                        html += `<div class="info-item">
+                                    <span class="info-label">• Current Reading Date:</span>
+                                    <span class="info-value">${formatDate(readings.CURR_READING_DATE)}</span>
+                                 </div>`;
+                    }
+
+                    html += `</div></div>`;
+                }
+
+                // ✅ NEW: Show data status for prepaid customers
+                if (data.data_status) {
+                    html += `<div class="subsection-title">ℹ️ DATA STATUS</div>
+                             <div class="info-grid">
+                                <div class="info-item">
+                                    <span class="info-label">• Data Source:</span>
+                                    <span class="info-value">`;
+
+                    if (data.data_status === 'complete') {
+                        html += `✅ Complete (Prepaid + Postpaid History)`;
+                    } else if (data.data_status === 'prepaid_only') {
+                        html += `📱 Prepaid Only (No Postpaid History)`;
+                    } else {
+                        html += `${data.data_status}`;
+                    }
+
+                    html += `</span>
+                                </div>
+                             </div>`;
+                }
+
                 html += `</div>`;
             }
 
-            // BILL SUMMARY
-            if (data.bill_summary) {
-                html += `<div class="terminal-section">
-                            <div class="section-title">📊 BILL SUMMARY</div>
-                            <div class="info-grid">`;
+           // BILL SUMMARY - Simplified to match desired format
+if (data.bill_summary) {
+    html += `<div class="terminal-section">
+                <div class="section-title">📊 BILL SUMMARY</div>
+                <div class="info-grid">`;
 
-                const summary = data.bill_summary;
-                const firstBill = data.bill_info && data.bill_info.length > 0 ? data.bill_info[data.bill_info.length - 1] : null;
-                const lastBill = data.bill_info && data.bill_info.length > 0 ? data.bill_info[0] : null;
+    const summary = data.bill_summary;
 
-                if (firstBill && firstBill.BILL_MONTH) {
-                    html += `<div class="info-item">
-                                <span class="info-label">First Bill Period</span>
-                                <span class="info-value">${formatBillMonth(firstBill.BILL_MONTH)}</span>
-                             </div>`;
-                }
+    html += `<div class="info-item">
+                <span class="info-label">Last Bill Period</span>
+                <span class="info-value">${summary.latest_bill_date || 'N/A'}</span>
+             </div>
+             <div class="info-item">
+                <span class="info-label">First Bill Period</span>
+                <span class="info-value">${summary.first_bill_date || 'N/A'}</span>
+             </div>
+             <div class="info-item">
+                <span class="info-label">Total Bills</span>
+                <span class="info-value">${summary.total_bills || 0}</span>
+             </div>
+             <div class="info-item">
+                <span class="info-label">Total Amount</span>
+                <span class="info-value">৳${((summary.total_amount || 0)).toFixed(0)}</span>
+             </div>
+             <div class="info-item">
+                <span class="info-label">Total Paid</span>
+                <span class="info-value">৳${((summary.total_paid || 0)).toFixed(0)}</span>
+             </div>
+             <div class="info-item">
+                <span class="info-label">Latest Consumption</span>
+                <span class="info-value">${(summary.latest_consumption || 0).toFixed(2)} kWh</span>
+             </div>
+             <div class="info-item">
+                <span class="info-label">Latest Bill Amount</span>
+                <span class="info-value">৳${((summary.latest_total_amount || 0)).toFixed(0)}</span>
+             </div>`;
 
-                if (lastBill && lastBill.BILL_MONTH) {
-                    html += `<div class="info-item">
-                                <span class="info-label">Last Bill Period</span>
-                                <span class="info-value">${formatBillMonth(lastBill.BILL_MONTH)}</span>
-                             </div>`;
-                }
-
-                html += `<div class="info-item">
-                            <span class="info-label">Total Bills</span>
-                            <span class="info-value">${summary.total_bills || (data.bill_info ? data.bill_info.length : 0)}</span>
-                         </div>
-                         <div class="info-item">
-                            <span class="info-label">Total Amount</span>
-                            <span class="info-value">৳${((summary.total_amount || 0)).toFixed(0)}</span>
-                         </div>
-                         <div class="info-item">
-                            <span class="info-label">Total Paid</span>
-                            <span class="info-value">৳${((summary.total_paid || 0)).toFixed(0)}</span>
-                         </div>
-                         <div class="info-item">
-                            <span class="info-label">Arrears</span>
-                            <span class="info-value">৳${((summary.arrears || 0)).toFixed(0)}</span>
-                         </div>
-                         </div></div>`;
-            }
+    html += `</div></div>`;
+}
 
             // BALANCE INFORMATION
             if (data.balance_info && Object.keys(data.balance_info).length > 0) {
@@ -827,7 +1015,7 @@ function updateInputPlaceholder() {
                             <div class="info-grid">`;
 
                 const balanceOrder = ['Total Balance', 'Arrear Amount', 'PRN', 'LPS', 'VAT'];
-                
+
                 balanceOrder.forEach(key => {
                     if (data.balance_info[key] && data.balance_info[key] !== 'N/A' && data.balance_info[key] !== '') {
                         html += `<div class="info-item">
@@ -862,7 +1050,7 @@ function updateInputPlaceholder() {
 
                 // Show only last 5 bills for better readability
                 const displayBills = data.bill_info.slice(0, 5);
-                
+
                 displayBills.forEach(bill => {
                     const balance = parseFloat(bill.BALANCE) || 0;
                     const balanceClass = balance === 0 ? 'amount-positive' : 'amount-negative';
@@ -881,13 +1069,13 @@ function updateInputPlaceholder() {
                 });
 
                 html += `</tbody></table></div>`;
-                
+
                 if (data.bill_info.length > 5) {
                     html += `<div class="terminal-line" style="text-align: center; color: #bdc3c7; margin-top: 10px;">
                                 ... and ${data.bill_info.length - 5} more bills
                              </div>`;
                 }
-                
+
                 html += `</div>`;
             }
 
@@ -919,7 +1107,7 @@ function updateInputPlaceholder() {
         function formatDate(dateString) {
             if (!dateString || dateString === 'N/A' || dateString === 'null') return '—';
             try {
-                return dateString.contains("T") ? dateString.split("T")[0] : dateString;
+                return dateString.includes("T") ? dateString.split("T")[0] : dateString;
             } catch (e) {
                 return dateString;
             }
