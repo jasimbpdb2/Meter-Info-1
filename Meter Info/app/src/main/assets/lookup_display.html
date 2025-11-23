@@ -631,6 +631,7 @@
                 showError('প্রিপেইড মিটার নং ১২ ডিজিটের হতে হবে!');
                 return;
             }
+            document.getElementById('searchInput').blur();
 
             showLoading();
 
@@ -877,11 +878,11 @@
 
      html += `<div class="info-item">
                  <span class="info-label">Last Bill Period</span>
-                 <span class="info-value">${summary.latest_bill_date || 'N/A'}</span>
+                 <span class="info-value">${formatBillMonth(summary.latest_bill_date) || 'N/A'}</span>
               </div>
               <div class="info-item">
                  <span class="info-label">First Bill Period</span>
-                 <span class="info-value">${summary.first_bill_date || 'N/A'}</span>
+                 <span class="info-value">${formatBillMonth(summary.first_bill_date) || 'N/A'}</span>
               </div>
               <div class="info-item">
                  <span class="info-label">Total Bills</span>
@@ -906,26 +907,22 @@
 
      html += `</div></div>`;
  }
+// BALANCE INFORMATION - Show only one line
+if (data.balance_info && Object.keys(data.balance_info).length > 0) {
+    html += `<div class="terminal-section">
+                <div class="subsection-title">💰 FINAL BALANCE DETAILS</div>
+                <div class="info-grid">`;
 
- // BALANCE INFORMATION
- if (data.balance_info && Object.keys(data.balance_info).length > 0) {
-     html += `<div class="terminal-section">
-                 <div class="subsection-title">💰 FINAL BALANCE DETAILS</div>
-                 <div class="info-grid">`;
+    // Show only Total Balance with details
+    if (data.balance_info['Total Balance']) {
+        html += `<div class="info-item">
+                    <span class="info-label">• Total Balance:</span>
+                    <span class="info-value">${data.balance_info['Total Balance']}</span>
+                 </div>`;
+    }
 
-     const balanceOrder = ['Total Balance', 'Arrear Amount', 'PRN', 'LPS', 'VAT'];
-
-     balanceOrder.forEach(key => {
-         if (data.balance_info[key] && data.balance_info[key] !== 'N/A' && data.balance_info[key] !== '') {
-             html += `<div class="info-item">
-                         <span class="info-label">• ${key}:</span>
-                         <span class="info-value">${data.balance_info[key]}</span>
-                      </div>`;
-         }
-     });
-
-     html += `</div></div>`;
- }
+    html += `</div></div>`;
+}
 
  // BILL TABLE
  if (data.bill_info && data.bill_info.length > 0) {
@@ -982,35 +979,43 @@
 }
 
         function formatBillMonth(dateStr) {
-            if (!dateStr || dateStr === 'N/A') return 'N/A';
+    if (!dateStr || dateStr === 'N/A') return 'N/A';
 
-            try {
-                if (dateStr.includes('-')) {
-                    const [year, month] = dateStr.split('-');
-                    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    try {
+        // Handle "2025-10-01T00:00:00" format
+        if (dateStr.includes('T')) {
+            dateStr = dateStr.split('T')[0];
+        }
+        
+        if (dateStr.includes('-')) {
+            const [year, month] = dateStr.split('-');
+            const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-                    if (month && year) {
-                        const monthIndex = parseInt(month) - 1;
-                        if (monthIndex >= 0 && monthIndex < 12) {
-                            return `${monthNames[monthIndex]}-${year}`;
-                        }
-                    }
+            if (month && year) {
+                const monthIndex = parseInt(month) - 1;
+                if (monthIndex >= 0 && monthIndex < 12) {
+                    // For older dates, show full year. For recent dates, show short year
+                    const displayYear = parseInt(year) > 2000 ? year.substring(2) : year;
+                    return `${monthNames[monthIndex]}-${displayYear}`;
                 }
-                return dateStr;
-            } catch (e) {
-                return dateStr;
             }
         }
+        return dateStr;
+    } catch (e) {
+        return dateStr;
+    }
+}
 
-        function formatDate(dateString) {
-            if (!dateString || dateString === 'N/A' || dateString === 'null') return '—';
-            try {
-                return dateString.includes("T") ? dateString.split("T")[0] : dateString;
-            } catch (e) {
-                return dateString;
-            }
-        }
+function formatDate(dateString) {
+    if (!dateString || dateString === 'N/A' || dateString === 'null') return '—';
+    try {
+        // Remove time part if present
+        return dateString.includes("T") ? dateString.split("T")[0] : dateString;
+    } catch (e) {
+        return dateString;
+    }
+}
 
         function showLoading() {
             document.getElementById("loading").style.display = "block";
