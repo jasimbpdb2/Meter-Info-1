@@ -750,151 +750,53 @@
                 html += `</div>`;
             }
 
-            // CUSTOMER INFORMATION FROM SERVER
-            if (data.customer_info && Object.keys(data.customer_info).length > 0) {
-                html += `<div class="terminal-section">
-                            <div class="section-title">👤 CUSTOMER INFORMATION</div>`;
+            // CUSTOMER INFORMATION - SINGLE FLAT VIEW
+if (data.customer_info && Object.keys(data.customer_info).length > 0) {
+    html += `<div class="terminal-section">
+                <div class="section-title">👤 CUSTOMER INFORMATION</div>
+                <div class="info-grid">`;
 
-                // Personal Information
-                const personalFields = ['Customer Name', 'Father Name', 'Customer Address'];
-                const hasPersonalInfo = personalFields.some(field =>
-                    data.customer_info[field] && data.customer_info[field] !== 'N/A' && data.customer_info[field] !== 'null'
-                );
+    // All fields in logical order (single flat list)
+    const allFields = [
+        // Core Identification
+        'Customer Number', 'Customer Name', 'Father Name', 
+        
+        // Contact & Location
+        'Customer Address', 'Phone', 'Division', 'Sub Division',
+        
+        // Meter Details
+        'Meter Number', 'Meter Condition', 'Meter Status', 'Connection Date',
+        
+        // Billing Details  
+        'Location Code', 'Area Code', 'Bill Group', 'Book Number',
+        'Account_Number', 'Walk Order',
+        
+        // Tariff & Technical
+        'Tariff', 'Sanctioned Load', 'Connection Category', 'Account Type',
+        'Usage Type', 'Description', 'Start Bill Cycle',
+        
+        // Readings & Balance
+        'Current Reading SR', 'Last Bill Reading SR',
+        'Last Bill Reading OF PK', 'Last Bill Reading PK',
+        'Arrear Amount', 'Total Balance'
+    ];
 
-                if (hasPersonalInfo) {
-                    html += `<div class="subsection-title">📋 PERSONAL INFORMATION</div>
-                             <div class="info-grid">`;
+    // Display all valid fields in single list
+    allFields.forEach(field => {
+        if (data.customer_info[field] && 
+            data.customer_info[field] !== 'N/A' && 
+            data.customer_info[field] !== 'null' &&
+            data.customer_info[field] !== '') {
+            
+            html += `<div class="info-item">
+                        <span class="info-label">• ${field}:</span>
+                        <span class="info-value">${data.customer_info[field]}</span>
+                     </div>`;
+        }
+    });
 
-                    personalFields.forEach(field => {
-                        if (data.customer_info[field] && data.customer_info[field] !== 'N/A' && data.customer_info[field] !== 'null') {
-                            html += `<div class="info-item">
-                                        <span class="info-label">• ${field}:</span>
-                                        <span class="info-value">${data.customer_info[field]}</span>
-                                     </div>`;
-                        }
-                    });
-                    html += `</div>`;
-                }
-
-                // Meter Information
-                const meterFields = [
-                    'Meter Number', 'Meter Condition', 'Meter Status',
-                    'Connection Date'
-                ];
-                const hasMeterInfo = meterFields.some(field =>
-                    data.customer_info[field] && data.customer_info[field] !== 'N/A' && data.customer_info[field] !== 'null'
-                );
-
-                if (hasMeterInfo) {
-                    html += `<div class="subsection-title">🔧 METER INFORMATION</div>
-                             <div class="info-grid">`;
-
-                    meterFields.forEach(field => {
-                        if (data.customer_info[field] && data.customer_info[field] !== 'N/A' && data.customer_info[field] !== 'null') {
-                            html += `<div class="info-item">
-                                        <span class="info-label">• ${field}:</span>
-                                        <span class="info-value">${data.customer_info[field]}</span>
-                                     </div>`;
-                        }
-                    });
-                    html += `</div>`;
-                }
-
-                // Billing Information
-                const billingFields = [
-                    'Customer Number', 'Location Code', 'Area Code', 'Bill Group',
-                    'Book Number', 'Account_Number', 'Walk Order'
-                ];
-                const hasBillingInfo = billingFields.some(field =>
-                    data.customer_info[field] && data.customer_info[field] !== 'N/A' && data.customer_info[field] !== 'null'
-                );
-
-                if (hasBillingInfo) {
-                    html += `<div class="subsection-title">💳 BILLING INFORMATION</div>
-                             <div class="info-grid">`;
-
-                    billingFields.forEach(field => {
-                        if (data.customer_info[field] && data.customer_info[field] !== 'N/A' && data.customer_info[field] !== 'null') {
-                            html += `<div class="info-item">
-                                        <span class="info-label">• ${field}:</span>
-                                        <span class="info-value">${data.customer_info[field]}</span>
-                                     </div>`;
-                        }
-                    });
-                    html += `</div>`;
-                }
-
-                // Tariff & Load Information
-                const tariffFields = [
-                    'Tariff','Sanctioned Load', 'Connection Category', 'Account Type'
-                ];
-                const hasTariffInfo = tariffFields.some(field =>
-                    data.customer_info[field] && data.customer_info[field] !== 'N/A' && data.customer_info[field] !== 'null'
-                );
-
-                if (hasTariffInfo) {
-                    html += `<div class="subsection-title">⚡ TARIFF & LOAD INFORMATION</div>
-                             <div class="info-grid">`;
-
-                    tariffFields.forEach(field => {
-                        if (data.customer_info[field] && data.customer_info[field] !== 'N/A' && data.customer_info[field] !== 'null') {
-                            html += `<div class="info-item">
-                                        <span class="info-label">• ${field}:</span>
-                                        <span class="info-value">${data.customer_info[field]}</span>
-                                     </div>`;
-                        }
-                    });
-                    html += `</div>`;
-                }
-
-                // Technical Information
-                const technicalFields = [
-                    'Usage Type', 'Description', 'Start Bill Cycle',
-                    'Division', 'Sub Division', 'Phone'
-                ];
-                const hasTechnicalInfo = technicalFields.some(field =>
-                    data.customer_info[field] && data.customer_info[field] !== 'N/A' && data.customer_info[field] !== 'null'
-                );
-
-                if (hasTechnicalInfo) {
-                    html += `<div class="subsection-title">⚙️ TECHNICAL INFORMATION</div>
-                             <div class="info-grid">`;
-
-                    technicalFields.forEach(field => {
-                        if (data.customer_info[field] && data.customer_info[field] !== 'N/A' && data.customer_info[field] !== 'null') {
-                            html += `<div class="info-item">
-                                        <span class="info-label">• ${field}:</span>
-                                        <span class="info-value">${data.customer_info[field]}</span>
-                                     </div>`;
-                        }
-                    });
-                    html += `</div>`;
-                }
-
-                // Meter Readings & Balance
-                const readingFields = [
-                    'Current Reading SR', 'Last Bill Reading SR',
-                    'Last Bill Reading OF PK', 'Last Bill Reading PK',
-                    'Arrear Amount', 'Total Balance'
-                ];
-                const hasReadings = readingFields.some(field =>
-                    data.customer_info[field] && data.customer_info[field] !== 'N/A' && data.customer_info[field] !== 'null'
-                );
-
-                if (hasReadings) {
-                    html += `<div class="subsection-title">📊 METER READINGS & BALANCE</div>
-                             <div class="info-grid">`;
-
-                    readingFields.forEach(field => {
-                        if (data.customer_info[field] && data.customer_info[field] !== 'N/A' && data.customer_info[field] !== 'null') {
-                            html += `<div class="info-item">
-                                        <span class="info-label">• ${field}:</span>
-                                        <span class="info-value">${data.customer_info[field]}</span>
-                                     </div>`;
-                        }
-                    });
-                    html += `</div>`;
-                }
+    html += `</div></div>`;
+}
 
                 // METER READING DETAILS FROM API
                 if (data.meter_readings && Object.keys(data.meter_readings).length > 0) {
