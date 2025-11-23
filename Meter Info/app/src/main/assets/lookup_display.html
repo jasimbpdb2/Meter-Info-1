@@ -750,239 +750,236 @@
                 html += `</div>`;
             }
 
-            // CUSTOMER INFORMATION - SINGLE FLAT VIEW
-if (data.customer_info && Object.keys(data.customer_info).length > 0) {
-    html += `<div class="terminal-section">
-                <div class="section-title">👤 CUSTOMER INFORMATION</div>
-                <div class="info-grid">`;
+             // CUSTOMER INFORMATION - SINGLE FLAT VIEW
+ if (data.customer_info && Object.keys(data.customer_info).length > 0) {
+     html += `<div class="terminal-section">
+                 <div class="section-title">👤 CUSTOMER INFORMATION</div>
+                 <div class="info-grid">`;
 
-    // All fields in logical order (single flat list)
-    const allFields = [
-        // Core Identification
-        'Customer Number', 'Customer Name', 'Father Name', 
-        
-        // Contact & Location
-        'Customer Address', 'Phone', 'Division', 'Sub Division',
-        
-        // Meter Details
-        'Meter Number', 'Meter Condition', 'Meter Status', 'Connection Date',
-        
-        // Billing Details  
-        'Location Code', 'Area Code', 'Bill Group', 'Book Number',
-        'Account_Number', 'Walk Order',
-        
-        // Tariff & Technical
-        'Tariff', 'Sanctioned Load', 'Connection Category', 'Account Type',
-        'Usage Type', 'Description', 'Start Bill Cycle',
-        
-        // Readings & Balance
-        'Current Reading SR', 'Last Bill Reading SR',
-        'Last Bill Reading OF PK', 'Last Bill Reading PK',
-        'Arrear Amount', 'Total Balance'
-    ];
+     // All fields in logical order (single flat list)
+     const allFields = [
+         // Core Identification
+         'Customer Number', 'Customer Name', 'Father Name', 
+         
+         // Contact & Location
+         'Customer Address', 'Phone', 'Division', 'Sub Division',
+         
+         // Meter Details
+         'Meter Number', 'Meter Condition', 'Meter Status', 'Connection Date',
+         
+         // Billing Details  
+         'Location Code', 'Area Code', 'Bill Group', 'Book Number',
+         'Account_Number', 'Walk Order',
+         
+         // Tariff & Technical
+         'Tariff', 'Sanctioned Load', 'Connection Category', 'Account Type',
+         'Usage Type', 'Description', 'Start Bill Cycle',
+         
+         // Readings & Balance
+         'Current Reading SR', 'Last Bill Reading SR',
+         'Last Bill Reading OF PK', 'Last Bill Reading PK',
+         'Arrear Amount', 'Total Balance'
+     ];
 
-    // Display all valid fields in single list
-    allFields.forEach(field => {
-        if (data.customer_info[field] && 
-            data.customer_info[field] !== 'N/A' && 
-            data.customer_info[field] !== 'null' &&
-            data.customer_info[field] !== '') {
-            
-            html += `<div class="info-item">
-                        <span class="info-label">• ${field}:</span>
-                        <span class="info-value">${data.customer_info[field]}</span>
-                     </div>`;
-        }
-    });
+     // Display all valid fields in single list
+     allFields.forEach(field => {
+         if (data.customer_info[field] && 
+             data.customer_info[field] !== 'N/A' && 
+             data.customer_info[field] !== 'null' &&
+             data.customer_info[field] !== '') {
+             
+             html += `<div class="info-item">
+                         <span class="info-label">• ${field}:</span>
+                         <span class="info-value">${data.customer_info[field]}</span>
+                      </div>`;
+         }
+     });
 
-    html += `</div></div>`;
+     html += `</div></div>`;
+ }
+
+ // METER READING DETAILS FROM API
+ if (data.meter_readings && Object.keys(data.meter_readings).length > 0) {
+     html += `<div class="terminal-section">
+                 <div class="subsection-title">🔢 DETAILED METER READINGS</div>
+                 <div class="info-grid">`;
+
+     const readings = data.meter_readings;
+
+     // Current Readings
+     if (readings.CLS_KWH_SR_RDNG && readings.CLS_KWH_SR_RDNG > 0) {
+         html += `<div class="info-item">
+                     <span class="info-label">• Current SR Reading:</span>
+                     <span class="info-value">${readings.CLS_KWH_SR_RDNG} kWh</span>
+                  </div>`;
+     }
+
+     if (readings.CLS_KWH_PK_RDNG && readings.CLS_KWH_PK_RDNG > 0) {
+         html += `<div class="info-item">
+                     <span class="info-label">• Current PK Reading:</span>
+                     <span class="info-value">${readings.CLS_KWH_PK_RDNG} kWh</span>
+                  </div>`;
+     }
+
+     if (readings.CLS_KWH_OFPK_RDNG && readings.CLS_KWH_OFPK_RDNG > 0) {
+         html += `<div class="info-item">
+                     <span class="info-label">• Current OFPK Reading:</span>
+                     <span class="info-value">${readings.CLS_KWH_OFPK_RDNG} kWh</span>
+                  </div>`;
+     }
+
+     // Reading Dates
+     if (readings.PREV_READING_DATE && readings.PREV_READING_DATE !== 'N/A') {
+         html += `<div class="info-item">
+                     <span class="info-label">• Previous Reading Date:</span>
+                     <span class="info-value">${formatDate(readings.PREV_READING_DATE)}</span>
+                  </div>`;
+     }
+
+     if (readings.CURR_READING_DATE && readings.CURR_READING_DATE !== 'N/A') {
+         html += `<div class="info-item">
+                     <span class="info-label">• Current Reading Date:</span>
+                     <span class="info-value">${formatDate(readings.CURR_READING_DATE)}</span>
+                  </div>`;
+     }
+
+     html += `</div></div>`;
+ }
+
+ // ✅ NEW: Show data status for prepaid customers
+ if (data.data_status) {
+     html += `<div class="subsection-title">ℹ️ DATA STATUS</div>
+              <div class="info-grid">
+                 <div class="info-item">
+                     <span class="info-label">• Data Source:</span>
+                     <span class="info-value">`;
+
+     if (data.data_status === 'complete') {
+         html += `✅ Complete (Prepaid + Postpaid History)`;
+     } else if (data.data_status === 'prepaid_only') {
+         html += `📱 Prepaid Only (No Postpaid History)`;
+     } else {
+         html += `${data.data_status}`;
+     }
+
+     html += `</span>
+                 </div>
+              </div>`;
+ }
+
+// BILL SUMMARY - Simplified to match desired format
+ if (data.bill_summary) {
+     html += `<div class="terminal-section">
+                 <div class="section-title">📊 BILL SUMMARY</div>
+                 <div class="info-grid">`;
+
+     const summary = data.bill_summary;
+
+     html += `<div class="info-item">
+                 <span class="info-label">Last Bill Period</span>
+                 <span class="info-value">${summary.latest_bill_date || 'N/A'}</span>
+              </div>
+              <div class="info-item">
+                 <span class="info-label">First Bill Period</span>
+                 <span class="info-value">${summary.first_bill_date || 'N/A'}</span>
+              </div>
+              <div class="info-item">
+                 <span class="info-label">Total Bills</span>
+                 <span class="info-value">${summary.total_bills || 0}</span>
+              </div>
+              <div class="info-item">
+                 <span class="info-label">Total Amount</span>
+                 <span class="info-value">৳${((summary.total_amount || 0)).toFixed(0)}</span>
+              </div>
+              <div class="info-item">
+                 <span class="info-label">Total Paid</span>
+                 <span class="info-value">৳${((summary.total_paid || 0)).toFixed(0)}</span>
+              </div>
+              <div class="info-item">
+                 <span class="info-label">Latest Consumption</span>
+                 <span class="info-value">${(summary.latest_consumption || 0).toFixed(2)} kWh</span>
+              </div>
+              <div class="info-item">
+                 <span class="info-label">Latest Bill Amount</span>
+                 <span class="info-value">৳${((summary.latest_total_amount || 0)).toFixed(0)}</span>
+              </div>`;
+
+     html += `</div></div>`;
+ }
+
+ // BALANCE INFORMATION
+ if (data.balance_info && Object.keys(data.balance_info).length > 0) {
+     html += `<div class="terminal-section">
+                 <div class="subsection-title">💰 FINAL BALANCE DETAILS</div>
+                 <div class="info-grid">`;
+
+     const balanceOrder = ['Total Balance', 'Arrear Amount', 'PRN', 'LPS', 'VAT'];
+
+     balanceOrder.forEach(key => {
+         if (data.balance_info[key] && data.balance_info[key] !== 'N/A' && data.balance_info[key] !== '') {
+             html += `<div class="info-item">
+                         <span class="info-label">• ${key}:</span>
+                         <span class="info-value">${data.balance_info[key]}</span>
+                      </div>`;
+         }
+     });
+
+     html += `</div></div>`;
+ }
+
+ // BILL TABLE
+ if (data.bill_info && data.bill_info.length > 0) {
+     html += `<div class="terminal-section">
+                 <div class="section-title">📋 BILL DETAILS</div>
+                 <div class="table-container">
+                     <table class="data-table">
+                         <thead>
+                             <tr>
+                                 <th>Bill Month</th>
+                                 <th>Bill No</th>
+                                 <th>Consumption</th>
+                                 <th>Current Bill</th>
+                                 <th>Due Date</th>
+                                 <th>Paid</th>
+                                 <th>Pay Date</th>
+                                 <th>Balance</th>
+                             </tr>
+                         </thead>
+                         <tbody>`;
+
+     // Show only last 5 bills for better readability
+     const displayBills = data.bill_info.slice(0, 5);
+
+     displayBills.forEach(bill => {
+         const balance = parseFloat(bill.BALANCE) || 0;
+         const balanceClass = balance === 0 ? 'amount-positive' : 'amount-negative';
+         const balanceDisplay = balance === 0 ? '—' : `৳${Math.abs(balance).toFixed(0)}`;
+
+         html += `<tr>
+                     <td>${formatBillMonth(bill.BILL_MONTH)}</td>
+                     <td>${bill.BILL_NO || '—'}</td>
+                     <td>${bill.CONS_KWH_SR || bill.consumption || '—'}</td>
+                     <td>৳${((bill.CURRENT_BILL || bill.TOTAL_BILL || 0)).toFixed(0)}</td>
+                     <td>${formatDate(bill.INVOICE_DUE_DATE)}</td>
+                     <td>৳${((bill.PAID_AMT || 0)).toFixed(0)}</td>
+                     <td>${formatDate(bill.RECEIPT_DATE)}</td>
+                     <td class="${balanceClass}">${balanceDisplay}</td>
+                 </tr>`;
+     });
+
+     html += `</tbody></table></div>`;
+
+     if (data.bill_info.length > 5) {
+         html += `<div class="terminal-line" style="text-align: center; color: #bdc3c7; margin-top: 10px;">
+                     ... and ${data.bill_info.length - 5} more bills
+                  </div>`;
+     }
+
+     html += `</div>`;
+ }
+
+ return html;
 }
-
-                // METER READING DETAILS FROM API
-                if (data.meter_readings && Object.keys(data.meter_readings).length > 0) {
-                    html += `<div class="terminal-section">
-                                <div class="subsection-title">🔢 DETAILED METER READINGS</div>
-                                <div class="info-grid">`;
-
-                    const readings = data.meter_readings;
-
-                    // Current Readings
-                    if (readings.CLS_KWH_SR_RDNG && readings.CLS_KWH_SR_RDNG > 0) {
-                        html += `<div class="info-item">
-                                    <span class="info-label">• Current SR Reading:</span>
-                                    <span class="info-value">${readings.CLS_KWH_SR_RDNG} kWh</span>
-                                 </div>`;
-                    }
-
-                    if (readings.CLS_KWH_PK_RDNG && readings.CLS_KWH_PK_RDNG > 0) {
-                        html += `<div class="info-item">
-                                    <span class="info-label">• Current PK Reading:</span>
-                                    <span class="info-value">${readings.CLS_KWH_PK_RDNG} kWh</span>
-                                 </div>`;
-                    }
-
-                    if (readings.CLS_KWH_OFPK_RDNG && readings.CLS_KWH_OFPK_RDNG > 0) {
-                        html += `<div class="info-item">
-                                    <span class="info-label">• Current OFPK Reading:</span>
-                                    <span class="info-value">${readings.CLS_KWH_OFPK_RDNG} kWh</span>
-                                 </div>`;
-                    }
-
-                    // Reading Dates
-                    if (readings.PREV_READING_DATE && readings.PREV_READING_DATE !== 'N/A') {
-                        html += `<div class="info-item">
-                                    <span class="info-label">• Previous Reading Date:</span>
-                                    <span class="info-value">${formatDate(readings.PREV_READING_DATE)}</span>
-                                 </div>`;
-                    }
-
-                    if (readings.CURR_READING_DATE && readings.CURR_READING_DATE !== 'N/A') {
-                        html += `<div class="info-item">
-                                    <span class="info-label">• Current Reading Date:</span>
-                                    <span class="info-value">${formatDate(readings.CURR_READING_DATE)}</span>
-                                 </div>`;
-                    }
-
-                    html += `</div></div>`;
-                }
-
-                // ✅ NEW: Show data status for prepaid customers
-                if (data.data_status) {
-                    html += `<div class="subsection-title">ℹ️ DATA STATUS</div>
-                             <div class="info-grid">
-                                <div class="info-item">
-                                    <span class="info-label">• Data Source:</span>
-                                    <span class="info-value">`;
-
-                    if (data.data_status === 'complete') {
-                        html += `✅ Complete (Prepaid + Postpaid History)`;
-                    } else if (data.data_status === 'prepaid_only') {
-                        html += `📱 Prepaid Only (No Postpaid History)`;
-                    } else {
-                        html += `${data.data_status}`;
-                    }
-
-                    html += `</span>
-                                </div>
-                             </div>`;
-                }
-
-                html += `</div>`;
-            }
-
-           // BILL SUMMARY - Simplified to match desired format
-if (data.bill_summary) {
-    html += `<div class="terminal-section">
-                <div class="section-title">📊 BILL SUMMARY</div>
-                <div class="info-grid">`;
-
-    const summary = data.bill_summary;
-
-    html += `<div class="info-item">
-                <span class="info-label">Last Bill Period</span>
-                <span class="info-value">${summary.latest_bill_date || 'N/A'}</span>
-             </div>
-             <div class="info-item">
-                <span class="info-label">First Bill Period</span>
-                <span class="info-value">${summary.first_bill_date || 'N/A'}</span>
-             </div>
-             <div class="info-item">
-                <span class="info-label">Total Bills</span>
-                <span class="info-value">${summary.total_bills || 0}</span>
-             </div>
-             <div class="info-item">
-                <span class="info-label">Total Amount</span>
-                <span class="info-value">৳${((summary.total_amount || 0)).toFixed(0)}</span>
-             </div>
-             <div class="info-item">
-                <span class="info-label">Total Paid</span>
-                <span class="info-value">৳${((summary.total_paid || 0)).toFixed(0)}</span>
-             </div>
-             <div class="info-item">
-                <span class="info-label">Latest Consumption</span>
-                <span class="info-value">${(summary.latest_consumption || 0).toFixed(2)} kWh</span>
-             </div>
-             <div class="info-item">
-                <span class="info-label">Latest Bill Amount</span>
-                <span class="info-value">৳${((summary.latest_total_amount || 0)).toFixed(0)}</span>
-             </div>`;
-
-    html += `</div></div>`;
-}
-
-            // BALANCE INFORMATION
-            if (data.balance_info && Object.keys(data.balance_info).length > 0) {
-                html += `<div class="terminal-section">
-                            <div class="subsection-title">💰 FINAL BALANCE DETAILS</div>
-                            <div class="info-grid">`;
-
-                const balanceOrder = ['Total Balance', 'Arrear Amount', 'PRN', 'LPS', 'VAT'];
-
-                balanceOrder.forEach(key => {
-                    if (data.balance_info[key] && data.balance_info[key] !== 'N/A' && data.balance_info[key] !== '') {
-                        html += `<div class="info-item">
-                                    <span class="info-label">• ${key}:</span>
-                                    <span class="info-value">${data.balance_info[key]}</span>
-                                 </div>`;
-                    }
-                });
-
-                html += `</div></div>`;
-            }
-
-            // BILL TABLE
-            if (data.bill_info && data.bill_info.length > 0) {
-                html += `<div class="terminal-section">
-                            <div class="section-title">📋 BILL DETAILS</div>
-                            <div class="table-container">
-                                <table class="data-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Bill Month</th>
-                                            <th>Bill No</th>
-                                            <th>Consumption</th>
-                                            <th>Current Bill</th>
-                                            <th>Due Date</th>
-                                            <th>Paid</th>
-                                            <th>Pay Date</th>
-                                            <th>Balance</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>`;
-
-                // Show only last 5 bills for better readability
-                const displayBills = data.bill_info.slice(0, 5);
-
-                displayBills.forEach(bill => {
-                    const balance = parseFloat(bill.BALANCE) || 0;
-                    const balanceClass = balance === 0 ? 'amount-positive' : 'amount-negative';
-                    const balanceDisplay = balance === 0 ? '—' : `৳${Math.abs(balance).toFixed(0)}`;
-
-                    html += `<tr>
-                                <td>${formatBillMonth(bill.BILL_MONTH)}</td>
-                                <td>${bill.BILL_NO || '—'}</td>
-                                <td>${bill.CONS_KWH_SR || bill.consumption || '—'}</td>
-                                <td>৳${((bill.CURRENT_BILL || bill.TOTAL_BILL || 0)).toFixed(0)}</td>
-                                <td>${formatDate(bill.INVOICE_DUE_DATE)}</td>
-                                <td>৳${((bill.PAID_AMT || 0)).toFixed(0)}</td>
-                                <td>${formatDate(bill.RECEIPT_DATE)}</td>
-                                <td class="${balanceClass}">${balanceDisplay}</td>
-                            </tr>`;
-                });
-
-                html += `</tbody></table></div>`;
-
-                if (data.bill_info.length > 5) {
-                    html += `<div class="terminal-line" style="text-align: center; color: #bdc3c7; margin-top: 10px;">
-                                ... and ${data.bill_info.length - 5} more bills
-                             </div>`;
-                }
-
-                html += `</div>`;
-            }
-
-            return html;
-        }
 
         function formatBillMonth(dateStr) {
             if (!dateStr || dateStr === 'N/A') return 'N/A';
