@@ -686,33 +686,81 @@
             console.log("🔍 Generating HTML for data:", data);
 
             // PREPAID CUSTOMER DETAILS
-            if (data.prepaid_customer_details && Object.keys(data.prepaid_customer_details).length > 0) {
-                html += `<div class="terminal-section">
-                            <div class="section-title">
-                                📋 PREPAID CUSTOMER DETAILS
-                            </div>
-                            <div class="subsection-title">👤 CUSTOMER INFORMATION</div>
-                            <div class="info-grid">`;
+if (data.prepaid_customer_details && Object.keys(data.prepaid_customer_details).length > 0) {
+    html += `<div class="terminal-section">
+                <div class="section-title">
+                    📋 PREPAID CUSTOMER DETAILS
+                </div>
+                <div class="subsection-title">👤 CUSTOMER INFORMATION</div>
+                <div class="info-grid">`;
 
-                const prepaidFields = [
-                    'Name', 'Address', 'Sanctioned Load', 'Sub Division',
-                    'Tariff Category','Consumer Number', 'Phone', 'Meter Type', 'Connection Category',
-                    'Division', 'Meter Number','Lock Status', 'Installation Date', 'Last Recharge Time', 'Account Type',
-                    'Last Recharge Amount', 'Total Recharge This Month'
-                ];
+    const prepaidFields = [
+        'Name', 'Address', 'Sanctioned Load', 'Sub Division',
+        'Tariff Category','Consumer Number', 'Phone', 'Meter Type', 'Connection Category',
+        'Division', 'Meter Number','Lock Status', 'Installation Date', 'Last Recharge Time', 'Account Type',
+        'Last Recharge Amount', 'Total Recharge This Month'
+    ];
 
-                prepaidFields.forEach(field => {
-                    if (data.prepaid_customer_details[field] && data.prepaid_customer_details[field] !== 'N/A') {
-                        html += `<div class="info-item">
-                                    <span class="info-label">• ${field}:</span>
-                                    <span class="info-value">${data.prepaid_customer_details[field]}</span>
-                                 </div>`;
-                    }
-                });
+    prepaidFields.forEach(field => {
+        let value = data.prepaid_customer_details[field];
+        
+        // Format Installation Date from "18-Sep-10" to "10-09-2018"
+        if (field === 'Installation Date' && value && value !== 'N/A') {
+            value = formatInstallationDate(value);
+        }
+        
+        if (value && value !== 'N/A') {
+            html += `<div class="info-item">
+                        <span class="info-label">• ${field}:</span>
+                        <span class="info-value">${value}</span>
+                     </div>`;
+        }
+    });
 
-                html += `</div></div>`;
+    html += `</div></div>`;
+}
+
+// Add this date formatting function
+function formatInstallationDate(dateString) {
+    try {
+        // Handle different date formats
+        if (!dateString || dateString === 'N/A') return dateString;
+        
+        // If already in correct format, return as is
+        if (dateString.match(/^\d{2}-\d{2}-\d{4}$/)) {
+            return dateString;
+        }
+        
+        // Format: "18-Sep-10" to "10-09-2018"
+        const parts = dateString.split('-');
+        if (parts.length === 3) {
+            const day = parts[0].padStart(2, '0');
+            const month = getMonthNumber(parts[1]);
+            let year = parts[2];
+            
+            // Handle 2-digit year (assume 2000s for years < 50, 1900s for years >= 50)
+            if (year.length === 2) {
+                const yearNum = parseInt(year);
+                year = (yearNum < 50) ? `20${year}` : `19${year}`;
             }
+            
+            return `${day}-${month}-${year}`;
+        }
+        
+        return dateString; // Return original if format doesn't match
+    } catch (e) {
+        return dateString; // Return original if error
+    }
+}
 
+function getMonthNumber(monthName) {
+    const months = {
+        'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04',
+        'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08',
+        'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
+    };
+    return months[monthName] || monthName;
+}
             // RECHARGE TOKENS
             if (data.recharge_history && data.recharge_history.length > 0) {
                 html += `<div class="terminal-section">
