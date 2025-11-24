@@ -685,7 +685,7 @@
 
             console.log("🔍 Generating HTML for data:", data);
 
-            // PREPAID CUSTOMER DETAILS
+     // PREPAID CUSTOMER DETAILS
 if (data.prepaid_customer_details && Object.keys(data.prepaid_customer_details).length > 0) {
     html += `<div class="terminal-section">
                 <div class="section-title">
@@ -720,10 +720,9 @@ if (data.prepaid_customer_details && Object.keys(data.prepaid_customer_details).
     html += `</div></div>`;
 }
 
-// Add this date formatting function
+// Corrected date formatting function
 function formatInstallationDate(dateString) {
     try {
-        // Handle different date formats
         if (!dateString || dateString === 'N/A') return dateString;
         
         // If already in correct format, return as is
@@ -731,20 +730,18 @@ function formatInstallationDate(dateString) {
             return dateString;
         }
         
-        // Format: "18-Sep-10" to "10-09-2018"
+        // Format: "18-Sep-10" to "10-09-2018" (swap day and year)
         const parts = dateString.split('-');
         if (parts.length === 3) {
-            const day = parts[0].padStart(2, '0');
+            const day = parts[0]; // This becomes the year part
             const month = getMonthNumber(parts[1]);
-            let year = parts[2];
+            const year = parts[2]; // This becomes the day part
             
-            // Handle 2-digit year (assume 2000s for years < 50, 1900s for years >= 50)
-            if (year.length === 2) {
-                const yearNum = parseInt(year);
-                year = (yearNum < 50) ? `20${year}` : `19${year}`;
-            }
+            // Swap: original day becomes last 2 digits of year, original year becomes day
+            let newYear = "20" + day; // "18" becomes "2018"
+            let newDay = year.padStart(2, '0'); // "10" becomes "10"
             
-            return `${day}-${month}-${year}`;
+            return `${newDay}-${month}-${newYear}`;
         }
         
         return dateString; // Return original if format doesn't match
