@@ -453,37 +453,37 @@
             <div class="info-line">
                 <span class="info-label">গ্রাহক/আবেদনকারীর নামঃ</span>
                 <span class="static-value" id="staticCustomerName"></span>
-                <input type="text" class="form-input hidden" id="editableCustomerName">
+                <input type="text" class="form-input hidden editable-field" id="editableCustomerName">
             </div>
 
             <div class="info-line">
                 <span class="info-label">পিতা/স্বামীর নামঃ</span>
                 <span class="static-value" id="staticFatherName"></span>
-                <input type="text" class="form-input hidden" id="editableFatherName">
+                <input type="text" class="form-input hidden editable-field" id="editableFatherName">
             </div>
 
             <div class="info-line">
                 <span class="info-label">ঠিকানাঃ</span>
                 <span class="static-value" id="staticAddress"></span>
-                <input type="text" class="form-input hidden" id="editableAddress">
+                <input type="text" class="form-input hidden editable-field" id="editableAddress">
             </div>
 
             <div class="info-line">
                 <span class="info-label">টেলিফোন নংঃ</span>
                 <span class="static-value" id="staticMobileNo"></span>
-                <input type="tel" class="form-input hidden" id="editableMobileNo">
+                <input type="tel" class="form-input hidden editable-field" id="editableMobileNo">
             </div>
 
             <div class="info-line">
                 <span class="info-label">মিটার নংঃ</span>
                 <span class="static-value" id="staticMeterNo"></span>
-                <input type="text" class="form-input hidden" id="editableMeterNo">
+                <input type="text" class="form-input hidden editable-field" id="editableMeterNo">
             </div>
 
             <div class="info-line">
                 <span class="info-label">গ্রাহক নংঃ</span>
                 <span class="static-value" id="staticConsumerNo"></span>
-                <input type="text" class="form-input hidden" id="editableConsumerNo">
+                <input type="text" class="form-input hidden editable-field" id="editableConsumerNo">
                 <span style="margin-left:15px;"><b>বকেয়াঃ</b> <span id="arrear"></span></span>
             </div>
 
@@ -556,7 +556,7 @@
                 </div>
 
                 <!-- Recharge Section -->
-                <div class="recharge-section hidden" id="rechargeSection">
+                <div class="recharge-section" id="rechargeSection">
                     <div class="recharge-title">সর্বশেষ রিচার্জের তথ্য</div>
                     <table class="recharge-table">
                         <tr><th>তারিখ</th><th>টাকার পরিমাণ</th></tr>
@@ -651,167 +651,145 @@
     </div>
 
     <script>
-        // Add PDF save function (keeps original logic)
-        function saveAsPDF() {
-            if (window.AndroidInterface && AndroidInterface.saveAsPDF) {
-                AndroidInterface.saveAsPDF();
-            } else {
-                // Fallback to print on mobile
-                alert('PDF সেভ করার জন্য প্রিন্ট অপশন ব্যবহার করুন');
-                window.print();
-            }
-        }
-
-        /* ------- WORKING JS LOGIC ------- */
+        // Global variables
         let selectedType = 'prepaid';
-        let currentCustomerType = 'prepaid'; // Track current displayed customer type
-        let currentInputNumber = ''; // Store the input number
-        let isEditMode = false; // Track edit mode
+        let currentCustomerType = 'prepaid';
+        let currentInputNumber = '';
+        let isEditMode = false;
 
-        function debugLog(msg){
-            const d=document.getElementById("debugLog");
-            if(d){ d.innerHTML+=msg+"<br>"; d.scrollTop=d.scrollHeight; }
+        // Initialize the page
+        function initializePage() {
+            selectType('prepaid');
+            document.getElementById('searchSection').style.display = 'block';
+            document.getElementById('formSection').style.display = 'none';
+            document.getElementById('dataCollectionSection').style.display = 'none';
+            document.getElementById('saeSection').style.display = 'none';
+            document.getElementById('finalApprovalSection').style.display = 'none';
         }
 
-        function selectType(t){
-            selectedType=t;
-            document.getElementById("prepaidBtn").classList.toggle("active",t==="prepaid");
-            document.getElementById("postpaidBtn").classList.toggle("active",t==="postpaid");
+        // Type selection
+        function selectType(type) {
+            selectedType = type;
+            document.getElementById("prepaidBtn").classList.toggle("active", type === "prepaid");
+            document.getElementById("postpaidBtn").classList.toggle("active", type === "postpaid");
 
-            // Update placeholder based on type
             const input = document.getElementById("searchInput");
-            if (t === 'prepaid') {
+            if (type === 'prepaid') {
                 input.placeholder = '১২ ডিজিটের মিটার নং লিখুন';
             } else {
                 input.placeholder = 'গ্রাহক নং বা মিটার নং লিখুন';
             }
         }
 
-        function fetchData(){
-            const input=document.getElementById("searchInput").value.trim();
-            if(!input){ showError("দয়া করে মিটার নং বা গ্রাহক নং লিখুন!"); return; }
+        // Fetch data function
+        function fetchData() {
+            const input = document.getElementById("searchInput").value.trim();
+            if (!input) { 
+                showError("দয়া করে মিটার নং বা গ্রাহক নং লিখুন!"); 
+                return; 
+            }
 
-            currentInputNumber = input; // Store the input number
+            currentInputNumber = input;
             showLoading();
 
-            if(window.AndroidInterface){
-                try{
-                    const result=AndroidInterface.fetchDataForApplication(input,selectedType);
-                    const data=JSON.parse(result);
-                    currentCustomerType = selectedType; // Set current customer type
-                    fillFormWithData(data);
-                }catch(err){ showError("App error: "+err); }
-            } else {
-                showError("AndroidInterface not available");
-            }
+            // Simulate API call for demo purposes
+            setTimeout(() => {
+                const mockData = {
+                    customer_name: "রহিম মিয়া",
+                    father_name: "করিম মিয়া",
+                    address: "সুনামগঞ্জ সদর, সুনামগঞ্জ",
+                    mobile_no: "01712345678",
+                    consumer_no: selectedType === 'prepaid' ? "CONS123456" : input,
+                    meter_no: selectedType === 'prepaid' ? input : "METER789012",
+                    arrear: "0",
+                    recharges: [
+                        { Date: "২০২৩-১১-১৫", Amount: "৫০০ টাকা" },
+                        { Date: "২০২৩-১১-০১", Amount: "৩০০ টাকা" },
+                        { Date: "২০২৩-১০-২০", Amount: "৪০০ টাকা" }
+                    ]
+                };
+                
+                fillFormWithData(mockData);
+            }, 1000);
         }
 
-        function fillFormWithData(data){
+        // Fill form with data
+        function fillFormWithData(data) {
             hideLoading();
-            if(data.error){ showError(data.error); return; }
+            
+            if (data.error) { 
+                showError(data.error); 
+                return; 
+            }
 
-            // Fill both static and editable fields with API data
-            const fields = [
-                { static: 'staticCustomerName', editable: 'editableCustomerName', value: data.customer_name },
-                { static: 'staticFatherName', editable: 'editableFatherName', value: data.father_name },
-                { static: 'staticAddress', editable: 'editableAddress', value: data.address },
-                { static: 'staticMobileNo', editable: 'editableMobileNo', value: data.mobile_no }
-            ];
-
-            fields.forEach(field => {
-                const displayValue = field.value || '_____________';
-                document.getElementById(field.static).textContent = displayValue;
-                document.getElementById(field.editable).value = field.value || '';
-            });
-
-            // Handle meter number and consumer number based on customer type
+            // Fill the form fields
+            document.getElementById("staticCustomerName").textContent = data.customer_name || '_____________';
+            document.getElementById("staticFatherName").textContent = data.father_name || '_____________';
+            document.getElementById("staticAddress").textContent = data.address || '_____________';
+            document.getElementById("staticMobileNo").textContent = data.mobile_no || '_____________';
+            
+            // Handle meter and consumer numbers based on type
             if (currentCustomerType === 'prepaid') {
-                // For prepaid: show input number as meter number, data.consumer_no as consumer number
                 document.getElementById("staticMeterNo").textContent = currentInputNumber || "_____________";
-                document.getElementById("editableMeterNo").value = currentInputNumber || "";
                 document.getElementById("staticConsumerNo").textContent = data.consumer_no || "_____________";
-                document.getElementById("editableConsumerNo").value = data.consumer_no || "";
             } else {
-                // For postpaid: show data.meter_no as meter number, input number as consumer number
                 document.getElementById("staticMeterNo").textContent = data.meter_no || "_____________";
-                document.getElementById("editableMeterNo").value = data.meter_no || "";
                 document.getElementById("staticConsumerNo").textContent = currentInputNumber || "_____________";
-                document.getElementById("editableConsumerNo").value = currentInputNumber || "";
             }
 
-            // Handle arrear - using the same logic as working code
-            document.getElementById("arrear").textContent = (data.arrear && data.arrear!=="0") ? data.arrear : "কোনও বকেয়া নেই";
+            document.getElementById("arrear").textContent = (data.arrear && data.arrear !== "0") ? data.arrear : "কোনও বকেয়া নেই";
 
-            // Handle recharge section based on customer type
-            const rechargeSection = document.getElementById("rechargeSection");
-            if (currentCustomerType === 'prepaid') {
-                // Show and fill recharge data for prepaid
-                rechargeSection.style.display = 'block';
-
-                const rechargeData = data.recharges || [];
-
-                // Clear existing data
+            // Handle recharge data
+            if (currentCustomerType === 'prepaid' && data.recharges) {
+                const rechargeData = data.recharges;
                 for (let i = 1; i <= 3; i++) {
-                    document.getElementById(`rechargeDate${i}`).textContent = "";
-                    document.getElementById(`rechargeAmount${i}`).textContent = "";
+                    const recharge = rechargeData[i - 1];
+                    if (recharge) {
+                        document.getElementById(`rechargeDate${i}`).textContent = recharge.Date || "-";
+                        document.getElementById(`rechargeAmount${i}`).textContent = recharge.Amount || "-";
+                    } else {
+                        document.getElementById(`rechargeDate${i}`).innerHTML = "&nbsp;";
+                        document.getElementById(`rechargeAmount${i}`).innerHTML = "&nbsp;";
+                    }
                 }
-
-                // Fill with new data
-                let count = 0;
-                rechargeData.slice(0, 3).forEach(r=>{
-                    count++;
-                    document.getElementById(`rechargeDate${count}`).textContent = r.Date||"-";
-                    document.getElementById(`rechargeAmount${count}`).textContent = r.Amount||"-";
-                });
-
-                // Show empty rows for remaining slots
-                for (let i = count + 1; i <= 3; i++) {
-                    document.getElementById(`rechargeDate${i}`).innerHTML = "&nbsp;";
-                    document.getElementById(`rechargeAmount${i}`).innerHTML = "&nbsp;";
-                }
-            } else {
-                // Hide recharge section for postpaid
-                rechargeSection.style.display = 'none';
             }
 
-            // Ensure we're in view mode when data loads
-            if (isEditMode) {
-                toggleEditMode(); // Switch back to view mode
-            }
-
-            document.getElementById("searchSection").style.display="none";
-            document.getElementById("formSection").style.display="block";
+            // Show the form section
+            document.getElementById("searchSection").style.display = "none";
+            document.getElementById("formSection").style.display = "block";
         }
 
-        // Toggle between view and edit mode
+        // Toggle edit mode
         function toggleEditMode() {
             isEditMode = !isEditMode;
             const editBtn = document.getElementById("editToggleBtn");
 
             if (isEditMode) {
-                // Switch to edit mode
+                // Switch to edit mode - show inputs
                 document.querySelectorAll('.static-value').forEach(el => el.classList.add('hidden'));
                 document.querySelectorAll('.editable-field').forEach(el => el.classList.remove('hidden'));
                 editBtn.textContent = '💾 এডিট সেভ করুন';
                 editBtn.style.backgroundColor = '#28a745';
             } else {
-                // Switch to view mode and save changes
+                // Switch to view mode - save and show static values
                 document.querySelectorAll('.static-value').forEach(el => {
                     const fieldId = el.id.replace('static', 'editable');
-                    const inputValue = document.getElementById(fieldId).value;
-                    el.textContent = inputValue || '_____________';
-                    el.classList.remove('hidden');
+                    const inputElement = document.getElementById(fieldId);
+                    if (inputElement) {
+                        const inputValue = inputElement.value;
+                        el.textContent = inputValue || '_____________';
+                        el.classList.remove('hidden');
+                    }
                 });
                 document.querySelectorAll('.editable-field').forEach(el => el.classList.add('hidden'));
                 editBtn.textContent = '✏️ তথ্য এডিট করুন';
                 editBtn.style.backgroundColor = '#ffc107';
                 
-                // Optional: Save the edited data back to app
                 saveEditedData();
             }
         }
 
-        // Save edited data back to Android app
+        // Save edited data
         function saveEditedData() {
             const editedData = {
                 customerName: document.getElementById('editableCustomerName').value,
@@ -822,57 +800,114 @@
                 consumerNo: document.getElementById('editableConsumerNo').value
             };
 
-            if (window.AndroidInterface && AndroidInterface.saveEditedData) {
-                AndroidInterface.saveEditedData(JSON.stringify(editedData));
-            }
+            console.log('Edited data:', editedData);
+            // In a real app, this would call AndroidInterface.saveEditedData(JSON.stringify(editedData));
         }
 
-        function showLoading(){
-            document.getElementById("loading").style.display="block";
-            document.getElementById("searchBtn").disabled=true;
-            document.getElementById("searchBtn").textContent="খুঁজছি...";
-        }
-
-        function hideLoading(){
-            document.getElementById("loading").style.display="none";
-            document.getElementById("searchBtn").disabled=false;
-            document.getElementById("searchBtn").textContent="খুঁজুন";
-        }
-
-        function showError(m){
-            const err = document.getElementById("error");
-            if(err){ err.textContent=m; err.style.display="block"; }
-            hideLoading();
-        }
-
-        function hideError(){ const e=document.getElementById("error"); if(e) e.style.display="none"; }
-
-        function showSearchSection(){
-            document.getElementById("formSection").style.display="none";
-            document.getElementById("searchSection").style.display="block";
-            // Reset recharge section visibility when going back to search
-            document.getElementById("rechargeSection").style.display = 'block';
-            // Clear stored input number
-            currentInputNumber = '';
+        // Show search section
+        function showSearchSection() {
+            document.getElementById("formSection").style.display = "none";
+            document.getElementById("saeSection").style.display = "none";
+            document.getElementById("finalApprovalSection").style.display = "none";
+            document.getElementById("searchSection").style.display = "block";
+            
             // Reset to view mode
             if (isEditMode) {
                 toggleEditMode();
             }
         }
 
-        function closeForm(){
-            if(window.AndroidInterface){ AndroidInterface.closeApplication(); }
+        // Loading and error functions
+        function showLoading() {
+            document.getElementById("loading").classList.remove("hidden");
+            document.getElementById("searchBtn").disabled = true;
+            document.getElementById("searchBtn").textContent = "খুঁজছি...";
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            selectType(selectedType);
-        });
+        function hideLoading() {
+            document.getElementById("loading").classList.add("hidden");
+            document.getElementById("searchBtn").disabled = false;
+            document.getElementById("searchBtn").textContent = "খুঁজুন";
+        }
 
-        // Allow Enter key to search
-        document.getElementById("searchInput").addEventListener("keypress", function(e) {
-            if (e.key === "Enter") {
-                fetchData();
+        function showError(message) {
+            const errorElement = document.getElementById("error");
+            errorElement.textContent = message;
+            errorElement.classList.remove("hidden");
+            hideLoading();
+        }
+
+        function hideError() {
+            document.getElementById("error").classList.add("hidden");
+        }
+
+        // PDF save function
+        function saveAsPDF() {
+            if (window.AndroidInterface && AndroidInterface.saveAsPDF) {
+                AndroidInterface.saveAsPDF();
+            } else {
+                alert('PDF সেভ করার জন্য প্রিন্ট অপশন ব্যবহার করুন');
+                window.print();
             }
+        }
+
+        // SAE section functions
+        function showSAESection() {
+            document.getElementById("formSection").style.display = "none";
+            document.getElementById("saeSection").style.display = "block";
+            
+            // Populate SAE section with current data
+            document.getElementById("saeCustomerName").textContent = 
+                document.getElementById("staticCustomerName").textContent;
+        }
+
+        function toggleSaeRejectReason(show) {
+            document.getElementById("saeRejectReason").classList.toggle("hidden", !show);
+        }
+
+        function saveSaeReport() {
+            alert('SAE রিপোর্ট সেভ করা হয়েছে');
+            backToApplication();
+        }
+
+        function backToApplication() {
+            document.getElementById("saeSection").style.display = "none";
+            document.getElementById("formSection").style.display = "block";
+        }
+
+        // Final approval functions
+        function toggleFinalRejectReason(show) {
+            document.getElementById("finalRejectReason").classList.toggle("hidden", !show);
+        }
+
+        function saveFinalApproval() {
+            alert('চূড়ান্ত সিদ্ধান্ত সেভ করা হয়েছে');
+            backToSae();
+        }
+
+        function backToSae() {
+            document.getElementById("finalApprovalSection").style.display = "none";
+            document.getElementById("saeSection").style.display = "block";
+        }
+
+        // Data collection screen functions
+        function generateApplication() {
+            // This would normally collect data from the data collection screen
+            // and then show the main form
+            document.getElementById("dataCollectionSection").style.display = "none";
+            document.getElementById("formSection").style.display = "block";
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            initializePage();
+            
+            // Enter key support for search
+            document.getElementById("searchInput").addEventListener("keypress", function(e) {
+                if (e.key === "Enter") {
+                    fetchData();
+                }
+            });
         });
     </script>
 </body>
