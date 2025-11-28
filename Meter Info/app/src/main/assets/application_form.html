@@ -197,22 +197,6 @@
             display: none;
         }
 
-        /* Edit mode controls */
-        .edit-controls {
-            margin: 10px 0;
-            text-align: center;
-        }
-
-        .edit-btn {
-            padding: 6px 12px;
-            background-color: #ffc107;
-            color: #000;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-
         .hidden {
             display: none;
         }
@@ -230,17 +214,6 @@
             .error,
             .debug-info {
                 display: none !important;
-            }
-
-            /* Hide edit button and input fields */
-            .edit-controls,
-            .editable-field {
-                display: none !important;
-            }
-
-            /* Show only static values in print */
-            .static-value {
-                display: inline !important;
             }
 
             /* Hide action buttons under form */
@@ -287,10 +260,10 @@
         <div class="loading" id="loading">ডেটা লোড হচ্ছে...</div>
         <div class="error" id="error"></div>
     </div>
-    
+
     <div class="form-section hidden" id="dataCollectionSection" style="padding: 15px; border: 1px solid #ddd; border-radius: 5px;">
         <div class="title" style="font-size: 20px;">গ্রাহক তথ্য যাচাই</div>
-        
+
         <div style="background: #f0f0f0; padding: 10px; margin-bottom: 15px; border-radius: 4px;">
             <div class="info-line">
                 <span class="info-label">গ্রাহকের নামঃ</span>
@@ -300,11 +273,15 @@
                 <span class="info-label">ঠিকানাঃ</span>
                 <span class="info-value" id="previewAddress"></span>
             </div>
+            <div class="info-line">
+                <span class="info-label">মোবাইল নংঃ</span>
+                <span class="info-value" id="previewMobileNo"></span>
+            </div>
         </div>
 
         <div class="info-line" style="display: block;">
             <span class="info-label" style="min-width: unset;">ফিডার নির্বাচনঃ</span>
-            <select class="editable-field" id="feederSelect" style="width: 100%; margin-top: 5px; padding: 8px;">
+            <select class="editable-field" id="feederSelect" style="width: 100%; margin-top: 5px; padding: 8px;" onchange="generateApplicationNo()">
                 <option value="">-- ফিডার নির্বাচন করুন --</option>
                 <option value="amb">AMBARI - amb</option>
                 <option value="bor">BOROPARA - bor</option>
@@ -316,12 +293,21 @@
             <input type="text" class="editable-field" id="nidInput" placeholder="এনআইডি নং লিখুন" style="width: 100%; margin-top: 5px;">
         </div>
 
+        <div class="info-line" style="display: block; margin-top: 15px;">
+            <span class="info-label" style="min-width: unset;">মোবাইল নং (এডিট করুন)ঃ</span>
+            <input type="tel" class="editable-field" id="mobileInput" placeholder="মোবাইল নং লিখুন" style="width: 100%; margin-top: 5px;">
+        </div>
+
+        <div class="info-line" style="display: block; margin-top: 15px; background: #e6f7ff; padding: 10px; border-radius: 4px;">
+            <span class="info-label" style="min-width: unset; font-weight: bold;">আবেদন নংঃ</span>
+            <span class="info-value" id="generatedAppNo" style="color: #007bff;">ফিডার নির্বাচন করুন</span>
+        </div>
+
         <div class="action-buttons" style="margin-top: 25px;">
             <button class="btn" style="background-color: #28a745;" onclick="generateApplication()">✅ আবেদনপত্র তৈরি করুন</button>
             <button class="btn" style="background-color: #6c757d;" onclick="showSearchSection()">← নতুন খোঁজ</button>
         </div>
     </div>
-
 
     <div class="form-section hidden" id="formSection">
 
@@ -337,44 +323,39 @@
             সুনামগঞ্জ
         </div>
 
-        <div class="edit-controls">
-            <button class="edit-btn" onclick="toggleEditMode()" id="editToggleBtn">✏️ তথ্য এডিট করুন</button>
-        </div>
-
         <div class="info-line">
             <span class="info-label">গ্রাহক/আবেদনকারীর নামঃ </span>
             <span class="static-value" id="staticCustomerName">_____________</span>
-            <input type="text" class="editable-field hidden" id="editableCustomerName" placeholder="গ্রাহকের নাম">
         </div>
 
         <div class="info-line">
             <span class="info-label">পিতা/স্বামীর নামঃ </span>
             <span class="static-value" id="staticFatherName">_____________</span>
-            <input type="text" class="editable-field hidden" id="editableFatherName" placeholder="পিতা/স্বামীর নাম">
         </div>
 
         <div class="info-line">
             <span class="info-label">ঠিকানাঃ </span>
             <span class="static-value" id="staticAddress">_____________</span>
-            <input type="text" class="editable-field hidden" id="editableAddress" placeholder="ঠিকানা">
         </div>
 
         <div class="info-line">
             <span class="info-label">টেলিফোন নংঃ </span>
             <span class="static-value" id="staticMobileNo">_____________</span>
-            <input type="tel" class="editable-field hidden" id="editableMobileNo" placeholder="টেলিফোন নং">
+        </div>
+
+        <div class="info-line">
+            <span class="info-label">এনআইডি নংঃ </span>
+            <span class="static-value" id="staticNid">_____________</span>
         </div>
 
         <div class="info-line">
             <span class="info-label">মিটার নংঃ </span>
             <span class="static-value" id="staticMeterNo">_____________</span>
-            <input type="text" class="editable-field hidden" id="editableMeterNo" placeholder="মিটার নং">
         </div>
 
         <div class="info-line">
             <span class="info-label">গ্রাহক নংঃ </span>
             <span class="static-value" id="staticConsumerNo">_____________</span>
-            <input type="text" class="editable-field hidden" id="editableConsumerNo" placeholder="গ্রাহক নং">
             <span style="margin-left: 20px;"><b>বকেয়াঃ</b> <b><span id="arrear">________</span></b></span>
         </div>
 
@@ -491,7 +472,6 @@
 let selectedType = 'prepaid';
 let currentCustomerType = 'prepaid';
 let currentInputNumber = ''; 
-let isEditMode = false;
 let applicationData = {}; // Global object to hold all data
 
 // --- Utility Functions ---
@@ -534,11 +514,11 @@ function showSearchSection(){
     hideAllSections();
     document.getElementById("searchSection").style.display="block";
     document.getElementById("searchInput").value = '';
+    document.getElementById("feederSelect").value = '';
+    document.getElementById("nidInput").value = '';
+    document.getElementById("mobileInput").value = '';
+    document.getElementById("generatedAppNo").textContent = 'ফিডার নির্বাচন করুন';
     currentInputNumber = '';
-    
-    if (isEditMode) {
-        toggleEditMode(); // Reset to view mode
-    }
 }
 
 function showDataCollectionSection(){
@@ -555,7 +535,7 @@ function showFormSection(){
 function showSAESection(){
     hideAllSections();
     document.getElementById("saeSection").style.display="block";
-    
+
     // Populate SAE section info
     document.getElementById("saeAppNo").textContent = applicationData.application_no || '_________ (N/A)';
     document.getElementById("saeCustomerName").textContent = applicationData.customer_name || 'N/A';
@@ -612,14 +592,16 @@ function fetchData(){
             const result=AndroidInterface.fetchDataForApplication(input,selectedType);
             const data=JSON.parse(result);
             currentCustomerType = selectedType;
-            
+
             if(data.error){ showError(data.error); return; }
-            
+
             applicationData = data; // Store data globally
-            
+
             // Populate Data Collection screen fields
             document.getElementById("previewCustomerName").textContent = data.customer_name || 'N/A';
             document.getElementById("previewAddress").textContent = data.address || 'N/A';
+            document.getElementById("previewMobileNo").textContent = data.mobile_no || 'N/A';
+            document.getElementById("mobileInput").value = data.mobile_no || '';
 
             showDataCollectionSection();
 
@@ -635,10 +617,29 @@ function fetchData(){
 }
 
 
+// --- Application Number Generation ---
+function generateApplicationNo() {
+    const feeder = document.getElementById("feederSelect").value;
+    if (!feeder) {
+        document.getElementById("generatedAppNo").textContent = "ফিডার নির্বাচন করুন";
+        return;
+    }
+
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-GB').replace(/\//g, '.');
+    const timeStr = now.toLocaleTimeString('en-GB', { hour12: false }).replace(/:/g, '-');
+    const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    
+    const appNo = `${feeder}-${dateStr}-${timeStr}-${randomNum}`;
+    document.getElementById("generatedAppNo").textContent = appNo;
+}
+
+
 // --- Data Collection and Form Filling ---
 function generateApplication() {
     const feeder = document.getElementById("feederSelect").value;
     const nid = document.getElementById("nidInput").value.trim();
+    const mobileNo = document.getElementById("mobileInput").value.trim();
 
     if (!feeder) {
         if(window.AndroidInterface && AndroidInterface.showToast) {
@@ -647,41 +648,34 @@ function generateApplication() {
         return;
     }
 
-    // Add collected data to the main object
+    // Update mobile number in application data
+    applicationData.mobile_no = mobileNo || applicationData.mobile_no;
+    
+    // Store collected data
     applicationData.feeder = feeder;
     applicationData.nid = nid;
+    applicationData.application_no = document.getElementById("generatedAppNo").textContent;
 
     fillFormWithData(applicationData);
     showFormSection();
 }
 
 function fillFormWithData(data){
-    
     document.getElementById("applicationNoDisplay").textContent = data.application_no || '_________';
 
-    const fields = [
-        { static: 'staticCustomerName', editable: 'editableCustomerName', value: data.customer_name },
-        { static: 'staticFatherName', editable: 'editableFatherName', value: data.father_name },
-        { static: 'staticAddress', editable: 'editableAddress', value: data.address },
-        { static: 'staticMobileNo', editable: 'editableMobileNo', value: data.mobile_no }
-    ];
-
-    fields.forEach(field => {
-        const displayValue = field.value || '_____________';
-        document.getElementById(field.static).textContent = displayValue;
-        document.getElementById(field.editable).value = field.value || '';
-    });
+    // Fill all static fields
+    document.getElementById("staticCustomerName").textContent = data.customer_name || '_____________';
+    document.getElementById("staticFatherName").textContent = data.father_name || '_____________';
+    document.getElementById("staticAddress").textContent = data.address || '_____________';
+    document.getElementById("staticMobileNo").textContent = data.mobile_no || '_____________';
+    document.getElementById("staticNid").textContent = data.nid || '_____________';
 
     if (currentCustomerType === 'prepaid') {
         document.getElementById("staticMeterNo").textContent = currentInputNumber || "_____________";
-        document.getElementById("editableMeterNo").value = currentInputNumber || "";
         document.getElementById("staticConsumerNo").textContent = data.consumer_no || "_____________";
-        document.getElementById("editableConsumerNo").value = data.consumer_no || "";
     } else {
         document.getElementById("staticMeterNo").textContent = data.meter_no || "_____________";
-        document.getElementById("editableMeterNo").value = data.meter_no || "";
         document.getElementById("staticConsumerNo").textContent = currentInputNumber || "_____________";
-        document.getElementById("editableConsumerNo").value = currentInputNumber || "";
     }
 
     document.getElementById("arrear").textContent = (data.arrear && data.arrear!=="0") ? data.arrear : "কোনও বকেয়া নেই";
@@ -699,56 +693,6 @@ function fillFormWithData(data){
     } else {
         rechargeSection.style.display = 'none';
     }
-
-    if (isEditMode) {
-        toggleEditMode();
-    }
-}
-
-
-// --- Edit Mode and Saving ---
-function toggleEditMode() {
-    isEditMode = !isEditMode;
-    const editBtn = document.getElementById("editToggleBtn");
-
-    if (isEditMode) {
-        document.querySelectorAll('.static-value').forEach(el => el.classList.add('hidden'));
-        document.querySelectorAll('.editable-field').forEach(el => el.classList.remove('hidden'));
-        editBtn.textContent = '💾 এডিট সেভ করুন';
-        editBtn.style.backgroundColor = '#28a745';
-    } else {
-        document.querySelectorAll('.static-value').forEach(el => {
-            const fieldId = el.id.replace('static', 'editable');
-            const inputValue = document.getElementById(fieldId).value;
-            el.textContent = inputValue || '_____________';
-            el.classList.remove('hidden');
-        });
-        document.querySelectorAll('.editable-field').forEach(el => el.classList.add('hidden'));
-        editBtn.textContent = '✏️ তথ্য এডিট করুন';
-        editBtn.style.backgroundColor = '#ffc107';
-        
-        saveEditedData();
-    }
-}
-
-function saveEditedData() {
-    const editedData = {
-        customerName: document.getElementById('editableCustomerName').value,
-        fatherName: document.getElementById('editableFatherName').value,
-        address: document.getElementById('editableAddress').value,
-        mobileNo: document.getElementById('editableMobileNo').value,
-        meterNo: document.getElementById('editableMeterNo').value,
-        consumerNo: document.getElementById('editableConsumerNo').value
-    };
-
-    if (window.AndroidInterface && AndroidInterface.saveEditedData) {
-        AndroidInterface.saveEditedData(JSON.stringify(editedData));
-        if(window.AndroidInterface.showToast) {
-            AndroidInterface.showToast("তথ্য সফলভাবে সেভ হয়েছে।");
-        }
-    } else if(window.AndroidInterface && window.AndroidInterface.showToast) {
-         AndroidInterface.showToast("AndroidInterface.saveEditedData অনুপস্থিত।");
-    }
 }
 
 
@@ -761,25 +705,25 @@ function saveSaeReport() {
     const action = document.querySelector('input[name="saeAction"]:checked');
     const report = document.getElementById("saeReport").value;
     const rejectReason = document.getElementById("saeRejectText").value;
-    
+
     if (!action) {
          if(window.AndroidInterface && AndroidInterface.showToast) AndroidInterface.showToast('দয়া করে একটি অ্যাকশন নির্বাচন করুন।');
          return;
     }
-    
+
     const reportData = {
         application_no: applicationData.application_no,
         action: action.value,
         report: report,
         rejectReason: action.value === 'reject' ? rejectReason : null
     };
-    
+
     // Store the report text globally (used for the next screen preview)
     applicationData.saeReport = report;
 
     // TODO: Call AndroidInterface.saveSaeReport(JSON.stringify(reportData));
     if(window.AndroidInterface && AndroidInterface.showToast) AndroidInterface.showToast(`SAE রিপোর্ট সেভ করা হয়েছে: ${reportData.action}`);
-    
+
     backToApplication();
 }
 
@@ -795,16 +739,16 @@ function saveFinalApproval() {
          if(window.AndroidInterface && AndroidInterface.showToast) AndroidInterface.showToast('দয়া করে একটি অ্যাকশন নির্বাচন করুন।');
          return;
     }
-    
+
     const finalData = {
         application_no: applicationData.application_no,
         action: action.value,
         rejectReason: action.value === 'reject' ? rejectReason : null
     };
-    
+
     // TODO: Call AndroidInterface.saveFinalApproval(JSON.stringify(finalData));
     if(window.AndroidInterface && AndroidInterface.showToast) AndroidInterface.showToast(`চূড়ান্ত সিদ্ধান্ত সেভ করা হয়েছে: ${finalData.action}`);
-    
+
     showSearchSection(); // Go back to start after final decision
 }
 
