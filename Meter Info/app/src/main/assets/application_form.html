@@ -474,6 +474,27 @@ let currentCustomerType = 'prepaid';
 let currentInputNumber = ''; 
 let applicationData = {}; // Global object to hold all data
 
+// Application counter - will be replaced with Firebase later
+function getNextApplicationNumber(feeder) {
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const key = `appCounter_${feeder}_${today}`;
+    
+    // Get current counter or start from 1
+    let counter = localStorage.getItem(key);
+    if (!counter) {
+        counter = 1;
+    } else {
+        counter = parseInt(counter) + 1;
+    }
+    
+    // Save updated counter
+    localStorage.setItem(key, counter);
+    
+    // Format: feeder-YYYYMMDD-001
+    const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
+    return `${feeder}-${dateStr}-${counter.toString().padStart(3, '0')}`;
+}
+
 // --- Utility Functions ---
 function debugLog(msg){
     const d=document.getElementById("debugLog");
@@ -616,7 +637,6 @@ function fetchData(){
     }
 }
 
-
 // --- Application Number Generation ---
 function generateApplicationNo() {
     const feeder = document.getElementById("feederSelect").value;
@@ -625,15 +645,9 @@ function generateApplicationNo() {
         return;
     }
 
-    const now = new Date();
-    const dateStr = now.toLocaleDateString('en-GB').replace(/\//g, '.');
-    const timeStr = now.toLocaleTimeString('en-GB', { hour12: false }).replace(/:/g, '-');
-    const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    
-    const appNo = `${feeder}-${dateStr}-${timeStr}-${randomNum}`;
+    const appNo = getNextApplicationNumber(feeder);
     document.getElementById("generatedAppNo").textContent = appNo;
 }
-
 
 // --- Data Collection and Form Filling ---
 function generateApplication() {
