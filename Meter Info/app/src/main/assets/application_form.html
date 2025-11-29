@@ -2,249 +2,583 @@
 <html lang="bn">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
     <title>আবেদনপত্র</title>
-
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
+        /* ---------------------------------------------------
+           MOBILE FIRST STYLING
+        ----------------------------------------------------*/
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
         body {
-            font-family: "Shonar Bangla", serif;
+            font-family: 'Noto Sans Bengali', Arial, sans-serif;
             margin: 0;
-            padding: 15px 25px;
-            font-size: 16px;
-            line-height: 1.6;
+            padding: 10px;
+            font-size: 14px;
+            line-height: 1.4;
+            color: #333;
+            background: #f5f5f5;
+            -webkit-text-size-adjust: 100%;
         }
 
-        /* Left-aligned office header */
-        .header {
-            text-align: left;
-            font-weight: bold;
-            margin-bottom: 12px;
-            font-size: 18px;
+        /* ** FIX: Robust hiding of elements ** */
+        .hidden {
+            display: none !important;
         }
 
-        /* Applicant info */
-        .info-line {
-            font-size: 17px;
-            margin-bottom: 3px;
-            display: flex;
-            align-items: center;
-        }
-        .info-label {
-            font-weight: normal;
-            min-width: 180px;
-        }
-        .info-value {
-            font-weight: bold;
+        /* --- Login Section --- */
+        .login-section {
+            width: 100%;
+            margin: 20px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
-        /* Editable fields */
-        .editable-field {
-            border: 1px dashed #ccc;
-            background: #f9f9f9;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 16px;
-            width: 250px;
-            font-family: "Shonar Bangla", serif;
-            font-weight: bold;
-        }
-
-        .editable-field:focus {
-            border-color: #3498db;
-            background: #fff;
-            outline: none;
-        }
-
-        .static-value {
-            font-weight: bold;
-        }
-
-        /* Title */
-        .title {
-            text-align: center;
-            font-size: 22px;
-            font-weight: bold;
-            margin-bottom: 15px;
-        }
-
-        /* Complaint title box */
-        .complain-box {
-            border: 1px solid #000;
-            padding: 6px;
-            width: 50%;
-            margin: 6px auto 12px auto;
+        .login-title {
             text-align: center;
             font-size: 20px;
             font-weight: bold;
-        }
-
-        /* Two-column area: complaints left, recharge table right */
-        .content-grid {
-            display: grid;
-            grid-template-columns: 65% 35%;
-            grid-gap: 6px;
-        }
-
-        /* Complaints list */
-        .complaints p {
-            margin: 1px 0;
-            font-size: 17px;
-            font-weight: bold;
-            page-break-inside: avoid;
-        }
-
-        /* Fix for "অন্যান্য" line specifically */
-        .complaints p:last-child {
-            white-space: nowrap;
-        }
-
-        /* Recharge section title */
-        .recharge-title {
-            text-align: center;
-            font-weight: bold;
-            font-size: 18px;
-            margin-bottom: 8px;
-        }
-
-        /* Recharge Table */
-        .recharge-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 17px;
-        }
-        .recharge-table th, .recharge-table td {
-            border: 1px solid #000;
-            padding: 5px 8px;
-            text-align: center;
-            height: 26px;
-        }
-
-        /* Signature */
-        .signature {
-            text-align: right;
-            margin-top: 40px;
-            font-size: 18px;
-            font-weight: bold;
-            page-break-inside: avoid;
-        }
-
-        /* Search Section Styles */
-        .search-section {
             margin-bottom: 20px;
+            color: #2c3e50;
         }
 
-        .type-selector {
-            display: flex;
-            margin-bottom: 10px;
+        .login-input {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            box-sizing: border-box;
         }
 
-        .type-btn {
-            padding: 8px 16px;
-            border: 1px solid #ccc;
-            cursor: pointer;
-            margin-right: 5px;
-        }
-
-        .type-btn.active {
-            background-color: #007bff;
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: #007bff;
             color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
         }
 
-        .search-row {
-            display: flex;
+        /* --- Dashboard Section --- */
+        .dashboard-section {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
             margin-bottom: 10px;
         }
 
-        .search-input {
-            flex: 1;
+        .user-info {
+            background: #e3f2fd;
             padding: 8px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .dashboard-title {
+            text-align: center;
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        .action-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .action-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
+        .action-card:active {
+            border-color: #007bff;
+            background: #e3f2fd;
+            transform: scale(0.98);
+        }
+
+        .action-card h3 {
+            margin: 0 0 8px 0;
+            color: #2c3e50;
             font-size: 16px;
         }
 
-        .search-btn {
-            padding: 8px 16px;
-            background-color: #28a745;
-            color: white;
+        .action-card p {
+            margin: 0;
+            color: #666;
+            font-size: 13px;
+        }
+
+        /* --- Status Badges --- */
+        .status-badge {
+            display: inline-block;
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-assigned { background: #d1ecf1; color: #0c5460; }
+        .status-verified { background: #d4edda; color: #155724; }
+        .status-approved { background: #d1e7dd; color: #0f5132; }
+        .status-rejected { background: #f8d7da; color: #721c24; }
+        .status-completed { background: #d1e7dd; color: #0f5132; }
+        .status-action-taken { background: #e2e3e5; color: #383d41; }
+
+        /* --- Header Section --- */
+        .title {
+            text-align: center;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        .APPLICATION_NO {
+            text-align: center;
+            font-size: 13px;
+            margin-bottom: 8px;
+            padding: 5px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        .header {
+            text-align: left;
+            font-weight: 500;
+            margin-bottom: 12px;
+            font-size: 13px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        /* --- Customer Information Section --- */
+        .info-line {
+            font-size: 13px;
+            margin-bottom: 8px;
+            display: block;
+        }
+        .info-label {
+            font-weight: 500;
+            display: block;
+            margin-bottom: 2px;
+            color: #555;
+        }
+        
+        .static-value {
+            font-weight: 700;
+            border-bottom: 1px solid #000;
+            padding-bottom: 1px;
+            color: #111;
+            display: block;
+            min-height: 20px;
+            margin-bottom: 8px;
+        }
+
+        /* Editable Input Fields */
+        .editable-field {
+            border: 1px solid #999;
+            background: #fff;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 14px;
+            width: 100%;
+            font-weight: normal;
+            margin-bottom: 8px;
+        }
+
+        /* Mobile optimized inline info */
+        .inline-info-group {
+            display: block;
+            margin: 10px 0;
+        }
+        .inline-info {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 2px;
+        }
+        .inline-value {
+            font-weight: bold;
+            border-bottom: 1px solid #000;
+            padding-bottom: 1px;
+            display: block;
+        }
+
+        /* --- Complaint Section --- */
+        .complain-box {
             border: none;
-            cursor: pointer;
+            background: #f0f0f0;
+            padding: 8px;
+            width: 100%;
+            margin: 10px 0 6px 0;
+            text-align: center;
+            font-size: 16px;
+            font-weight: 700;
+        }
+        .content-grid {
+            display: block;
+            margin-top: 8px;
+        }
+        .complaints {
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+        
+        /* FIX: Checkbox styles for mobile */
+        .complaint-item {
+            display: flex;
+            align-items: flex-start;
+            margin: 4px 0;
+            font-size: 12px;
+            font-weight: normal;
+            page-break-inside: avoid;
+        }
+        .complaint-checkbox {
+            margin-right: 8px;
+            margin-top: 2px;
+            transform: scale(1.2);
+            min-width: 18px;
+        }
+        .complaint-label {
+            flex: 1;
+            line-height: 1.3;
+        }
+        #otherComplaintInput {
+            border: none;
+            border-bottom: 1px dashed #000;
+            background: transparent;
+            margin-left: 5px;
+            width: 150px;
+            font-size: 12px;
+            padding: 0 4px;
         }
 
-        .loading {
-            display: none;
-            color: #007bff;
+        /* --- Recharge Table Section --- */
+        .recharge-title {
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        .recharge-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+        }
+        .recharge-table th, .recharge-table td {
+            border: 1px solid #000;
+            padding: 4px;
+            text-align: center;
+            height: 20px;
+        }
+        .recharge-table th {
+            background-color: #eee;
+            font-weight: 600;
         }
 
-        .error {
-            display: none;
-            color: #dc3545;
+        /* --- Workflow Actions --- */
+        .workflow-actions {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 12px 0;
         }
 
-        .action-buttons {
+        .workflow-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+
+        /* --- Footer and Buttons --- */
+        .signature {
+            text-align: center;
             margin-top: 20px;
+            padding-top: 6px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .action-buttons {
+            margin-top: 15px;
             text-align: center;
         }
-
         .btn {
-            padding: 8px 16px;
-            margin: 5px;
-            background-color: #6c757d;
-            color: white;
+            padding: 10px 14px;
+            margin: 4px;
+            background: #6c757d;
+            color: #fff;
             border: none;
+            border-radius: 6px;
             cursor: pointer;
+            font-size: 14px;
+            min-height: 44px;
+            min-width: 44px;
+        }
+        .edit-btn {
+            padding: 10px 14px;
+            background: #ffc107;
+            color: #000;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            width: 100%;
+            margin-bottom: 10px;
         }
 
-        .form-section {
+        /* Search Section Styles - Mobile Optimized */
+        .search-section {
+            margin-bottom: 15px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+        .type-selector {
+            display: flex;
+            margin-bottom: 10px;
+            gap: 5px;
+        }
+        .type-btn {
+            padding: 10px 12px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 14px;
+            flex: 1;
+            text-align: center;
+        }
+        .type-btn.active {
+            background: #007bff;
+            color: #fff;
+        }
+        .search-row {
+            display: block;
+            margin-bottom: 10px;
+        }
+        .search-input {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+        .search-btn {
+            width: 100%;
+            padding: 12px;
+            background: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            min-height: 44px;
+        }
+        .loading, .error {
             display: none;
+            text-align: center;
+            padding: 8px;
+            font-size: 14px;
+        }
+        .loading { color: #007bff; }
+        .error { color: #dc3545; background: #f8d7da; }
+
+        /* --- Data Collection Section --- */
+        .data-collection-section {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
         }
 
-        .hidden {
-            display: none;
+        /* --- SAE and Final Approval Sections --- */
+        .sae-section, .final-approval-section, .action-taken-section {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border: 2px solid;
         }
+        .sae-section { border-color: #007bff; }
+        .final-approval-section { border-color: #28a745; }
+        .action-taken-section { border-color: #6c757d; }
+
+        /* --- Assignment Section --- */
+        .assignment-section {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border: 2px solid #ffc107;
+        }
+
+        /* --- Workflow History Section --- */
+        .workflow-history {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 12px 0;
+            border-left: 4px solid #007bff;
+        }
+
+        .workflow-history-title {
+            font-size: 15px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+
+        .workflow-step {
+            padding: 6px;
+            margin: 4px 0;
+            background: white;
+            border-radius: 4px;
+            border-left: 3px solid #007bff;
+            font-size: 12px;
+        }
+
+        .workflow-step.completed {
+            border-left-color: #28a745;
+            background: #f8fff8;
+        }
+
+        .workflow-step.rejected {
+            border-left-color: #dc3545;
+            background: #fff5f5;
+        }
+
+        /* Mobile specific improvements */
+        .mobile-full-width {
+            width: 100%;
+        }
+        
+        .mobile-stack {
+            display: block;
+        }
+        
+        .mobile-padding {
+            padding: 8px;
+        }
+        
+        .mobile-margin {
+            margin: 5px 0;
+        }
+
+        /* Print Optimization */
         @media print {
-
-            /* Hide search UI */
-            #searchSection,
+            body { 
+                padding: 5mm !important;
+                line-height: 1.2;
+                font-size: 10px !important;
+                margin: 0 !important;
+                background: white !important;
+            }
+            
+            .login-section,
+            .dashboard-section,
             .search-section,
-            .search-row,
-            .type-selector,
-            .type-btn,
-            #searchBtn,
-            #searchInput,
-            .loading,
-            .error,
-            .debug-info {
-                display: none !important;
+            .workflow-actions,
+            .data-collection-section,
+            .sae-section,
+            .final-approval-section,
+            .action-taken-section,
+            .assignment-section,
+            .no-print, 
+            .edit-controls, 
+            .editable-field, 
+            .action-buttons { 
+                display: none !important; 
             }
 
-            /* Hide action buttons under form */
-            .action-buttons {
-                display: none !important;
+            .workflow-history {
+                display: block !important;
+                background: white !important;
+                border: 1px solid #ddd !important;
             }
 
-            /* Prevent unwanted background shading */
-            body {
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
+            .content-grid {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
             }
+        }
 
-            /* Ensure page margins are tight like official form */
-            @page {
-                margin: 8mm;
-            }
+        /* Dropdown styles for mobile */
+        .assignee-select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            margin: 8px 0;
+        }
+
+        /* Textarea mobile optimization */
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            min-height: 100px;
+        }
+
+        /* Radio button mobile optimization */
+        input[type="radio"] {
+            transform: scale(1.2);
+            margin-right: 8px;
         }
     </style>
 </head>
-
 <body>
-<div class="application-container">
+<!-- Login Section -->
+<div class="login-section" id="loginSection">
+    <div class="login-title">লগইন</div>
+    <input type="text" id="userId" class="login-input" placeholder="ইউজার আইডি" autofocus>
+    <input type="password" id="password" class="login-input" placeholder="পাসওয়ার্ড">
+    <button class="login-btn" onclick="login()">লগইন</button>
+    <div class="error" id="loginError"></div>
+</div>
 
+<!-- Dashboard Section -->
+<div class="dashboard-section hidden" id="dashboardSection">
+    <div class="user-info" id="userInfo">
+        লগইন করেছেন: <span id="userDisplayName"></span>
+        <button class="btn" onclick="logout()" style="margin-top: 8px; background: #dc3545; width: 100%;">লগআউট</button>
+    </div>
+
+    <div class="dashboard-title" id="dashboardTitle">ড্যাশবোর্ড</div>
+
+    <div class="action-grid" id="actionGrid">
+        <!-- Actions will be populated based on user role -->
+    </div>
+</div>
+
+<!-- Application Container -->
+<div class="application-container hidden" id="applicationContainer">
+    <!-- Search Section -->
     <div class="search-section" id="searchSection">
         <h2 style="font-size:16px;margin-bottom:8px;">গ্রাহক তথ্য খুঁজুন</h2>
-
-        <div class="debug-info" id="debugInfo" style="display:none;">
-            <strong>ডিবাগ তথ্য:</strong>
-            <div id="debugLog"></div>
-        </div>
 
         <div class="type-selector">
             <div class="type-btn active" id="prepaidBtn" onclick="selectType('prepaid')">প্রিপেইড</div>
@@ -261,10 +595,11 @@
         <div class="error" id="error"></div>
     </div>
 
-    <div class="form-section hidden" id="dataCollectionSection" style="padding: 15px; border: 1px solid #ddd; border-radius: 5px;">
-        <div class="title" style="font-size: 20px;">গ্রাহক তথ্য যাচাই</div>
+    <!-- Data Collection Section -->
+    <div class="data-collection-section hidden" id="dataCollectionSection">
+        <div class="title" style="font-size: 18px;">গ্রাহক তথ্য যাচাই</div>
 
-        <div style="background: #f0f0f0; padding: 10px; margin-bottom: 15px; border-radius: 4px;">
+        <div style="background: #f0f0f0; padding: 10px; margin-bottom: 12px; border-radius: 4px;">
             <div class="info-line">
                 <span class="info-label">গ্রাহকের নামঃ</span>
                 <span class="info-value" id="previewCustomerName"></span>
@@ -279,41 +614,57 @@
             </div>
         </div>
 
-        <div class="info-line" style="display: block;">
-            <span class="info-label" style="min-width: unset;">ফিডার নির্বাচনঃ</span>
-            <select class="editable-field" id="feederSelect" style="width: 100%; margin-top: 5px; padding: 8px;" onchange="generateApplicationNo()">
+        <div class="info-line mobile-stack">
+            <span class="info-label">ফিডার নির্বাচনঃ</span>
+            <select class="editable-field mobile-full-width" id="feederSelect">
                 <option value="">-- ফিডার নির্বাচন করুন --</option>
                 <option value="amb">AMBARI - amb</option>
                 <option value="bor">BOROPARA - bor</option>
             </select>
         </div>
 
-        <div class="info-line" style="display: block; margin-top: 15px;">
-            <span class="info-label" style="min-width: unset;">এনআইডি নংঃ</span>
-            <input type="text" class="editable-field" id="nidInput" placeholder="এনআইডি নং লিখুন" style="width: 100%; margin-top: 5px;">
+        <div class="info-line mobile-stack">
+            <span class="info-label">এনআইডি নংঃ</span>
+            <input type="text" class="editable-field mobile-full-width" id="nidInput" placeholder="এনআইডি নং লিখুন">
         </div>
 
-        <div class="info-line" style="display: block; margin-top: 15px;">
-            <span class="info-label" style="min-width: unset;">মোবাইল নং (এডিট করুন)ঃ</span>
-            <input type="tel" class="editable-field" id="mobileInput" placeholder="মোবাইল নং লিখুন" style="width: 100%; margin-top: 5px;">
+        <div class="info-line mobile-stack">
+            <span class="info-label">মোবাইল নং (এডিট করুন)ঃ</span>
+            <input type="tel" class="editable-field mobile-full-width" id="mobileInput" placeholder="মোবাইল নং লিখুন">
         </div>
 
-        <div class="info-line" style="display: block; margin-top: 15px; background: #e6f7ff; padding: 10px; border-radius: 4px;">
-            <span class="info-label" style="min-width: unset; font-weight: bold;">আবেদন নংঃ</span>
-            <span class="info-value" id="generatedAppNo" style="color: #007bff;">ফিডার নির্বাচন করুন</span>
+        <div class="info-line mobile-stack" style="background: #e6f7ff; padding: 10px; border-radius: 4px;">
+            <span class="info-label" style="font-weight: bold;">আবেদন নংঃ</span>
+            <span class="info-value" id="generatedAppNo" style="color: #007bff;">আবেদন তৈরি করলে নং দেখানো হবে</span>
         </div>
 
-        <div class="action-buttons" style="margin-top: 25px;">
-            <button class="btn" style="background-color: #28a745;" onclick="generateApplication()">✅ আবেদনপত্র তৈরি করুন</button>
-            <button class="btn" style="background-color: #6c757d;" onclick="showSearchSection()">← নতুন খোঁজ</button>
+        <div class="action-buttons">
+            <button class="btn mobile-full-width" style="background-color: #28a745; margin-bottom: 8px;" onclick="generateApplication()">✅ আবেদনপত্র তৈরি করুন</button>
+            <button class="btn mobile-full-width" style="background-color: #6c757d;" onclick="showDashboard()">← ড্যাশবোর্ড</button>
         </div>
     </div>
 
+    <!-- Main Form Section -->
     <div class="form-section hidden" id="formSection">
+        <!-- Workflow History -->
+        <div class="workflow-history" id="workflowHistory">
+            <div class="workflow-history-title">ওয়ার্কফ্লো ইতিহাস</div>
+            <div id="workflowSteps">
+                <!-- Workflow steps will be populated here -->
+            </div>
+        </div>
+
+        <div class="workflow-actions" id="workflowActions">
+            <div class="workflow-title">ওয়ার্কফ্লো একশন</div>
+            <div id="workflowButtons">
+                <!-- Workflow buttons will be populated based on user role and application status -->
+            </div>
+        </div>
 
         <div class="title">আবেদন পত্র</div>
-        <div class="info-line" style="justify-content: flex-end; font-size: 14px;">
+        <div class="APPLICATION_NO">
             আবেদন নং: <span id="applicationNoDisplay">________</span>
+            <span class="status-badge" id="applicationStatusBadge"></span>
         </div>
 
         <div class="header">
@@ -323,68 +674,124 @@
             সুনামগঞ্জ
         </div>
 
+        <div class="edit-controls no-print">
+            <button class="edit-btn" onclick="toggleEditMode()" id="editToggleBtn">✏️ তথ্য এডিট করুন</button>
+        </div>
+
         <div class="info-line">
             <span class="info-label">গ্রাহক/আবেদনকারীর নামঃ </span>
-            <span class="static-value" id="staticCustomerName">_____________</span>
+            <span class="static-value" id="staticCustomerName"></span>
+            <input type="text" class="editable-field hidden" id="editableCustomerName" placeholder="গ্রাহকের নাম">
         </div>
 
         <div class="info-line">
             <span class="info-label">পিতা/স্বামীর নামঃ </span>
-            <span class="static-value" id="staticFatherName">_____________</span>
+            <span class="static-value" id="staticFatherName"></span>
+            <input type="text" class="editable-field hidden" id="editableFatherName" placeholder="পিতা/স্বামীর নাম">
         </div>
 
         <div class="info-line">
             <span class="info-label">ঠিকানাঃ </span>
-            <span class="static-value" id="staticAddress">_____________</span>
+            <span class="static-value" id="staticAddress"></span>
+            <input type="text" class="editable-field hidden" id="editableAddress" placeholder="ঠিকানা">
         </div>
 
         <div class="info-line">
             <span class="info-label">টেলিফোন নংঃ </span>
-            <span class="static-value" id="staticMobileNo">_____________</span>
+            <span class="static-value" id="staticMobileNo"></span>
+            <input type="tel" class="editable-field hidden" id="editableMobileNo" placeholder="টেলিফোন নং">
         </div>
 
         <div class="info-line">
             <span class="info-label">এনআইডি নংঃ </span>
-            <span class="static-value" id="staticNid">_____________</span>
+            <span class="static-value" id="staticNid"></span>
         </div>
 
         <div class="info-line">
             <span class="info-label">মিটার নংঃ </span>
-            <span class="static-value" id="staticMeterNo">_____________</span>
+            <span class="static-value" id="staticMeterNo"></span>
+            <input type="text" class="editable-field hidden" id="editableMeterNo" placeholder="মিটার নং">
         </div>
 
         <div class="info-line">
             <span class="info-label">গ্রাহক নংঃ </span>
-            <span class="static-value" id="staticConsumerNo">_____________</span>
-            <span style="margin-left: 20px;"><b>বকেয়াঃ</b> <b><span id="arrear">________</span></b></span>
+            <span class="static-value" id="staticConsumerNo"></span>
+            <input type="text" class="editable-field hidden" id="editableConsumerNo" placeholder="গ্রাহক নং">
+            <div class="inline-info-group">
+                <span class="inline-info">বকেয়াঃ</span>
+                <span class="inline-value" id="arrear"></span>
+            </div>
         </div>
 
         <div class="complain-box">সম্ভাব্য অভিযোগ</div>
 
         <div class="content-grid">
-
             <div class="complaints">
-                <p>১.  লোড ছাড়াও মিটারে টাকা কাটে / টাকা কাটে না</p>
-                <p>২.  মিটার টুইস্ট সীল/লীড/প্যাডলক সীল ভাঙ্গা / চুরি</p>
-                <p>৩.  মিটার ভেঙ্গে / হারিয়ে / পুড়ে গেছে</p>
-                <p>৪.  মিটার স্থানান্তর / পরিবর্তন করতে আগ্রহী</p>
-                <p>৫.  মিটারের ডিসপ্লেতে ডিজিট এলোমেলো</p>
-                <p>৬.  মিটার সিটি/পিটি নষ্ট</p>
-                <p>৭.  মিটার কার্ড হারিয়েছে</p>
-                <p>৮.  মিটারের বাটন কাজ করে না</p>
-                <p>৯.  টার্মিনাল কভার খুলে গেছে</p>
-                <p>১০. মিটারে আউটপুট নেই</p>
-                <p>১১. মিটারে ডেট/টাইম সঠিক না</p>
-                <p>১২. নাম পরিবর্তন প্রয়োজন</p>
-                <p>১৩. লোড বৃদ্ধি প্রয়োজন</p>
-                <p>১৪. ব্যাটারি/লো-ভোল্টেজ সমস্যা</p>
-                <p>১৫. মিটারে কোন পাওয়ার নেই</p>
-                <p>১৬. অন্যান্য __________________________________________</p>
+                <div class="complaint-item">
+                    <input type="checkbox" class="complaint-checkbox" id="complaint1">
+                    <label class="complaint-label" for="complaint1">১. লোড ছাড়াও মিটারে টাকা কাটে / টাকা কাটে না</label>
+                </div>
+                <div class="complaint-item">
+                    <input type="checkbox" class="complaint-checkbox" id="complaint2">
+                    <label class="complaint-label" for="complaint2">২. মিটার টুইস্ট সীল/লীড/প্যাডলক সীল ভাঙ্গা / চুরি</label>
+                </div>
+                <div class="complaint-item">
+                    <input type="checkbox" class="complaint-checkbox" id="complaint3">
+                    <label class="complaint-label" for="complaint3">৩. মিটার ভেঙ্গে / হারিয়ে / পুড়ে গেছে</label>
+                </div>
+                <div class="complaint-item">
+                    <input type="checkbox" class="complaint-checkbox" id="complaint4">
+                    <label class="complaint-label" for="complaint4">৪. মিটার স্থানান্তর / পরিবর্তন করতে আগ্রহী</label>
+                </div>
+                <div class="complaint-item">
+                    <input type="checkbox" class="complaint-checkbox" id="complaint5">
+                    <label class="complaint-label" for="complaint5">৫. মিটারের ডিসপ্লেতে ডিজিট এলোমেলো</label>
+                </div>
+                <div class="complaint-item">
+                    <input type="checkbox" class="complaint-checkbox" id="complaint6">
+                    <label class="complaint-label" for="complaint6">৬. মিটার কার্ড হারিয়েছে</label>
+                </div>
+                <div class="complaint-item">
+                    <input type="checkbox" class="complaint-checkbox" id="complaint7">
+                    <label class="complaint-label" for="complaint7">৭. মিটারের বাটন কাজ করে না</label>
+                </div>
+                <div class="complaint-item">
+                    <input type="checkbox" class="complaint-checkbox" id="complaint8">
+                    <label class="complaint-label" for="complaint8">৮. টার্মিনাল কভার খুলে গেছে</label>
+                </div>
+                <div class="complaint-item">
+                    <input type="checkbox" class="complaint-checkbox" id="complaint9">
+                    <label class="complaint-label" for="complaint9">৯. মিটারে আউটপুট নেই</label>
+                </div>
+                <div class="complaint-item">
+                    <input type="checkbox" class="complaint-checkbox" id="complaint10">
+                    <label class="complaint-label" for="complaint10">১০. মিটারে ডেট/টাইম সঠিক না</label>
+                </div>
+                <div class="complaint-item">
+                    <input type="checkbox" class="complaint-checkbox" id="complaint11">
+                    <label class="complaint-label" for="complaint11">১১. নাম পরিবর্তন প্রয়োজন</label>
+                </div>
+                <div class="complaint-item">
+                    <input type="checkbox" class="complaint-checkbox" id="complaint12">
+                    <label class="complaint-label" for="complaint12">১২. লোড বৃদ্ধি প্রয়োজন</label>
+                </div>
+                <div class="complaint-item">
+                    <input type="checkbox" class="complaint-checkbox" id="complaint13">
+                    <label class="complaint-label" for="complaint13">১৩. ব্যাটারি/লো-ভোল্টেজ সমস্যা</label>
+                </div>
+                <div class="complaint-item">
+                    <input type="checkbox" class="complaint-checkbox" id="complaint14">
+                    <label class="complaint-label" for="complaint14">১৪. মিটারে কোন পাওয়ার নেই</label>
+                </div>
+                <div class="complaint-item">
+                    <input type="checkbox" class="complaint-checkbox" id="complaint15">
+                    <label class="complaint-label" for="complaint15">১৫. অন্যান্য------------------------</label>
+                    <input type="text" id="otherComplaintInput" class="hidden" placeholder="অন্যান্য অভিযোগ">
+                </div>
             </div>
 
             <div id="rechargeSection">
                 <div class="recharge-title">সর্বশেষ রিচার্জের তথ্য</div>
-
                 <table class="recharge-table" id="rechargeTable">
                     <tr><th>তারিখ</th><th>টাকার পরিমাণ</th></tr>
                     <tr><td id="rechargeDate1">&nbsp;</td><td id="rechargeAmount1">&nbsp;</td></tr>
@@ -392,184 +799,934 @@
                     <tr><td id="rechargeDate3">&nbsp;</td><td id="rechargeAmount3">&nbsp;</td></tr>
                 </table>
             </div>
-
         </div>
 
-        <div class="signature">
-            ...........................<br>
-            আবেদনকারীর সাক্ষর
+        <!-- Action Taken Section in Form -->
+        <div id="actionTakenSectionInForm" class="hidden">
+            <div class="complain-box" style="margin-top: 15px;">গৃহীত পদক্ষেপ</div>
+            <div class="info-line">
+                <span class="info-label">কর্মচারীঃ</span>
+                <span class="static-value" id="staticActionTakenBy"></span>
+            </div>
+            <div class="info-line">
+                <span class="info-label">তারিখঃ</span>
+                <span class="static-value" id="staticActionTakenDate"></span>
+            </div>
+            <div class="info-line">
+                <span class="info-label">বিবরণঃ</span>
+                <span class="static-value" id="staticActionTakenDetails"></span>
+            </div>
+        </div>
+
+        <div class="signature">...........................<br>আবেদনকারীর সাক্ষর</div>
+
+        <div class="action-buttons no-print">
+            <button class="btn mobile-full-width" style="margin-bottom: 8px;" onclick="printApplication()">🖨️ প্রিন্ট</button>
+            <button class="btn mobile-full-width" style="margin-bottom: 8px;" onclick="saveAsPDF()">📄 PDF সেভ</button>
+            <button class="btn mobile-full-width" onclick="showDashboard()">← ড্যাশবোর্ড</button>
+        </div>
+    </div>
+
+    <!-- Assignment Section -->
+    <div class="assignment-section hidden" id="assignmentSection">
+        <div class="title" style="font-size: 18px; color: #ffc107;">ব্যক্তি নির্বাচন</div>
+
+        <div style="background: #fffbf0; padding: 10px; margin-bottom: 12px; border-radius: 4px; font-size: 14px;">
+            <div><strong>আবেদন নং:</strong> <span id="assignAppNo"></span></div>
+            <div><strong>গ্রাহকের নাম:</strong> <span id="assignCustomerName"></span></div>
+            <div><strong>বর্তমান স্ট্যাটাস:</strong> <span id="assignCurrentStatus"></span></div>
+        </div>
+
+        <div style="margin-bottom: 12px;">
+            <span class="info-label">নির্বাচিত ব্যক্তিঃ</span>
+            <select class="assignee-select" id="assigneeSelect">
+                <option value="">-- নির্বাচন করুন --</option>
+                <!-- Options will be populated based on role -->
+            </select>
         </div>
 
         <div class="action-buttons">
-            <button class="btn" onclick="window.print()">🖨️ প্রিন্ট</button>
-            <button class="btn" onclick="saveAsPDF()">📄 PDF সেভ</button>
-            <button class="btn" style="background-color: #007bff;" onclick="showSAESection()">📋 SAE তে পাঠান</button>
-            <button class="btn" onclick="showSearchSection()">← নতুন খোঁজ</button>
-            <button class="btn" onclick="closeForm()">✕ বন্ধ</button>
+            <button class="btn mobile-full-width" style="background-color: #28a745; margin-bottom: 8px;" onclick="saveAssignment()">✅ Assign করুন</button>
+            <button class="btn mobile-full-width" style="background-color: #6c757d;" onclick="backToApplication()">← আবেদনে ফিরুন</button>
         </div>
-
     </div>
 
-    <div class="form-section hidden" id="saeSection" style="padding: 15px; border: 1px solid #007bff; border-radius: 5px;">
-        <div class="title" style="font-size: 20px; color: #007bff;">সার্ভে ও মূল্যায়ন (SAE)</div>
+    <!-- SAE Section -->
+    <div class="sae-section hidden" id="saeSection">
+        <div class="title" style="font-size: 18px; color: #007bff;">সার্ভে ও মূল্যায়ন (SAE)</div>
 
-        <div style="background: #e6f7ff; padding: 10px; margin-bottom: 15px; border-radius: 4px; font-size: 15px;">
+        <div style="background: #e6f7ff; padding: 10px; margin-bottom: 12px; border-radius: 4px; font-size: 14px;">
             <div><strong>আবেদন নং:</strong> <span id="saeAppNo"></span></div>
             <div><strong>গ্রাহকের নাম:</strong> <span id="saeCustomerName"></span></div>
         </div>
 
-        <div style="margin-bottom: 15px;">
-            <span class="info-label" style="display: block;">সার্ভে রিপোর্টঃ</span>
-            <textarea id="saeReport" placeholder="সার্ভে রিপোর্ট লিখুন..." style="width: 100%; height: 100px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;"></textarea>
+        <div style="margin-bottom: 12px;">
+            <span class="info-label">সার্ভে রিপোর্টঃ</span>
+            <textarea id="saeReport" placeholder="সার্ভে রিপোর্ট লিখুন..."></textarea>
         </div>
 
-        <div style="margin: 15px 0;">
-            <label style="display: block; margin-bottom: 8px;"><input type="radio" name="saeAction" value="verify" onclick="toggleSaeRejectReason(false)"> যাচাই করুন (Verify)</label>
-            <label style="display: block;"><input type="radio" name="saeAction" value="reject" onclick="toggleSaeRejectReason(true)"> প্রত্যাখ্যান করুন (Reject)</label>
+        <div style="margin: 12px 0;">
+            <label style="display: block; margin-bottom: 8px; font-size: 14px;">
+                <input type="radio" name="saeAction" value="verify" onclick="toggleSaeRejectReason(false)"> 
+                যাচাই করুন (Verify)
+            </label>
+            <label style="display: block; font-size: 14px;">
+                <input type="radio" name="saeAction" value="reject" onclick="toggleSaeRejectReason(true)"> 
+                প্রত্যাখ্যান করুন (Reject)
+            </label>
         </div>
 
-        <div id="saeRejectReason" class="hidden" style="margin-top: 15px;">
-            <span class="info-label" style="display: block;">প্রত্যাখ্যান কারণঃ</span>
-            <input type="text" class="editable-field" id="saeRejectText" placeholder="প্রত্যাখ্যানের কারণ লিখুন..." style="width: 100%;">
+        <div id="saeRejectReason" class="hidden" style="margin-top: 12px;">
+            <span class="info-label">প্রত্যাখ্যান কারণঃ</span>
+            <input type="text" class="editable-field mobile-full-width" id="saeRejectText" placeholder="প্রত্যাখ্যানের কারণ লিখুন...">
         </div>
 
-        <div class="action-buttons" style="margin-top: 25px;">
-            <button class="btn" style="background-color: #28a745;" onclick="saveSaeReport()">💾 রিপোর্ট সেভ করুন</button>
-            <button class="btn" style="background-color: #007bff;" onclick="showFinalApprovalSection()">➡️ অনুমোদনের জন্য পাঠান</button>
-            <button class="btn" style="background-color: #6c757d;" onclick="backToApplication()">← আবেদনে ফিরুন</button>
+        <div class="action-buttons">
+            <button class="btn mobile-full-width" style="background-color: #28a745; margin-bottom: 8px;" onclick="saveSaeReport()">💾 রিপোর্ট সেভ করুন</button>
+            <button class="btn mobile-full-width" style="background-color: #6c757d;" onclick="backToApplication()">← আবেদনে ফিরুন</button>
         </div>
     </div>
 
-    <div class="form-section hidden" id="finalApprovalSection" style="padding: 15px; border: 1px solid #28a745; border-radius: 5px;">
-        <div class="title" style="font-size: 20px; color: #28a745;">চূড়ান্ত অনুমোদন</div>
+    <!-- Final Approval Section -->
+    <div class="final-approval-section hidden" id="finalApprovalSection">
+        <div class="title" style="font-size: 18px; color: #28a745;">চূড়ান্ত অনুমোদন</div>
 
-        <div style="background: #e3ffe6; padding: 10px; margin-bottom: 15px; border-radius: 4px; font-size: 15px;">
+        <div style="background: #e3ffe6; padding: 10px; margin-bottom: 12px; border-radius: 4px; font-size: 14px;">
             <div><strong>আবেদন নং:</strong> <span id="finalAppNo"></span></div>
             <div><strong>গ্রাহকের নাম:</strong> <span id="finalCustomerName"></span></div>
             <div><strong>সার্ভে রিপোর্ট:</strong> <span id="finalReport">N/A</span></div>
         </div>
 
-        <div style="margin: 15px 0;">
-            <label style="display: block; margin-bottom: 8px;"><input type="radio" name="finalAction" value="approve" onclick="toggleFinalRejectReason(false)"> অনুমোদন করুন (Approve)</label>
-            <label style="display: block;"><input type="radio" name="finalAction" value="reject" onclick="toggleFinalRejectReason(true)"> প্রত্যাখ্যান করুন (Reject)</label>
+        <div style="margin: 12px 0;">
+            <label style="display: block; margin-bottom: 8px; font-size: 14px;">
+                <input type="radio" name="finalAction" value="approve" onclick="toggleFinalRejectReason(false)"> 
+                অনুমোদন করুন (Approve)
+            </label>
+            <label style="display: block; font-size: 14px;">
+                <input type="radio" name="finalAction" value="reject" onclick="toggleFinalRejectReason(true)"> 
+                প্রত্যাখ্যান করুন (Reject)
+            </label>
         </div>
 
-        <div id="finalRejectReason" class="hidden" style="margin-top: 15px;">
-            <span class="info-label" style="display: block;">প্রত্যাখ্যান কারণঃ</span>
-            <input type="text" class="editable-field" id="finalRejectText" placeholder="প্রত্যাখ্যানের কারণ লিখুন..." style="width: 100%;">
+        <div id="finalRejectReason" class="hidden" style="margin-top: 12px;">
+            <span class="info-label">প্রত্যাখ্যান কারণঃ</span>
+            <input type="text" class="editable-field mobile-full-width" id="finalRejectText" placeholder="প্রত্যাখ্যানের কারণ লিখুন...">
         </div>
 
-        <div class="action-buttons" style="margin-top: 25px;">
-            <button class="btn" style="background-color: #28a745;" onclick="saveFinalApproval()">✅ সিদ্ধান্ত সেভ করুন</button>
-            <button class="btn" style="background-color: #6c757d;" onclick="backToSae()">← SAE তে ফিরুন</button>
+        <div class="action-buttons">
+            <button class="btn mobile-full-width" style="background-color: #28a745; margin-bottom: 8px;" onclick="saveFinalApproval()">✅ সিদ্ধান্ত সেভ করুন</button>
+            <button class="btn mobile-full-width" style="background-color: #6c757d;" onclick="backToApplication()">← আবেদনে ফিরুন</button>
         </div>
     </div>
 
+    <!-- Action Taken Section -->
+    <div class="action-taken-section hidden" id="actionTakenSection">
+        <div class="title" style="font-size: 18px; color: #6c757d;">গৃহীত পদক্ষেপ</div>
+
+        <div style="background: #f8f9fa; padding: 10px; margin-bottom: 12px; border-radius: 4px; font-size: 14px;">
+            <div><strong>আবেদন নং:</strong> <span id="actionAppNo"></span></div>
+            <div><strong>গ্রাহকের নাম:</strong> <span id="actionCustomerName"></span></div>
+        </div>
+
+        <div style="margin-bottom: 12px;">
+            <span class="info-label">গৃহীত পদক্ষেপের বিবরণঃ</span>
+            <textarea id="actionTakenDetails" placeholder="গৃহীত পদক্ষেপের বিস্তারিত বিবরণ লিখুন..."></textarea>
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn mobile-full-width" style="background-color: #28a745; margin-bottom: 8px;" onclick="saveActionTaken()">💾 সেভ করুন</button>
+            <button class="btn mobile-full-width" style="background-color: #6c757d;" onclick="backToApplication()">← আবেদনে ফিরুন</button>
+        </div>
+    </div>
 </div>
 
 <script>
+// ALL JAVASCRIPT LOGIC REMAINS EXACTLY THE SAME AS THE PC VERSION
+// Only the CSS has been optimized for mobile
+
+// ==================== USER MANAGEMENT AND ROLES ====================
+const USER_ROLES = {
+    UDA: { name: 'UDA', canCreate: true, dashboard: ['নতুন আবেদন তৈরি'] },
+    XEN: { name: 'XEN', dashboard: ['আবেদন দেখুন', 'AE/SDE তে Assign করুন'] },
+    AE: { name: 'AE/SDE', dashboard: ['আবেদন দেখুন', 'SAE তে Assign করুন', 'SAE রিপোর্ট Verify করুন'] },
+    SAE: { name: 'SAE', dashboard: ['ফিল্ড সার্ভে করুন', 'সার্ভে রিপোর্ট জমা দিন'] }
+};
+
+const WORKFLOW_STATUS = {
+    CREATED: 'created',
+    ASSIGNED_TO_AE: 'assigned_to_ae',
+    ASSIGNED_TO_SAE: 'assigned_to_sae',
+    FIELD_SURVEY_COMPLETED: 'field_survey_completed',
+    VERIFIED_BY_AE: 'verified_by_ae',
+    APPROVED_BY_XEN: 'approved_by_xen',
+    REJECTED: 'rejected',
+    ACTION_TAKEN: 'action_taken',
+    COMPLETED: 'completed'
+};
+
+// Mock user database
+const USERS_DB = {
+    'uda': { password: 'pass', role: 'UDA', name: 'UDA', division: 'S&D Sunamganj' },
+    'xen': { password: 'pass', role: 'XEN', name: 'XEN', division: 'S&D Sunamganj' },
+    'ae1': { password: 'pass', role: 'AE', name: 'AE1', division: 'S&D Sunamganj' },
+    'ae2': { password: 'pass', role: 'AE', name: 'AE2', division: 'S&D Sunamganj' },
+    'sae1': { password: 'pass', role: 'SAE', name: 'SAE1', division: 'S&D Sunamganj' },
+    'sae2': { password: 'pass', role: 'SAE', name: 'SAE2', division: 'S&D Sunamganj' },
+    'sae3': { password: 'pass', role: 'SAE', name: 'SAE3', division: 'S&D Sunamganj' }
+};
+
 // Global variables
+let currentUser = null;
 let selectedType = 'prepaid';
 let currentCustomerType = 'prepaid';
-let currentInputNumber = ''; 
+let currentInputNumber = '';
 let applicationData = {}; // Global object to hold all data
+let isEditMode = false;
 
-// Application counter - will be replaced with Firebase later
-function getNextApplicationNumber(feeder) {
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-    const key = `appCounter_${feeder}_${today}`;
-    
-    // Get current counter or start from 1
-    let counter = localStorage.getItem(key);
-    if (!counter) {
-        counter = 1;
+// ==================== APPLICATION DATA PERSISTENCE ====================
+function saveApplicationToStorage() {
+    if (!applicationData.application_no) return;
+
+    let allApplications = JSON.parse(localStorage.getItem('allApplications')) || [];
+    const existingIndex = allApplications.findIndex(app => app.application_no === applicationData.application_no);
+
+    if (existingIndex !== -1) {
+        allApplications[existingIndex] = applicationData;
     } else {
-        counter = parseInt(counter) + 1;
+        allApplications.push(applicationData);
     }
+
+    localStorage.setItem('allApplications', JSON.stringify(allApplications));
+}
+
+function loadApplicationFromStorage(appNo) {
+    const allApplications = JSON.parse(localStorage.getItem('allApplications')) || [];
+    const app = allApplications.find(app => app.application_no === appNo);
+    return app || null;
+}
+
+function canUserWorkOnApp(userRole, appStatus) {
+    switch(userRole) {
+        case 'UDA':
+            return appStatus === WORKFLOW_STATUS.CREATED;
+        case 'XEN':
+            return appStatus === WORKFLOW_STATUS.CREATED || appStatus === WORKFLOW_STATUS.VERIFIED_BY_AE || appStatus === WORKFLOW_STATUS.APPROVED_BY_XEN;
+        case 'AE':
+            return appStatus === WORKFLOW_STATUS.ASSIGNED_TO_AE || appStatus === WORKFLOW_STATUS.FIELD_SURVEY_COMPLETED || appStatus === WORKFLOW_STATUS.VERIFIED_BY_AE || appStatus === WORKFLOW_STATUS.APPROVED_BY_XEN;
+        case 'SAE':
+            return appStatus === WORKFLOW_STATUS.ASSIGNED_TO_SAE || appStatus === WORKFLOW_STATUS.APPROVED_BY_XEN;
+        default:
+            return false;
+    }
+}
+
+// ==================== LOGIN SYSTEM ====================
+function login() {
+    const userId = document.getElementById('userId').value.trim();
+    const password = document.getElementById('password').value.trim();
+    const errorDiv = document.getElementById('loginError');
+
+    if (!userId || !password) {
+        if (errorDiv) { errorDiv.textContent = 'ইউজার আইডি এবং পাসওয়ার্ড দিন'; errorDiv.style.display = 'block'; }
+        return;
+    }
+
+    const user = USERS_DB[userId];
+    if (user && user.password === password) {
+        currentUser = { ...user, id: userId };
+        showDashboard();
+    } else {
+        if (errorDiv) { errorDiv.textContent = 'ভুল ইউজার আইডি বা পাসওয়ার্ড'; errorDiv.style.display = 'block'; }
+    }
+}
+
+function logout() {
+    currentUser = null;
+    const uidEl = document.getElementById('userId');
+    const passEl = document.getElementById('password');
+    if (uidEl) uidEl.value = '';
+    if (passEl) passEl.value = '';
+    const err = document.getElementById('loginError');
+    if (err) err.style.display = 'none';
+    showLogin();
+}
+
+function showLogin() {
+    hideAllSections();
+    document.getElementById('loginSection').classList.remove('hidden');
+}
+
+function showDashboard() {
+    hideAllSections();
+    document.getElementById('dashboardSection').classList.remove('hidden');
+
+    const userDisplayName = document.getElementById('userDisplayName');
+    if (userDisplayName) userDisplayName.textContent = `${currentUser.name} (${USER_ROLES[currentUser.role].name})`;
     
-    // Save updated counter
+    const dashboardTitle = document.getElementById('dashboardTitle');
+    if (dashboardTitle) dashboardTitle.textContent = `${USER_ROLES[currentUser.role].name} ড্যাশবোর্ড`;
+
+    populateDashboard();
+}
+
+// ==================== DASHBOARD MANAGEMENT ====================
+function populateDashboard() {
+    const actionGrid = document.getElementById('actionGrid');
+    if (!actionGrid) return;
+    actionGrid.innerHTML = '';
+
+    // Show "নতুন আবেদন তৈরি" for UDA
+    if (currentUser.role === 'UDA') {
+        const card = document.createElement('div');
+        card.className = 'action-card';
+        card.onclick = () => handleDashboardAction('নতুন আবেদন তৈরি');
+        card.innerHTML = `<h3>নতুন আবেদন তৈরি</h3><p>ক্লিক করুন শুরু করতে</p>`;
+        actionGrid.appendChild(card);
+    }
+
+    // Load applications this user can work on
+    const allApplications = JSON.parse(localStorage.getItem('allApplications')) || [];
+    const userApplications = allApplications.filter(app => {
+        if (!canUserWorkOnApp(currentUser.role, app.status)) return false;
+
+        // For AE: if the app is assigned to AE, only show if assignedTo matches currentUser.id
+        if (currentUser.role === 'AE' && app.status === WORKFLOW_STATUS.ASSIGNED_TO_AE) {
+            return !app.assignedTo || app.assignedTo === currentUser.id;
+        }
+
+        // For SAE: only show assigned SAE tasks when assignedTo matches currentUser.id
+        if (currentUser.role === 'SAE' && app.status === WORKFLOW_STATUS.ASSIGNED_TO_SAE) {
+            return !app.assignedTo || app.assignedTo === currentUser.id;
+        }
+
+        return true;
+    });
+
+    userApplications.forEach(app => {
+        const card = document.createElement('div');
+        card.className = 'action-card';
+        card.onclick = () => openApplication(app.application_no);
+
+        card.innerHTML = `
+            <h3>${app.application_no}</h3>
+            <p>${getStatusText(app.status)}</p>
+            <p><small>গ্রাহক: ${app.customer_name || 'N/A'}</small></p>
+            <span class="status-badge ${getStatusClass(app.status)}">${getStatusText(app.status)}</span>
+        `;
+
+        actionGrid.appendChild(card);
+    });
+
+    // If no applications, show message
+    if (userApplications.length === 0 && currentUser.role !== 'UDA') {
+        const messageCard = document.createElement('div');
+        messageCard.className = 'action-card';
+        messageCard.innerHTML = `<h3>কোন আবেদন নেই</h3><p>এই মুহূর্তে আপনার জন্য কোন আবেদন নেই</p>`;
+        actionGrid.appendChild(messageCard);
+    }
+}
+
+function handleDashboardAction(action) {
+    switch(action) {
+        case 'নতুন আবেদন তৈরি':
+            showApplicationContainer();
+            showSearchSection();
+            break;
+        case 'আবেদন দেখুন':
+        case 'AE/SDE তে Assign করুন':
+        case 'SAE তে Assign করুন':
+        case 'SAE রিপোর্ট Verify করুন':
+        case 'ফিল্ড সার্ভে করুন':
+            // These will now show applications in populateDashboard()
+            break;
+    }
+}
+
+function openApplication(appNo) {
+    const appData = loadApplicationFromStorage(appNo);
+    if (appData) {
+        applicationData = appData;
+        fillFormWithData(applicationData);
+        showFormSection();
+    } else {
+        alert('আবেদন খুঁজে পাওয়া যায়নি');
+    }
+}
+
+// ==================== APPLICATION MANAGEMENT ====================
+function showApplicationContainer() {
+    hideAllSections();
+    document.getElementById('applicationContainer').classList.remove('hidden');
+}
+
+// Application Number Generation
+function getNextApplicationNumber(feeder) {
+    const today = new Date().toISOString().split('T')[0];
+    const key = `appCounter_${feeder}_${today}`;
+    let counter = localStorage.getItem(key);
+    counter = counter ? parseInt(counter) + 1 : 1;
     localStorage.setItem(key, counter);
-    
-    // Format: feeder-YYYYMMDD-001
-    const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
+
+    const dateStr = today.replace(/-/g, '');
     return `${feeder}-${dateStr}-${counter.toString().padStart(3, '0')}`;
 }
 
-// --- Utility Functions ---
-function debugLog(msg){
-    const d=document.getElementById("debugLog");
-    if(d){ d.innerHTML+=msg+"<br>"; d.scrollTop=d.scrollHeight; }
+function generateApplication() {
+    const feederEl = document.getElementById("feederSelect");
+    const nidEl = document.getElementById("nidInput");
+    const mobileEl = document.getElementById("mobileInput");
+    const feeder = feederEl ? feederEl.value : '';
+    const nid = nidEl ? nidEl.value.trim() : '';
+    const mobileNo = mobileEl ? mobileEl.value.trim() : '';
+
+    if (!feeder) {
+        alert("দয়া করে ফিডার নির্বাচন করুন।");
+        return;
+    }
+
+    if (!nid) {
+        alert("দয়া করে এনআইডি নং লিখুন।");
+        return;
+    }
+
+    const appNo = getNextApplicationNumber(feeder);
+    const gen = document.getElementById("generatedAppNo");
+    if (gen) gen.textContent = appNo;
+
+    applicationData.mobile_no = mobileNo || applicationData.mobile_no;
+    applicationData.feeder = feeder;
+    applicationData.nid = nid;
+    applicationData.application_no = appNo;
+    applicationData.status = WORKFLOW_STATUS.CREATED;
+    applicationData.createdBy = currentUser ? currentUser.name : 'Unknown';
+    applicationData.createdAt = new Date().toLocaleString();
+
+    saveApplicationToStorage();
+
+    fillFormWithData(applicationData);
+    showFormSection();
+    populateDashboard();
 }
 
-function showLoading(){
-    document.getElementById("loading").style.display="block";
-    document.getElementById("searchBtn").disabled=true;
-    document.getElementById("searchBtn").textContent="খুঁজছি...";
+// ==================== WORKFLOW MANAGEMENT ====================
+function updateWorkflowActions() {
+    const workflowButtons = document.getElementById('workflowButtons');
+    if (!workflowButtons) return;
+    workflowButtons.innerHTML = '';
+
+    if (!currentUser) return;
+
+    const actions = getWorkflowActionsForUser();
+    actions.forEach(action => {
+        const btn = document.createElement('button');
+        btn.className = 'btn mobile-full-width';
+        btn.style.backgroundColor = getActionColor(action);
+        btn.style.marginBottom = '8px';
+        btn.textContent = action;
+        btn.onclick = () => handleWorkflowAction(action);
+        workflowButtons.appendChild(btn);
+    });
+
+    // Update workflow history
+    updateWorkflowHistory();
 }
 
-function hideLoading(){
-    document.getElementById("loading").style.display="none";
-    document.getElementById("searchBtn").disabled=false;
-    document.getElementById("searchBtn").textContent="খুঁজুন";
+function getWorkflowActionsForUser() {
+    const role = currentUser.role;
+    const status = applicationData.status || WORKFLOW_STATUS.CREATED;
+
+    switch(role) {
+        case 'UDA':
+            if (status === WORKFLOW_STATUS.CREATED) return ['🖨️ প্রিন্ট', '📄 PDF সেভ'];
+            return ['🖨️ প্রিন্ট', '📄 PDF সেভ', 'আবেদন দেখুন'];
+        case 'XEN':
+            if (status === WORKFLOW_STATUS.CREATED) return ['AE/SDE তে Assign করুন'];
+            if (status === WORKFLOW_STATUS.VERIFIED_BY_AE) return ['অনুমোদন করুন', 'প্রত্যাখ্যান করুন'];
+            if (status === WORKFLOW_STATUS.APPROVED_BY_XEN) return ['গৃহীত পদক্ষেপ'];
+            return ['আবেদন দেখুন'];
+        case 'AE':
+            if (status === WORKFLOW_STATUS.ASSIGNED_TO_AE) return ['SAE তে Assign করুন'];
+            if (status === WORKFLOW_STATUS.FIELD_SURVEY_COMPLETED) return ['Verify করুন', 'প্রত্যাখ্যান করুন'];
+            if (status === WORKFLOW_STATUS.APPROVED_BY_XEN) return ['গৃহীত পদক্ষেপ'];
+            return ['আবেদন দেখুন'];
+        case 'SAE':
+            if (status === WORKFLOW_STATUS.ASSIGNED_TO_SAE) return ['ফিল্ড সার্ভে করুন'];
+            if (status === WORKFLOW_STATUS.APPROVED_BY_XEN) return ['গৃহীত পদক্ষেপ'];
+            return ['আবেদন দেখুন'];
+        default:
+            return [];
+    }
 }
 
-function showError(m){
-    const err = document.getElementById("error");
-    if(err){ err.textContent=m; err.style.display="block"; }
-    hideLoading();
+function getActionColor(action) {
+    const colors = {
+        'অনুমোদন করুন': '#28a745',
+        'Verify করুন': '#17a2b8',
+        'প্রত্যাখ্যান করুন': '#dc3545',
+        'AE/SDE তে Assign করুন': '#007bff',
+        'SAE তে Assign করুন': '#007bff',
+        'ফিল্ড সার্ভে করুন': '#ffc107',
+        'গৃহীত পদক্ষেপ': '#6c757d'
+    };
+    return colors[action] || '#6c757d';
 }
 
-function hideError(){ const e=document.getElementById("error"); if(e) e.style.display="none"; }
+function handleWorkflowAction(action) {
+    switch(action) {
+        case 'AE/SDE তে Assign করুন':
+            showAssignmentSection('AE');
+            break;
+        case 'SAE তে Assign করুন':
+            showAssignmentSection('SAE');
+            break;
+        case 'ফিল্ড সার্ভে করুন':
+            showSAESection();
+            break;
+        case 'Verify করুন':
+            verifyFieldSurvey();
+            break;
+        case 'অনুমোদন করুন':
+            showFinalApprovalSection();
+            break;
+        case 'প্রত্যাখ্যান করুন':
+            rejectApplication();
+            break;
+        case 'গৃহীত পদক্ষেপ':
+            showActionTakenSection();
+            break;
+    }
+}
 
+function showAssignmentSection(assignToRole) {
+    hideAllSections();
+    document.getElementById("applicationContainer").classList.remove('hidden');
+    document.getElementById("assignmentSection").classList.remove('hidden');
 
-// --- State Management ---
+    const assignAppNo = document.getElementById("assignAppNo");
+    if (assignAppNo) assignAppNo.textContent = applicationData.application_no || '_________ (N/A)';
+    const assignCustomerName = document.getElementById("assignCustomerName");
+    if (assignCustomerName) assignCustomerName.textContent = applicationData.customer_name || 'N/A';
+    const assignCurrentStatus = document.getElementById("assignCurrentStatus");
+    if (assignCurrentStatus) assignCurrentStatus.textContent = getStatusText(applicationData.status);
+
+    // Populate assignee dropdown based on role
+    const assigneeSelect = document.getElementById("assigneeSelect");
+    if (assigneeSelect) {
+        assigneeSelect.innerHTML = '<option value="">-- নির্বাচন করুন --</option>';
+        
+        const users = Object.keys(USERS_DB).filter(id => USERS_DB[id].role === assignToRole);
+        users.forEach(userId => {
+            const user = USERS_DB[userId];
+            const option = document.createElement('option');
+            option.value = userId;
+            option.textContent = `${user.name} (${userId})`;
+            assigneeSelect.appendChild(option);
+        });
+    }
+}
+
+function saveAssignment() {
+    const assigneeSelect = document.getElementById("assigneeSelect");
+    const assigneeId = assigneeSelect ? assigneeSelect.value : '';
+    
+    if (!assigneeId) {
+        alert('দয়া করে একজন ব্যক্তি নির্বাচন করুন');
+        return;
+    }
+
+    const assignee = USERS_DB[assigneeId];
+    const assignToRole = assignee.role;
+
+    let newStatus;
+    if (assignToRole === 'AE') {
+        newStatus = WORKFLOW_STATUS.ASSIGNED_TO_AE;
+    } else if (assignToRole === 'SAE') {
+        newStatus = WORKFLOW_STATUS.ASSIGNED_TO_SAE;
+    }
+
+    applicationData.status = newStatus;
+    applicationData.assignedTo = assigneeId;
+    applicationData.assignedBy = currentUser.name;
+    applicationData.assignedAt = new Date().toLocaleString();
+
+    // Add to workflow history
+    if (!applicationData.workflowHistory) {
+        applicationData.workflowHistory = [];
+    }
+    applicationData.workflowHistory.push({
+        step: `${assignToRole} তে Assign করা হয়েছে`,
+        by: currentUser.name,
+        to: assignee.name,
+        date: new Date().toLocaleString(),
+        status: 'assigned'
+    });
+
+    saveApplicationToStorage();
+    updateApplicationStatus(`${assignToRole} তে Assign করা হয়েছে`, 'status-assigned');
+    alert(`${assignee.name} কে সফলভাবে Assign করা হয়েছে`);
+    backToApplication();
+}
+
+function verifyFieldSurvey() {
+    applicationData.status = WORKFLOW_STATUS.VERIFIED_BY_AE;
+    applicationData.verifiedBy = currentUser.name;
+    applicationData.verifiedAt = new Date().toLocaleString();
+
+    // Add to workflow history
+    if (!applicationData.workflowHistory) {
+        applicationData.workflowHistory = [];
+    }
+    applicationData.workflowHistory.push({
+        step: 'ফিল্ড সার্ভে Verify করা হয়েছে',
+        by: currentUser.name,
+        date: new Date().toLocaleString(),
+        status: 'verified'
+    });
+
+    saveApplicationToStorage();
+    updateApplicationStatus('Verify করা হয়েছে', 'status-verified');
+    alert('ফিল্ড সার্ভে Verify করা হয়েছে');
+    backToApplication();
+}
+
+function rejectApplication() {
+    applicationData.status = WORKFLOW_STATUS.REJECTED;
+    applicationData.rejectedBy = currentUser.name;
+    applicationData.rejectedAt = new Date().toLocaleString();
+
+    // Add to workflow history
+    if (!applicationData.workflowHistory) {
+        applicationData.workflowHistory = [];
+    }
+    applicationData.workflowHistory.push({
+        step: 'আবেদন প্রত্যাখ্যান করা হয়েছে',
+        by: currentUser.name,
+        date: new Date().toLocaleString(),
+        status: 'rejected'
+    });
+
+    saveApplicationToStorage();
+    updateApplicationStatus('প্রত্যাখ্যান করা হয়েছে', 'status-rejected');
+    alert('আবেদন প্রত্যাখ্যান করা হয়েছে');
+    backToApplication();
+}
+
+function updateApplicationStatus(statusText, statusClass) {
+    const badge = document.getElementById('applicationStatusBadge');
+    if (badge) {
+        badge.textContent = statusText;
+        badge.className = `status-badge ${statusClass}`;
+    }
+    applicationData.statusText = statusText;
+    applicationData.statusClass = statusClass;
+}
+
+// ==================== WORKFLOW HISTORY ====================
+function updateWorkflowHistory() {
+    const workflowSteps = document.getElementById('workflowSteps');
+    if (!workflowSteps) return;
+    
+    workflowSteps.innerHTML = '';
+
+    if (!applicationData.workflowHistory || applicationData.workflowHistory.length === 0) {
+        workflowSteps.innerHTML = '<div class="workflow-step">কোন ইতিহাস নেই</div>';
+        return;
+    }
+
+    applicationData.workflowHistory.forEach(step => {
+        const stepDiv = document.createElement('div');
+        stepDiv.className = `workflow-step ${step.status || ''}`;
+        
+        let stepHtml = `<strong>${step.step}</strong><br>`;
+        stepHtml += `কর্তৃক: ${step.by}<br>`;
+        stepHtml += `তারিখ: ${step.date}`;
+        
+        if (step.to) {
+            stepHtml += `<br>প্রাপক: ${step.to}`;
+        }
+        if (step.details) {
+            stepHtml += `<br>বিবরণ: ${step.details}`;
+        }
+
+        stepDiv.innerHTML = stepHtml;
+        workflowSteps.appendChild(stepDiv);
+    });
+}
+
+// ==================== SAE AND FINAL APPROVAL ====================
+function saveSaeReport() {
+    const report = document.getElementById("saeReport").value.trim();
+    const action = document.querySelector('input[name="saeAction"]:checked');
+
+    if (!report) {
+        alert('দয়া করে সার্ভে রিপোর্ট লিখুন');
+        return;
+    }
+
+    if (!action) {
+        alert('দয়া করে একটি অ্যাকশন নির্বাচন করুন');
+        return;
+    }
+
+    if (action.value === 'reject') {
+        const rejectReason = document.getElementById("saeRejectText").value.trim();
+        if (!rejectReason) {
+            alert('দয়া করে প্রত্যাখ্যানের কারণ লিখুন');
+            return;
+        }
+        applicationData.saeRejectReason = rejectReason;
+        applicationData.status = WORKFLOW_STATUS.REJECTED;
+        
+        // Add to workflow history
+        if (!applicationData.workflowHistory) {
+            applicationData.workflowHistory = [];
+        }
+        applicationData.workflowHistory.push({
+            step: 'সার্ভে রিপোর্ট প্রত্যাখ্যান',
+            by: currentUser.name,
+            date: new Date().toLocaleString(),
+            details: rejectReason,
+            status: 'rejected'
+        });
+    } else {
+        applicationData.saeReport = report;
+        applicationData.status = WORKFLOW_STATUS.FIELD_SURVEY_COMPLETED;
+        
+        // Add to workflow history
+        if (!applicationData.workflowHistory) {
+            applicationData.workflowHistory = [];
+        }
+        applicationData.workflowHistory.push({
+            step: 'সার্ভে রিপোর্ট জমা দেওয়া হয়েছে',
+            by: currentUser.name,
+            date: new Date().toLocaleString(),
+            details: report.substring(0, 100) + (report.length > 100 ? '...' : ''),
+            status: 'completed'
+        });
+    }
+
+    saveApplicationToStorage();
+    updateApplicationStatus(
+        action.value === 'verify' ? 'ফিল্ড সার্ভে সম্পন্ন' : 'প্রত্যাখ্যান করা হয়েছে',
+        action.value === 'verify' ? 'status-verified' : 'status-rejected'
+    );
+
+    alert('সার্ভে রিপোর্ট সফলভাবে সেভ করা হয়েছে');
+    backToApplication();
+}
+
+function saveFinalApproval() {
+    const action = document.querySelector('input[name="finalAction"]:checked');
+
+    if (!action) {
+        alert('দয়া করে একটি অ্যাকশন নির্বাচন করুন');
+        return;
+    }
+
+    if (action.value === 'reject') {
+        const rejectReason = document.getElementById("finalRejectText").value.trim();
+        if (!rejectReason) {
+            alert('দয়া করে প্রত্যাখ্যানের কারণ লিখুন');
+            return;
+        }
+        applicationData.finalRejectReason = rejectReason;
+        applicationData.status = WORKFLOW_STATUS.REJECTED;
+        
+        // Add to workflow history
+        if (!applicationData.workflowHistory) {
+            applicationData.workflowHistory = [];
+        }
+        applicationData.workflowHistory.push({
+            step: 'চূড়ান্ত অনুমোদন প্রত্যাখ্যান',
+            by: currentUser.name,
+            date: new Date().toLocaleString(),
+            details: rejectReason,
+            status: 'rejected'
+        });
+    } else {
+        applicationData.status = WORKFLOW_STATUS.APPROVED_BY_XEN;
+        applicationData.approvedBy = currentUser.name;
+        applicationData.approvedAt = new Date().toLocaleString();
+        
+        // Add to workflow history
+        if (!applicationData.workflowHistory) {
+            applicationData.workflowHistory = [];
+        }
+        applicationData.workflowHistory.push({
+            step: 'চূড়ান্ত অনুমোদন দেওয়া হয়েছে',
+            by: currentUser.name,
+            date: new Date().toLocaleString(),
+            status: 'approved'
+        });
+    }
+
+    saveApplicationToStorage();
+    updateApplicationStatus(
+        action.value === 'approve' ? 'XEN অনুমোদন করেছেন' : 'প্রত্যাখ্যান করা হয়েছে',
+        action.value === 'approve' ? 'status-approved' : 'status-rejected'
+    );
+
+    alert('চূড়ান্ত সিদ্ধান্ত সফলভাবে সেভ করা হয়েছে');
+    backToApplication();
+}
+
+// ==================== ACTION TAKEN SECTION ====================
+function showActionTakenSection() {
+    hideAllSections();
+    document.getElementById("applicationContainer").classList.remove('hidden');
+    document.getElementById("actionTakenSection").classList.remove('hidden');
+
+    const actionAppNo = document.getElementById("actionAppNo");
+    if (actionAppNo) actionAppNo.textContent = applicationData.application_no || '_________ (N/A)';
+    const actionCustomerName = document.getElementById("actionCustomerName");
+    if (actionCustomerName) actionCustomerName.textContent = applicationData.customer_name || 'N/A';
+}
+
+function saveActionTaken() {
+    const actionDetails = document.getElementById("actionTakenDetails").value.trim();
+
+    if (!actionDetails) {
+        alert('দয়া করে গৃহীত পদক্ষেপের বিবরণ লিখুন');
+        return;
+    }
+
+    applicationData.actionTaken = {
+        by: currentUser.name,
+        date: new Date().toLocaleString(),
+        details: actionDetails
+    };
+    applicationData.status = WORKFLOW_STATUS.ACTION_TAKEN;
+
+    // Add to workflow history
+    if (!applicationData.workflowHistory) {
+        applicationData.workflowHistory = [];
+    }
+    applicationData.workflowHistory.push({
+        step: 'গৃহীত পদক্ষেপ রেকর্ড করা হয়েছে',
+        by: currentUser.name,
+        date: new Date().toLocaleString(),
+        details: actionDetails.substring(0, 100) + (actionDetails.length > 100 ? '...' : ''),
+        status: 'action_taken'
+    });
+
+    saveApplicationToStorage();
+    updateApplicationStatus('গৃহীত পদক্ষেপ', 'status-action-taken');
+    
+    // Update action taken section in form
+    updateActionTakenInForm();
+    
+    alert('গৃহীত পদক্ষেপ সফলভাবে সেভ করা হয়েছে');
+    backToApplication();
+}
+
+function updateActionTakenInForm() {
+    const actionSection = document.getElementById("actionTakenSectionInForm");
+    if (actionSection && applicationData.actionTaken) {
+        actionSection.classList.remove('hidden');
+        
+        const staticActionTakenBy = document.getElementById("staticActionTakenBy");
+        if (staticActionTakenBy) staticActionTakenBy.textContent = applicationData.actionTaken.by;
+        
+        const staticActionTakenDate = document.getElementById("staticActionTakenDate");
+        if (staticActionTakenDate) staticActionTakenDate.textContent = applicationData.actionTaken.date;
+        
+        const staticActionTakenDetails = document.getElementById("staticActionTakenDetails");
+        if (staticActionTakenDetails) staticActionTakenDetails.textContent = applicationData.actionTaken.details;
+    }
+}
+
+function toggleSaeRejectReason(show) {
+    const el = document.getElementById("saeRejectReason");
+    if (el) el.classList.toggle("hidden", !show);
+}
+
+function toggleFinalRejectReason(show) {
+    const el = document.getElementById("finalRejectReason");
+    if (el) el.classList.toggle("hidden", !show);
+}
+
+// ==================== UI MANAGEMENT ====================
 function hideAllSections() {
-    document.getElementById("searchSection").style.display = "none";
-    document.getElementById("formSection").style.display = "none";
-    document.getElementById("dataCollectionSection").style.display = "none";
-    document.getElementById("saeSection").style.display = "none";
-    document.getElementById("finalApprovalSection").style.display = "none";
+    const sections = [
+        'loginSection', 'dashboardSection', 'applicationContainer',
+        'searchSection', 'formSection', 'dataCollectionSection', 
+        'saeSection', 'finalApprovalSection', 'actionTakenSection', 'assignmentSection'
+    ];
+    sections.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+    });
 }
 
 function showSearchSection(){
     hideAllSections();
-    document.getElementById("searchSection").style.display="block";
-    document.getElementById("searchInput").value = '';
-    document.getElementById("feederSelect").value = '';
-    document.getElementById("nidInput").value = '';
-    document.getElementById("mobileInput").value = '';
-    document.getElementById("generatedAppNo").textContent = 'ফিডার নির্বাচন করুন';
+    document.getElementById("applicationContainer").classList.remove('hidden');
+    document.getElementById("searchSection").classList.remove('hidden');
+    
+    const si = document.getElementById("searchInput");
+    if (si) si.value = '';
+    const feeder = document.getElementById("feederSelect");
+    if (feeder) feeder.value = '';
+    const nid = document.getElementById("nidInput");
+    if (nid) nid.value = '';
+    const mob = document.getElementById("mobileInput");
+    if (mob) mob.value = '';
+    const gen = document.getElementById("generatedAppNo");
+    if (gen) gen.textContent = 'ফিডার নির্বাচন করুন';
     currentInputNumber = '';
+    
+    // Reset application data for new search
+    applicationData = {};
 }
 
 function showDataCollectionSection(){
     hideAllSections();
-    document.getElementById("dataCollectionSection").style.display="block";
+    document.getElementById("applicationContainer").classList.remove('hidden');
+    document.getElementById("dataCollectionSection").classList.remove('hidden');
 }
 
 function showFormSection(){
     hideAllSections();
-    document.getElementById("formSection").style.display="block";
-    document.getElementById("rechargeSection").style.display = 'block'; 
+    document.getElementById("applicationContainer").classList.remove('hidden');
+    document.getElementById("formSection").classList.remove('hidden');
+    
+    const rechargeSection = document.getElementById("rechargeSection");
+    if (rechargeSection) rechargeSection.style.display = 'block';
+
+    updateWorkflowActions();
+
+    if (!applicationData.status) {
+        applicationData.status = WORKFLOW_STATUS.CREATED;
+    }
+
+    updateApplicationStatus(getStatusText(applicationData.status), getStatusClass(applicationData.status));
+    
+    // Update action taken section if exists
+    updateActionTakenInForm();
 }
 
 function showSAESection(){
     hideAllSections();
-    document.getElementById("saeSection").style.display="block";
+    document.getElementById("applicationContainer").classList.remove('hidden');
+    document.getElementById("saeSection").classList.remove('hidden');
 
-    // Populate SAE section info
-    document.getElementById("saeAppNo").textContent = applicationData.application_no || '_________ (N/A)';
-    document.getElementById("saeCustomerName").textContent = applicationData.customer_name || 'N/A';
+    const saeAppNo = document.getElementById("saeAppNo");
+    if (saeAppNo) saeAppNo.textContent = applicationData.application_no || '_________ (N/A)';
+    const saeCustomerName = document.getElementById("saeCustomerName");
+    if (saeCustomerName) saeCustomerName.textContent = applicationData.customer_name || 'N/A';
 }
 
 function showFinalApprovalSection(){
     hideAllSections();
-    document.getElementById("finalApprovalSection").style.display="block";
+    document.getElementById("applicationContainer").classList.remove('hidden');
+    document.getElementById("finalApprovalSection").classList.remove('hidden');
 
-    // Populate Final Approval section info
-    document.getElementById("finalAppNo").textContent = applicationData.application_no || '_________ (N/A)';
-    document.getElementById("finalCustomerName").textContent = applicationData.customer_name || 'N/A';
-    document.getElementById("finalReport").textContent = applicationData.saeReport || document.getElementById("saeReport").value || 'No Report';
+    const finalAppNo = document.getElementById("finalAppNo");
+    if (finalAppNo) finalAppNo.textContent = applicationData.application_no || '_________ (N/A)';
+    const finalCustomerName = document.getElementById("finalCustomerName");
+    if (finalCustomerName) finalCustomerName.textContent = applicationData.customer_name || '_________ (N/A)';
+    const finalReport = document.getElementById("finalReport");
+    if (finalReport) finalReport.textContent = applicationData.saeReport || document.getElementById("saeReport")?.value || 'No Report';
 }
 
 function backToApplication(){
@@ -580,213 +1737,379 @@ function backToSae(){
     showSAESection();
 }
 
-function closeForm(){
-    if(window.AndroidInterface && AndroidInterface.closeApplication){ 
-        AndroidInterface.closeApplication(); 
+// ==================== UTILITY FUNCTIONS ====================
+function getStatusText(status){
+    switch(status){
+        case WORKFLOW_STATUS.CREATED: return 'নতুন আবেদন';
+        case WORKFLOW_STATUS.ASSIGNED_TO_AE: return 'AE/SDE তে Assign করা হয়েছে';
+        case WORKFLOW_STATUS.ASSIGNED_TO_SAE: return 'SAE তে Assign করা হয়েছে';
+        case WORKFLOW_STATUS.FIELD_SURVEY_COMPLETED: return 'ফিল্ড সার্ভে সম্পন্ন';
+        case WORKFLOW_STATUS.VERIFIED_BY_AE: return 'AE Verify করেছেন';
+        case WORKFLOW_STATUS.APPROVED_BY_XEN: return 'XEN অনুমোদন করেছেন';
+        case WORKFLOW_STATUS.REJECTED: return 'প্রত্যাখ্যান করা হয়েছে';
+        case WORKFLOW_STATUS.ACTION_TAKEN: return 'গৃহীত পদক্ষেপ';
+        case WORKFLOW_STATUS.COMPLETED: return 'সম্পন্ন';
+        default: return 'স্ট্যাটাস অজানা';
     }
 }
 
+function getStatusClass(status){
+    switch(status){
+        case WORKFLOW_STATUS.CREATED: return 'status-pending';
+        case WORKFLOW_STATUS.ASSIGNED_TO_AE:
+        case WORKFLOW_STATUS.ASSIGNED_TO_SAE:
+            return 'status-assigned';
+        case WORKFLOW_STATUS.FIELD_SURVEY_COMPLETED:
+        case WORKFLOW_STATUS.VERIFIED_BY_AE:
+            return 'status-verified';
+        case WORKFLOW_STATUS.APPROVED_BY_XEN:
+            return 'status-approved';
+        case WORKFLOW_STATUS.REJECTED:
+            return 'status-rejected';
+        case WORKFLOW_STATUS.ACTION_TAKEN:
+            return 'status-action-taken';
+        case WORKFLOW_STATUS.COMPLETED:
+            return 'status-completed';
+        default: return 'status-pending';
+    }
+}
 
-// --- Search and Data Fetching ---
-function selectType(t){
-    selectedType=t;
-    document.getElementById("prepaidBtn").classList.toggle("active",t==="prepaid");
-    document.getElementById("postpaidBtn").classList.toggle("active",t==="postpaid");
+// ==================== EXISTING FORM FUNCTIONS (UPDATED) ====================
+function setTextSafe(id, val){ 
+    const el=document.getElementById(id); 
+    if(!el) return; 
+    el.textContent = (val || '').toString(); 
+}
 
-    const input = document.getElementById("searchInput");
-    if (t === 'prepaid') {
-        input.placeholder = '১২ ডিজিটের মিটার নং লিখুন';
+function setInputSafe(id, val){ 
+    const el=document.getElementById(id); 
+    if(!el) return; 
+    el.value = (val || '').toString(); 
+}
+
+function fillFormWithData(data){
+    hideLoading();
+    if(!data){ showError("ডেটা নেই"); return; }
+    if(data.error){ showError(data.error); return; }
+    
+    console.log("Received data:", data);
+    
+    // Set application number
+    setTextSafe("applicationNoDisplay", data.application_no || '');
+    
+    // Set main fields
+    const fields = [
+        { static:'staticCustomerName', editable:'editableCustomerName', value: data.customer_name },
+        { static:'staticFatherName', editable:'editableFatherName', value: data.father_name },
+        { static:'staticAddress', editable:'editableAddress', value: data.address },
+        { static:'staticMobileNo', editable:'editableMobileNo', value: data.mobile_no },
+        { static:'staticNid', editable:'', value: data.nid }
+    ];
+    
+    fields.forEach(f => { 
+        setTextSafe(f.static, f.value || ''); 
+        if (f.editable) setInputSafe(f.editable, f.value || ''); 
+    });
+
+    // Set meter and consumer numbers based on type
+    if(currentCustomerType === 'prepaid'){
+        setTextSafe("staticMeterNo", currentInputNumber || '');
+        setInputSafe("editableMeterNo", currentInputNumber || '');
+        setTextSafe("staticConsumerNo", data.consumer_no || '');
+        setInputSafe("editableConsumerNo", data.consumer_no || '');
     } else {
-        input.placeholder = 'গ্রাহক নং বা মিটার নং লিখুন';
+        setTextSafe("staticMeterNo", data.meter_no || '');
+        setInputSafe("editableMeterNo", data.meter_no || '');
+        setTextSafe("staticConsumerNo", currentInputNumber || '');
+        setInputSafe("editableConsumerNo", currentInputNumber || '');
+    }
+
+    // Set additional fields
+    setTextSafe("arrear", (data.arrear && data.arrear!=="0") ? data.arrear : "কোন বকেয়া নেই");
+
+    // Set recharge data
+    const rechargeSection = document.getElementById("rechargeSection");
+    if(rechargeSection){
+        if(currentCustomerType === 'prepaid'){
+            rechargeSection.style.display='block';
+            const rechargeData = data.recharges || [];
+            for(let i=1;i<=3;i++){ 
+                setTextSafe(`rechargeDate${i}`, ""); 
+                setTextSafe(`rechargeAmount${i}`, ""); 
+            }
+            let count=0;
+            rechargeData.slice(0,3).forEach(r=>{ 
+                count++; 
+                setTextSafe(`rechargeDate${count}`, r.Date||""); 
+                setTextSafe(`rechargeAmount${count}`, r.Amount||""); 
+            });
+            for(let i=count+1;i<=3;i++){ 
+                setTextSafe(`rechargeDate${i}`, "\u00A0"); 
+                setTextSafe(`rechargeAmount${i}`, "\u00A0"); 
+            }
+        } else {
+            rechargeSection.style.display='none';
+        }
+    }
+
+    if(isEditMode) toggleEditMode();
+    showFormSection();
+}
+
+function toggleEditMode(){
+    isEditMode = !isEditMode;
+    const editBtn = document.getElementById("editToggleBtn");
+    if(isEditMode){
+        document.querySelectorAll('.static-value').forEach(el=>el.classList.add('hidden'));
+        document.querySelectorAll('.editable-field').forEach(el=>el.classList.remove('hidden'));
+        if(editBtn) { editBtn.textContent='💾 এডিট সেভ করুন'; editBtn.style.backgroundColor='#28a745'; }
+    } else {
+        document.querySelectorAll('.static-value').forEach(el=>{
+            const fieldId = el.id.replace('static','editable');
+            const input = document.getElementById(fieldId);
+            const v = input ? input.value : '';
+            el.textContent = v || '';
+            el.classList.remove('hidden');
+        });
+        document.querySelectorAll('.editable-field').forEach(el=>el.classList.add('hidden'));
+        if(editBtn){ editBtn.textContent='✏️ তথ্য এডিট করুন'; editBtn.style.backgroundColor='#ffc107'; }
+        saveEditedData();
     }
 }
 
-function fetchData(){
-    const input=document.getElementById("searchInput").value.trim();
-    if(!input){ showError("দয়া করে মিটার নং বা গ্রাহক নং লিখুন!"); return; }
+function saveEditedData(){
+    const editedData = {
+        customerName: document.getElementById('editableCustomerName')?.value || '',
+        fatherName: document.getElementById('editableFatherName')?.value || '',
+        address: document.getElementById('editableAddress')?.value || '',
+        mobileNo: document.getElementById('editableMobileNo')?.value || '',
+        meterNo: document.getElementById('editableMeterNo')?.value || '',
+        consumerNo: document.getElementById('editableConsumerNo')?.value || '',
+        inputNumber: currentInputNumber,
+        customerType: currentCustomerType
+    };
+    
+    // Update application data
+    applicationData.customer_name = editedData.customerName;
+    applicationData.father_name = editedData.fatherName;
+    applicationData.address = editedData.address;
+    applicationData.mobile_no = editedData.mobileNo;
+    applicationData.meter_no = editedData.meterNo;
+    applicationData.consumer_no = editedData.consumerNo;
+    
+    saveApplicationToStorage();
+    
+    if(window.javaApp && typeof javaApp.saveEditedData === 'function'){
+        try { 
+            javaApp.saveEditedData(JSON.stringify(editedData)); 
+            showToast("ডেটা সফলভাবে সেভ হয়েছে");
+        } catch(e){ 
+            console.warn("saveEditedData failed:", e);
+            showToast("ডেটা সেভ করতে সমস্যা হয়েছে");
+        }
+    } else {
+        console.log("Edited data (no javaApp):", editedData);
+    }
+}
 
+// ==================== SEARCH AND DATA FETCHING ====================
+function selectType(t){ 
+    selectedType=t; 
+    document.getElementById("prepaidBtn")?.classList.toggle("active", t==="prepaid"); 
+    document.getElementById("postpaidBtn")?.classList.toggle("active", t==="postpaid"); 
+    const input=document.getElementById("searchInput"); 
+    if(input) input.placeholder = (t==='prepaid') ? '১২ ডিজিটের মিটার নং লিখুন' : 'গ্রাহক নং বা মিটার নং লিখুন'; 
+}
+
+function showLoading(){ 
+    const ld=document.getElementById("loading"); 
+    if(ld) ld.style.display="block"; 
+    const b=document.getElementById("searchBtn"); 
+    if(b){ b.disabled=true; b.textContent="খুঁজছি..."; } 
+}
+
+function hideLoading(){ 
+    const ld=document.getElementById("loading"); 
+    if(ld) ld.style.display="none"; 
+    const b=document.getElementById("searchBtn"); 
+    if(b){ b.disabled=false; b.textContent="খুঁজুন"; } 
+}
+
+function showError(m){ 
+    const e=document.getElementById("error"); 
+    if(e){ e.textContent=m; e.style.display="block"; } 
+    hideLoading(); 
+}
+
+function hideError(){ 
+    const e=document.getElementById("error"); 
+    if(e) e.style.display="none"; 
+}
+
+// ==================== FIXED FETCH DATA FUNCTION ====================
+async function fetchData() {
+    hideError();
+    const inputEl = document.getElementById("searchInput");
+    if(!inputEl){ 
+        showError("Internal error: search input not found"); 
+        return; 
+    }
+    
+    const input = inputEl.value.trim();
+    if(!input){ 
+        showError("দয়া করে মিটার নং বা গ্রাহক নং লিখুন!"); 
+        return; 
+    }
+    
     currentInputNumber = input;
     showLoading();
 
-    if(window.AndroidInterface && AndroidInterface.fetchDataForApplication){
-        try{
-            const result=AndroidInterface.fetchDataForApplication(input,selectedType);
-            const data=JSON.parse(result);
-            currentCustomerType = selectedType;
+    // CRITICAL FIX: Reset applicationData for new search but preserve essential structure
+    const tempAppData = { ...applicationData };
+    applicationData = {
+        customer_name: tempAppData.customer_name,
+        father_name: tempAppData.father_name,
+        address: tempAppData.address,
+        mobile_no: tempAppData.mobile_no,
+        consumer_no: tempAppData.consumer_no,
+        meter_no: tempAppData.meter_no,
+        arrear: tempAppData.arrear,
+        recharges: tempAppData.recharges
+    };
 
-            if(data.error){ showError(data.error); return; }
-
-            applicationData = data; // Store data globally
-
-            // Populate Data Collection screen fields
-            document.getElementById("previewCustomerName").textContent = data.customer_name || 'N/A';
-            document.getElementById("previewAddress").textContent = data.address || 'N/A';
-            document.getElementById("previewMobileNo").textContent = data.mobile_no || 'N/A';
-            document.getElementById("mobileInput").value = data.mobile_no || '';
-
-            showDataCollectionSection();
-
-        }catch(err){ 
-            showError("App error: ডেটা লোডে ব্যর্থ। "+err); 
-        } finally {
-            hideLoading();
+    try {
+        let result;
+        // Use AndroidInterface if available, otherwise use javaApp
+        if(window.AndroidInterface && AndroidInterface.fetchDataForApplication){
+            result = AndroidInterface.fetchDataForApplication(input, selectedType);
+        } else if (window.javaApp && typeof javaApp.fetchDataForApplication === 'function') {
+            result = javaApp.fetchDataForApplication(input, selectedType);
+        } else {
+            // Mock data for testing
+            result = JSON.stringify({
+                customer_name: "টেস্ট গ্রাহক",
+                father_name: "টেস্ট পিতা",
+                address: "টেস্ট ঠিকানা, সুনামগঞ্জ",
+                mobile_no: "017XXXXXXXX",
+                consumer_no: selectedType === 'prepaid' ? "CONS123456" : input,
+                meter_no: selectedType === 'prepaid' ? input : "MTR789012",
+                arrear: "0",
+                recharges: [
+                    { Date: "2024-01-15", Amount: "500" },
+                    { Date: "2024-01-10", Amount: "300" }
+                ]
+            });
         }
-    } else {
-        showError("AndroidInterface.fetchDataForApplication অনুপস্থিত।");
+
+        // FIX: Proper JSON parsing with error handling
+        let data;
+        try {
+            data = JSON.parse(result);
+        } catch (parseError) {
+            console.error("JSON Parse Error:", parseError);
+            showError("ডেটা ফরম্যাট সঠিক নয়। দয়া করে আবার চেষ্টা করুন।");
+            hideLoading();
+            return;
+        }
+
+        // Validate data structure
+        if (!data || typeof data !== 'object') {
+            showError("অবৈধ ডেটা ফরম্যাট");
+            hideLoading();
+            return;
+        }
+
+        currentCustomerType = selectedType;
+        
+        // Merge data properly
+        applicationData = { ...applicationData, ...data };
+        
+        // Update preview section
+        const previewCustomerName = document.getElementById("previewCustomerName");
+        if (previewCustomerName) previewCustomerName.textContent = data.customer_name || 'N/A';
+        
+        const previewAddress = document.getElementById("previewAddress");
+        if (previewAddress) previewAddress.textContent = data.address || 'N/A';
+        
+        const previewMobileNo = document.getElementById("previewMobileNo");
+        if (previewMobileNo) previewMobileNo.textContent = data.mobile_no || 'N/A';
+        
+        const mobileInput = document.getElementById("mobileInput");
+        if (mobileInput) mobileInput.value = data.mobile_no || '';
+
+        showDataCollectionSection();
+        
+    } catch(err) {
+        console.error("Data fetch error:", err);
+        showError("ডেটা লোডে ব্যর্থ: " + (err.message || err));
+    } finally {
         hideLoading();
     }
 }
 
-// --- Application Number Generation ---
-function generateApplicationNo() {
-    const feeder = document.getElementById("feederSelect").value;
-    if (!feeder) {
-        document.getElementById("generatedAppNo").textContent = "ফিডার নির্বাচন করুন";
-        return;
-    }
-
-    const appNo = getNextApplicationNumber(feeder);
-    document.getElementById("generatedAppNo").textContent = appNo;
-}
-
-// --- Data Collection and Form Filling ---
-function generateApplication() {
-    const feeder = document.getElementById("feederSelect").value;
-    const nid = document.getElementById("nidInput").value.trim();
-    const mobileNo = document.getElementById("mobileInput").value.trim();
-
-    if (!feeder) {
-        if(window.AndroidInterface && AndroidInterface.showToast) {
-            AndroidInterface.showToast("দয়া করে ফিডার নির্বাচন করুন।");
-        } else { alert("দয়া করে ফিডার নির্বাচন করুন।"); }
-        return;
-    }
-
-    // Update mobile number in application data
-    applicationData.mobile_no = mobileNo || applicationData.mobile_no;
-    
-    // Store collected data
-    applicationData.feeder = feeder;
-    applicationData.nid = nid;
-    applicationData.application_no = document.getElementById("generatedAppNo").textContent;
-
-    fillFormWithData(applicationData);
-    showFormSection();
-}
-
-function fillFormWithData(data){
-    document.getElementById("applicationNoDisplay").textContent = data.application_no || '_________';
-
-    // Fill all static fields
-    document.getElementById("staticCustomerName").textContent = data.customer_name || '_____________';
-    document.getElementById("staticFatherName").textContent = data.father_name || '_____________';
-    document.getElementById("staticAddress").textContent = data.address || '_____________';
-    document.getElementById("staticMobileNo").textContent = data.mobile_no || '_____________';
-    document.getElementById("staticNid").textContent = data.nid || '_____________';
-
-    if (currentCustomerType === 'prepaid') {
-        document.getElementById("staticMeterNo").textContent = currentInputNumber || "_____________";
-        document.getElementById("staticConsumerNo").textContent = data.consumer_no || "_____________";
-    } else {
-        document.getElementById("staticMeterNo").textContent = data.meter_no || "_____________";
-        document.getElementById("staticConsumerNo").textContent = currentInputNumber || "_____________";
-    }
-
-    document.getElementById("arrear").textContent = (data.arrear && data.arrear!=="0") ? data.arrear : "কোনও বকেয়া নেই";
-
-    const rechargeSection = document.getElementById("rechargeSection");
-    if (currentCustomerType === 'prepaid' && data.recharges) {
-        rechargeSection.style.display = 'block';
-        const rechargeData = data.recharges || [];
-
-        for (let i = 1; i <= 3; i++) {
-            const r = rechargeData[i - 1];
-            document.getElementById(`rechargeDate${i}`).textContent = r ? (r.Date || "-") : "";
-            document.getElementById(`rechargeAmount${i}`).textContent = r ? (r.Amount || "-") : "";
+// ==================== PRINT AND EXPORT ====================
+function printApplication() {
+    if(window.javaApp && typeof javaApp.printApplication === 'function'){
+        try {
+            javaApp.printApplication();
+        } catch(e){
+            console.error("Print failed:", e);
+            window.print(); // fallback to browser print
         }
     } else {
-        rechargeSection.style.display = 'none';
+        window.print(); // fallback to browser print
     }
 }
 
-
-// --- Approval Logic ---
-function toggleSaeRejectReason(show) {
-    document.getElementById("saeRejectReason").classList.toggle("hidden", !show);
-}
-
-function saveSaeReport() {
-    const action = document.querySelector('input[name="saeAction"]:checked');
-    const report = document.getElementById("saeReport").value;
-    const rejectReason = document.getElementById("saeRejectText").value;
-
-    if (!action) {
-         if(window.AndroidInterface && AndroidInterface.showToast) AndroidInterface.showToast('দয়া করে একটি অ্যাকশন নির্বাচন করুন।');
-         return;
-    }
-
-    const reportData = {
-        application_no: applicationData.application_no,
-        action: action.value,
-        report: report,
-        rejectReason: action.value === 'reject' ? rejectReason : null
-    };
-
-    // Store the report text globally (used for the next screen preview)
-    applicationData.saeReport = report;
-
-    // TODO: Call AndroidInterface.saveSaeReport(JSON.stringify(reportData));
-    if(window.AndroidInterface && AndroidInterface.showToast) AndroidInterface.showToast(`SAE রিপোর্ট সেভ করা হয়েছে: ${reportData.action}`);
-
-    backToApplication();
-}
-
-function toggleFinalRejectReason(show) {
-    document.getElementById("finalRejectReason").classList.toggle("hidden", !show);
-}
-
-function saveFinalApproval() {
-    const action = document.querySelector('input[name="finalAction"]:checked');
-    const rejectReason = document.getElementById("finalRejectText").value;
-
-    if (!action) {
-         if(window.AndroidInterface && AndroidInterface.showToast) AndroidInterface.showToast('দয়া করে একটি অ্যাকশন নির্বাচন করুন।');
-         return;
-    }
-
-    const finalData = {
-        application_no: applicationData.application_no,
-        action: action.value,
-        rejectReason: action.value === 'reject' ? rejectReason : null
-    };
-
-    // TODO: Call AndroidInterface.saveFinalApproval(JSON.stringify(finalData));
-    if(window.AndroidInterface && AndroidInterface.showToast) AndroidInterface.showToast(`চূড়ান্ত সিদ্ধান্ত সেভ করা হয়েছে: ${finalData.action}`);
-
-    showSearchSection(); // Go back to start after final decision
-}
-
-
-// --- Initialization and Events ---
 function saveAsPDF() {
     if (window.AndroidInterface && AndroidInterface.saveAsPDF) {
         AndroidInterface.saveAsPDF();
+    } else if (window.javaApp && typeof javaApp.saveAsPDF === 'function') {
+        try {
+            javaApp.saveAsPDF();
+        } catch(e){
+            console.error("PDF save failed:", e);
+            showToast("PDF সেভ করতে সমস্যা হয়েছে");
+        }
     } else {
-        alert('PDF সেভ করার জন্য প্রিন্ট অপশন ব্যবহার করুন');
+        showToast("PDF ফিচার উপলব্ধ নয়");
         window.print();
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    showSearchSection(); 
-    selectType(selectedType);
-});
-
-// Allow Enter key to search
-document.getElementById("searchInput").addEventListener("keypress", function(e) {
-    if (e.key === "Enter") {
-        fetchData();
+function showToast(message) {
+    if(window.javaApp && typeof javaApp.showToast === 'function'){
+        javaApp.showToast(message);
+    } else {
+        alert(message);
     }
+}
+
+function closeForm(){ 
+    if(window.javaApp && typeof javaApp.closeApplication === 'function'){ 
+        javaApp.closeApplication(); 
+    } 
+}
+
+// ==================== INITIALIZATION ====================
+document.addEventListener('DOMContentLoaded', () => {
+    // Set default values
+    window.selectedType = 'prepaid';
+    window.currentCustomerType = 'prepaid';
+    window.currentInputNumber = '';
+    window.isEditMode = false;
+
+    selectType(selectedType);
+    showLogin();
+
+    // Wire up events
+    const searchInput = document.getElementById("searchInput");
+    if(searchInput) searchInput.addEventListener("keypress", function(e){ 
+        if(e.key === "Enter") fetchData(); 
+    });
+
+    const searchBtn = document.getElementById("searchBtn");
+    if(searchBtn) searchBtn.addEventListener("click", fetchData);
 });
 </script>
 </body>
