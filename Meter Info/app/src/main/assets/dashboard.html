@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>বিদ্যুৎ আবেদন ব্যবস্থাপনা</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+    <!-- Main Dashboard Section -->
+    <section id="dashboardSection" class="section">
+        <div class="dashboard-header">
+            <h1>বিদ্যুৎ আবেদন ব্যবস্থাপনা</h1>
+            <p>বিক্রয় ও বিতরণ বিভাগ, সুনামগঞ্জ</p>
+        </div>
+        
+        <div class="action-grid">
+            <!-- Existing Complaint Form -->
+            <div class="action-card" onclick="openComplaintForm()">
+                <h3>নতুন আবেদন</h3>
+                <p>নতুন কমপ্লেইন্ট রেজিস্ট্রেশন</p>
+            </div>
+            
+            <!-- NEW: Data Management -->
+            <div class="action-card" onclick="showDataManagement()">
+                <h3>আবেদন ব্যবস্থাপনা</h3>
+                <p>মাসওয়ারী আবেদন দেখুন ও এক্সপোর্ট করুন</p>
+            </div>
+            
+            <!-- You can add more buttons here -->
+            <div class="action-card" onclick="showHistory()">
+                <h3>আবেদন হিস্ট্রি</h3>
+                <p>পূর্বের আবেদনগুলো দেখুন</p>
+            </div>
+            
+            <div class="action-card" onclick="showReports()">
+                <h3>রিপোর্ট</h3>
+                <p>বিভিন্ন রিপোর্ট দেখুন</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Data Management Section -->
+    <section id="dataManagementSection" class="section hidden">
+        <div class="section-header">
+            <h2>আবেদন ব্যবস্থাপনা</h2>
+            <button class="back-btn" onclick="showDashboard()">← ব্যাক</button>
+        </div>
+        
+        <div class="control-panel">
+            <div class="filter-controls">
+                <select id="monthSelect" onchange="loadApplicationsByMonth()">
+                    <option value="">সব মাস</option>
+                    <option value="2024-01">জানুয়ারি ২০২৪</option>
+                    <option value="2024-02">ফেব্রুয়ারি ২০২৪</option>
+                    <option value="2024-03">মার্চ ২০২৪</option>
+                    <option value="2024-04">এপ্রিল ২০২৪</option>
+                    <option value="2024-05">মে ২০২৪</option>
+                    <option value="2024-06">জুন ২০২৪</option>
+                    <option value="2024-07">জুলাই ২০২৪</option>
+                    <option value="2024-08">আগস্ট ২০২৪</option>
+                    <option value="2024-09">সেপ্টেম্বর ২০২৪</option>
+                    <option value="2024-10">অক্টোবর ২০২৪</option>
+                    <option value="2024-11">নভেম্বর ২০২৪</option>
+                    <option value="2024-12">ডিসেম্বর ২০২৪</option>
+                </select>
+                
+                <input type="text" id="searchAppNo" placeholder="আবেদন নং দিয়ে সার্চ করুন">
+                <button class="btn" onclick="searchApplication()">সার্চ</button>
+            </div>
+            
+            <div class="action-controls">
+                <button class="btn btn-success" onclick="exportToExcel()">এক্সেল এক্সপোর্ট</button>
+                <button class="btn btn-info" onclick="showStats()">পরিসংখ্যান</button>
+                <button class="btn" onclick="loadApplicationsByMonth()">রিফ্রেশ</button>
+            </div>
+        </div>
+        
+        <div id="applicationsList">
+            <!-- Applications will be loaded here -->
+        </div>
+    </section>
+
+    <!-- Other sections can be added here -->
+
+    <script src="js/DataManager.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>
