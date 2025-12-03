@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application List</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Noto Sans Bengali', Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 15px;
+            background: #f5f5f5;
+        }
+
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 15px;
+            border-radius: 8px 8px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .controls {
+            background: white;
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            min-width: 200px;
+        }
+
+        .filter-select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            min-width: 150px;
+        }
+
+        .action-btn {
+            padding: 10px 15px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .action-btn.export {
+            background: #28a745;
+        }
+
+        .action-btn.print {
+            background: #6c757d;
+        }
+
+        .action-btn.back {
+            background: #dc3545;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            background: white;
+            border-radius: 0 0 8px 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1000px;
+        }
+
+        th {
+            background: #f8f9fa;
+            padding: 12px 8px;
+            text-align: left;
+            border-bottom: 2px solid #dee2e6;
+            cursor: pointer;
+            user-select: none;
+            position: sticky;
+            top: 0;
+        }
+
+        th:hover {
+            background: #e9ecef;
+        }
+
+        th.sort-asc::after {
+            content: " ↑";
+        }
+
+        th.sort-desc::after {
+            content: " ↓";
+        }
+
+        td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #dee2e6;
+            font-size: 14px;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status-badge {
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        .status-created { background: #fff3cd; color: #856404; }
+        .status-assigned { background: #d1ecf1; color: #0c5460; }
+        .status-verified { background: #d4edda; color: #155724; }
+        .status-approved { background: #d1e7dd; color: #0f5132; }
+        .status-rejected { background: #f8d7da; color: #721c24; }
+        .status-completed { background: #cce5ff; color: #004085; }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #007bff;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .pagination {
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            background: white;
+            border-top: 1px solid #ddd;
+        }
+
+        .page-btn {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            background: white;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .page-btn.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+        .mobile-only {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+            }
+
+            .mobile-only {
+                display: block;
+            }
+
+            .desktop-only {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="header">
+    <h2 style="margin: 0;">📊 Application List</h2>
+    <div style="display: flex; gap: 10px;">
+        <span id="appCount">0 Application</span>
+        <span id="lastUpdated">Loading...</span>
+    </div>
+</div>
+
+<div class="controls">
+    <input type="text"
+           id="searchInput"
+           class="search-box"
+           placeholder="🔍 নাম, আবেদন নং, মিটার নং দিয়ে খুঁজুন..."
+           onkeyup="filterTable()">
+
+    <select id="statusFilter" class="filter-select" onchange="filterTable()">
+        <option value="">All Status</option>
+        <option value="created">New Application</option>
+        <option value="assigned">Assigned</option>
+        <option value="verified">Verified</option>
+        <option value="approved">Approved</option>
+        <option value="rejected">Rejected</option>
+        <option value="completed">Complete</option>
+    </select>
+
+    <select id="feederFilter" class="filter-select" onchange="filterTable()">
+        <option value="">সকল ফিডার</option>
+        <option value="amb">AMBARI (amb)</option>
+        <option value="bor">BOROPARA (bor)</option>
+    </select>
+
+    <select id="dateFilter" class="filter-select" onchange="filterTable()">
+        <option value="">সকল তারিখ</option>
+        <option value="today">আজ</option>
+        <option value="yesterday">গতকাল</option>
+        <option value="week">এই সপ্তাহ</option>
+        <option value="month">এই মাস</option>
+    </select>
+
+    <button class="action-btn export" onclick="exportToExcel()">
+        📥 এক্সেলে এক্সপোর্ট
+    </button>
+
+    <button class="action-btn print" onclick="printTable()">
+        🖨️ প্রিন্ট
+    </button>
+
+    <button class="action-btn back" onclick="goBack()">
+        ← ড্যাশবোর্ড
+    </button>
+</div>
+
+<div class="table-container">
+    <table id="applicationsTable">
+        <thead>
+        <tr>
+            <th onclick="sortTable(0)">আবেদন নং</th>
+            <th onclick="sortTable(1)">গ্রাহকের নাম</th>
+            <th onclick="sortTable(2)">ঠিকানা</th>
+            <th onclick="sortTable(3)">মোবাইল</th>
+            <th onclick="sortTable(4)">মিটার নং</th>
+            <th onclick="sortTable(5)">ফিডার</th>
+            <th onclick="sortTable(6)">স্ট্যাটাস</th>
+            <th onclick="sortTable(7)">তৈরির তারিখ</th>
+            <th onclick="sortTable(8)">সর্বশেষ আপডেট</th>
+            <th class="desktop-only" onclick="sortTable(9)">কার্যক্রম</th>
+        </tr>
+        </thead>
+        <tbody id="tableBody">
+        <tr id="loadingRow">
+            <td colspan="10" class="loading">
+                ⏳ Firebase থেকে ডেটা লোড হচ্ছে...
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="pagination" id="pagination" style="display: none;">
+    <!-- Pagination buttons will be added here -->
+</div>
+
+<script>
+        // Global variables
+        let allApplications = [];
+        let filteredApplications = [];
+        let currentSortColumn = -1;
+        let sortDirection = 1; // 1 = asc, -1 = desc
+        let currentPage = 1;
+        const pageSize = 50;
+
+        // ==================== INITIALIZATION ====================
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load applications from Firebase
+            loadApplicationsFromFirebase();
+
+            // Update last updated time
+            updateLastUpdated();
+
+            // Auto-refresh every 30 seconds
+            setInterval(updateLastUpdated, 30000);
+        });
+
+        // ==================== FIREBASE DATA LOADING ====================
+        function loadApplicationsFromFirebase() {
+            try {
+                // Check if AndroidInterface is available
+                if (window.AndroidInterface && AndroidInterface.loadApplications) {
+                    AndroidInterface.loadApplications();
+                    document.getElementById('lastUpdated').textContent = "ডেটা লোড হচ্ছে...";
+                } else {
+                    // Fallback: Load from localStorage
+                    const apps = JSON.parse(localStorage.getItem('allApplications')) || [];
+                    displayApplications(apps);
+                    document.getElementById('lastUpdated').textContent = "অফলাইন মোড";
+                }
+            } catch (error) {
+                console.error("Firebase load error:", error);
+                showError("ডেটা লোড করতে সমস্যা");
+            }
+        }
+
+        // Callback function for Android to send data
+        window.handleLoadedApplications = function(applications) {
+            try {
+                console.log("Excel View: Received", applications.length, "applications");
+
+                if (applications && applications.length > 0) {
+                    allApplications = applications;
+                    displayApplications(allApplications);
+
+                    // Update counts
+                    document.getElementById('appCount').textContent =
+                        applications.length + " আবেদন";
+
+                    document.getElementById('lastUpdated').textContent =
+                        "সর্বশেষ আপডেট: " + new Date().toLocaleTimeString('bn-BD');
+
+                    showSuccess(applications.length + " টি আবেদন লোড হয়েছে");
+                } else {
+                    showInfo("কোন আবেদন পাওয়া যায়নি");
+                    document.getElementById('appCount').textContent = "0 আবেদন";
+                }
+            } catch (error) {
+                console.error("Data processing error:", error);
+                showError("ডেটা প্রসেস করতে সমস্যা");
+            }
+        };
+
+        // ==================== TABLE DISPLAY ====================
+        function displayApplications(apps) {
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = '';
+
+            if (apps.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="10" class="empty-state">
+                            📭 কোন আবেদন পাওয়া যায়নি
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            filteredApplications = [...apps];
+
+            // Apply initial sorting
+            sortTable(7); // Sort by creation date descending by default
+
+            // Show first page
+            showPage(1);
+        }
+
+        function showPage(page) {
+            currentPage = page;
+            const startIndex = (page - 1) * pageSize;
+            const endIndex = startIndex + pageSize;
+            const pageData = filteredApplications.slice(startIndex, endIndex);
+
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = '';
+
+            pageData.forEach(app => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${app.application_no || 'N/A'}</strong></td>
+                    <td>${app.customer_name || 'N/A'}</td>
+                    <td>${app.address || 'N/A'}</td>
+                    <td>${app.mobile_no || 'N/A'}</td>
+                    <td>${app.meter_no || 'N/A'}</td>
+                    <td>${app.feeder || 'N/A'}</td>
+                    <td><span class="status-badge ${getStatusClass(app.status)}">
+                        ${getStatusText(app.status)}
+                    </span></td>
+                    <td>${formatDate(app.createdAt) || 'N/A'}</td>
+                    <td>${formatDate(app.updatedAt) || 'N/A'}</td>
+                    <td class="desktop-only">
+                        <button onclick="viewDetails('${app.application_no}')"
+                                style="padding: 5px 10px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer;">
+                            👁️ দেখুন
+                        </button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+
+            updatePagination();
+        }
+
+        // ==================== SORTING ====================
+        function sortTable(columnIndex) {
+            const headers = document.querySelectorAll('th');
+
+            // Remove sort indicators from all headers
+            headers.forEach(header => {
+                header.classList.remove('sort-asc', 'sort-desc');
+            });
+
+            // If clicking the same column, reverse direction
+            if (currentSortColumn === columnIndex) {
+                sortDirection = -sortDirection;
+            } else {
+                currentSortColumn = columnIndex;
+                sortDirection = 1;
+            }
+
+            // Add sort indicator to current header
+            const currentHeader = headers[columnIndex];
+            currentHeader.classList.add(sortDirection === 1 ? 'sort-asc' : 'sort-desc');
+
+            // Sort the data
+            filteredApplications.sort((a, b) => {
+                let valueA = getCellValue(a, columnIndex);
+                let valueB = getCellValue(b, columnIndex);
+
+                // Handle dates
+                if (columnIndex === 7 || columnIndex === 8) {
+                    valueA = new Date(valueA || 0);
+                    valueB = new Date(valueB || 0);
+                }
+
+                // Handle numbers (application numbers)
+                if (columnIndex === 0 && valueA && valueB) {
+                    const numA = extractNumber(valueA);
+                    const numB = extractNumber(valueB);
+                    if (numA !== null && numB !== null) {
+                        return (numA - numB) * sortDirection;
+                    }
+                }
+
+                // Default string comparison
+                if (valueA < valueB) return -1 * sortDirection;
+                if (valueA > valueB) return 1 * sortDirection;
+                return 0;
+            });
+
+            showPage(1);
+        }
+
+        function getCellValue(app, columnIndex) {
+            switch(columnIndex) {
+                case 0: return app.application_no;
+                case 1: return app.customer_name;
+                case 2: return app.address;
+                case 3: return app.mobile_no;
+                case 4: return app.meter_no;
+                case 5: return app.feeder;
+                case 6: return app.status;
+                case 7: return app.createdAt;
+                case 8: return app.updatedAt;
+                default: return '';
+            }
+        }
+
+        // ==================== FILTERING ====================
+        function filterTable() {
+            const searchText = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            const feederFilter = document.getElementById('feederFilter').value;
+            const dateFilter = document.getElementById('dateFilter').value;
+
+            filteredApplications = allApplications.filter(app => {
+                // Search filter
+                if (searchText) {
+                    const searchable = [
+                        app.application_no,
+                        app.customer_name,
+                        app.address,
+                        app.mobile_no,
+                        app.meter_no,
+                        app.consumer_no
+                    ].join(' ').toLowerCase();
+
+                    if (!searchable.includes(searchText)) {
+                        return false;
+                    }
+                }
+
+                // Status filter
+                if (statusFilter && app.status !== statusFilter) {
+                    return false;
+                }
+
+                // Feeder filter
+                if (feederFilter && app.feeder !== feederFilter) {
+                    return false;
+                }
+
+                // Date filter
+                if (dateFilter) {
+                    const appDate = new Date(app.createdAt);
+                    const today = new Date();
+
+                    switch(dateFilter) {
+                        case 'today':
+                            if (!isSameDay(appDate, today)) return false;
+                            break;
+                        case 'yesterday':
+                            const yesterday = new Date(today);
+                            yesterday.setDate(yesterday.getDate() - 1);
+                            if (!isSameDay(appDate, yesterday)) return false;
+                            break;
+                        case 'week':
+                            const weekAgo = new Date(today);
+                            weekAgo.setDate(weekAgo.getDate() - 7);
+                            if (appDate < weekAgo) return false;
+                            break;
+                        case 'month':
+                            const monthAgo = new Date(today);
+                            monthAgo.setMonth(monthAgo.getMonth() - 1);
+                            if (appDate < monthAgo) return false;
+                            break;
+                    }
+                }
+
+                return true;
+            });
+
+            document.getElementById('appCount').textContent =
+                filteredApplications.length + " আবেদন (ফিল্টারকৃত)";
+
+            showPage(1);
+        }
+
+        // ==================== PAGINATION ====================
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredApplications.length / pageSize);
+            const paginationDiv = document.getElementById('pagination');
+
+            if (totalPages <= 1) {
+                paginationDiv.style.display = 'none';
+                return;
+            }
+
+            paginationDiv.style.display = 'flex';
+            paginationDiv.innerHTML = '';
+
+            // Previous button
+            const prevBtn = document.createElement('button');
+            prevBtn.className = 'page-btn';
+            prevBtn.innerHTML = '←';
+            prevBtn.disabled = currentPage === 1;
+            prevBtn.onclick = () => showPage(currentPage - 1);
+            paginationDiv.appendChild(prevBtn);
+
+            // Page buttons
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
+
+            for (let i = startPage; i <= endPage; i++) {
+                const pageBtn = document.createElement('button');
+                pageBtn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
+                pageBtn.textContent = i;
+                pageBtn.onclick = () => showPage(i);
+                paginationDiv.appendChild(pageBtn);
+            }
+
+            // Next button
+            const nextBtn = document.createElement('button');
+            nextBtn.className = 'page-btn';
+            nextBtn.innerHTML = '→';
+            nextBtn.disabled = currentPage === totalPages;
+            nextBtn.onclick = () => showPage(currentPage + 1);
+            paginationDiv.appendChild(nextBtn);
+        }
+
+        // ==================== EXPORT FUNCTIONS ====================
+        function exportToExcel() {
+            try {
+                if (filteredApplications.length === 0) {
+                    showError("এক্সপোর্ট করার মত কোন ডেটা নেই");
+                    return;
+                }
+
+                if (window.AndroidInterface && AndroidInterface.exportToExcel) {
+                    AndroidInterface.exportToExcel(JSON.stringify(filteredApplications));
+                    showSuccess("এক্সেল ফাইল তৈরি হচ্ছে...");
+                } else {
+                    // Fallback: Download as CSV
+                    downloadAsCSV();
+                }
+            } catch (error) {
+                console.error("Export error:", error);
+                showError("এক্সপোর্ট করতে সমস্যা: " + error.message);
+            }
+        }
+
+        function downloadAsCSV() {
+            const csvRows = [];
+
+            // Headers
+            const headers = [
+                'আবেদন নং',
+                'গ্রাহকের নাম',
+                'পিতার নাম',
+                'ঠিকানা',
+                'মোবাইল নং',
+                'মিটার নং',
+                'গ্রাহক নং',
+                'ফিডার',
+                'স্ট্যাটাস',
+                'বকেয়া',
+                'তৈরির তারিখ',
+                'আপডেট তারিখ'
+            ];
+            csvRows.push(headers.join(','));
+
+            // Data rows
+            filteredApplications.forEach(app => {
+                const row = [
+                    `"${app.application_no || ''}"`,
+                    `"${app.customer_name || ''}"`,
+                    `"${app.father_name || ''}"`,
+                    `"${app.address || ''}"`,
+                    `"${app.mobile_no || ''}"`,
+                    `"${app.meter_no || ''}"`,
+                    `"${app.consumer_no || ''}"`,
+                    `"${app.feeder || ''}"`,
+                    `"${getStatusText(app.status)}"`,
+                    `"${app.arrear || '0'}"`,
+                    `"${formatDate(app.createdAt) || ''}"`,
+                    `"${formatDate(app.updatedAt) || ''}"`
+                ];
+                csvRows.push(row.join(','));
+            });
+
+            const csvContent = csvRows.join('\n');
+            const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `applications_${new Date().toISOString().slice(0,10)}.csv`;
+            link.click();
+
+            showSuccess("CSV ফাইল ডাউনলোড শুরু হয়েছে");
+        }
+
+        function printTable() {
+            window.print();
+        }
+
+        // ==================== UTILITY FUNCTIONS ====================
+        function getStatusText(status) {
+            const statusMap = {
+                'created': 'নতুন আবেদন',
+                'assigned_to_ae': 'AE তে Assign',
+                'assigned_to_sae': 'SAE তে Assign',
+                'field_survey_completed': 'সার্ভে সম্পন্ন',
+                'verified_by_ae': 'AE Verify করেছেন',
+                'approved_by_xen': 'XEN অনুমোদন করেছেন',
+                'rejected': 'প্রত্যাখ্যান',
+                'action_taken': 'গৃহীত পদক্ষেপ',
+                'completed': 'সম্পন্ন'
+            };
+            return statusMap[status] || status;
+        }
+
+        function getStatusClass(status) {
+            const classMap = {
+                'created': 'status-created',
+                'assigned_to_ae': 'status-assigned',
+                'assigned_to_sae': 'status-assigned',
+                'field_survey_completed': 'status-verified',
+                'verified_by_ae': 'status-verified',
+                'approved_by_xen': 'status-approved',
+                'rejected': 'status-rejected',
+                'action_taken': 'status-completed',
+                'completed': 'status-completed'
+            };
+            return classMap[status] || 'status-created';
+        }
+
+        function formatDate(dateString) {
+    if (!dateString) return '';
+
+    // If it's already a readable date string, return as is
+    if (dateString.includes('/') || dateString.includes(':')) {
+        return dateString;
+    }
+
+    // If it's a Firebase timestamp object
+    if (typeof dateString === 'object' && dateString.seconds) {
+        const date = new Date(dateString.seconds * 1000);
+        return date.getDate() + '/' + (date.getMonth()+1) + '/' + date.getFullYear();
+    }
+
+    // Try to parse anyway
+    try {
+        const date = new Date(dateString);
+        if (!isNaN(date.getTime())) {
+            return date.getDate() + '/' + (date.getMonth()+1) + '/' + date.getFullYear();
+        }
+    } catch(e) {}
+
+    return dateString;
+}
+
+        function isSameDay(date1, date2) {
+            return date1.getDate() === date2.getDate() &&
+                   date1.getMonth() === date2.getMonth() &&
+                   date1.getFullYear() === date2.getFullYear();
+        }
+
+        function extractNumber(text) {
+            const match = text.match(/\d+/);
+            return match ? parseInt(match[0]) : null;
+        }
+
+        function updateLastUpdated() {
+            const now = new Date();
+            document.getElementById('lastUpdated').textContent =
+                "সর্বশেষ আপডেট: " + now.toLocaleTimeString('bn-BD');
+        }
+
+        function viewDetails(appNo) {
+            if (window.AndroidInterface && AndroidInterface.showToast) {
+                AndroidInterface.showToast("খোলা হচ্ছে: " + appNo);
+                // You can open detailed view here
+            }
+        }
+
+        function goBack() {
+            if (window.AndroidInterface && AndroidInterface.showToast) {
+                AndroidInterface.showToast("ড্যাশবোর্ডে ফিরে যাচ্ছি...");
+                // Navigate back to main dashboard
+                // This depends on your app navigation structure
+            }
+        }
+
+        function showSuccess(message) {
+            if (window.AndroidInterface && AndroidInterface.showToast) {
+                AndroidInterface.showToast(message);
+            } else {
+                alert(message);
+            }
+        }
+
+        function showError(message) {
+            if (window.AndroidInterface && AndroidInterface.showToast) {
+                AndroidInterface.showToast("❌ " + message);
+            } else {
+                alert("❌ " + message);
+            }
+        }
+
+        function showInfo(message) {
+            if (window.AndroidInterface && AndroidInterface.showToast) {
+                AndroidInterface.showToast("ℹ️ " + message);
+            }
+        }
+    </script>
+</body>
+</html>
