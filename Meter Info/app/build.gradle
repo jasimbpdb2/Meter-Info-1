@@ -1,15 +1,16 @@
 plugins {
     id 'com.android.application'
+    id 'com.google.gms.google-services' // Firebase plugin
 }
 
 android {
     namespace 'customerinfo.app'
-    compileSdk 36
+    compileSdk 34  // Changed from 36 to 34 (latest stable)
 
     defaultConfig {
         applicationId "customerinfo.app"
         minSdk 26
-        targetSdk 36
+        targetSdk 34  // Changed from 36 to 34
         versionCode 1
         versionName "1.0"
 
@@ -30,20 +31,33 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 
-    buildToolsVersion '36.0.0'
-
-    packagingOptions {
-        pickFirst 'META-INF/LICENSE'
-        pickFirst 'META-INF/NOTICE'
-    }
+    // Remove buildToolsVersion line (auto-managed)
 }
 
 dependencies {
     implementation 'androidx.appcompat:appcompat:1.7.1'
     implementation 'com.google.android.material:material:1.13.0'
-    implementation 'org.json:json:20250517'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4' // Add this
+
+    // Firebase dependencies (UPDATED)
+    implementation platform('com.google.firebase:firebase-bom:33.0.0') // Updated from 34.6.0
+    implementation 'com.google.firebase:firebase-firestore'
+    implementation 'com.google.firebase:firebase-storage'
+    implementation 'com.google.firebase:firebase-analytics'
+
+    // JSON & Networking
+    implementation 'org.json:json:20230227'
     implementation 'com.squareup.okhttp3:okhttp:5.3.0'
+    implementation 'com.google.code.gson:gson:2.10.1'
+
+    // Excel/POI
     implementation 'org.apache.poi:poi-ooxml:5.2.3'
     implementation 'org.apache.poi:poi:5.2.3'
     implementation 'xerces:xercesImpl:2.12.2'
+
+    // FTP
+    //implementation 'commons-net:commons-net:3.9.0'
+
+    // Remove duplicate JSON dependency
+    // implementation 'org.json:json:20250517' // Remove this line
 }
