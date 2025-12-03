@@ -10,7 +10,17 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.webkit.JavascriptInterface;
 import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 public class HtmlActivity extends AppCompatActivity {
 
@@ -31,55 +41,147 @@ public class HtmlActivity extends AppCompatActivity {
         webView.getSettings().setJavaScriptEnabled(true);
         webView.getSettings().setDomStorageEnabled(true);
 
-        // Required to render properly
         webView.setWebViewClient(new WebViewClient());
-
-        // LINK Android ↔ JavaScript
         webView.addJavascriptInterface(new WebAppInterface(), "AndroidInterface");
 
-        // Load template
         try {
             webView.loadUrl("file:///android_asset/application_form.html");
-            Log.d(TAG, "HTML Loaded Successfully");
         } catch (Exception e) {
-            Log.e(TAG, "Error loading HTML: " + e.getMessage());
-            Toast.makeText(this, "Error loading form", Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "HTML load error: " + e.getMessage());
         }
     }
 
-    /* =============================
-       ANDROID ↔ JAVASCRIPT INTERFACE
-       ============================= */
+    /* ==================================================
+            ANDROID ↔ JAVASCRIPT INTERFACE
+       ================================================== */
     public class WebAppInterface {
 
+        // ---------------- FETCH DATA -------------------
         @JavascriptInterface
         public String fetchDataForApplication(String inputNumber, String type) {
             try {
-                Log.d(TAG, "Fetch requested → " + inputNumber + " (" + type + ")");
                 ApplicationFormHelper helper = new ApplicationFormHelper();
-                java.util.Map<String, Object> result =
+                Map<String, Object> result =
                         helper.fetchDataForApplicationForm(inputNumber, type);
 
-                return new org.json.JSONObject(result).toString();
+                return new JSONObject(result).toString();
 
             } catch (Exception e) {
-                Log.e(TAG, "fetch error: " + e.getMessage());
                 return "{\"error\":\"Data fetch failed: " + e.getMessage() + "\"}";
             }
         }
 
+        // ---------------- SAVE APPLICATION -------------------
         @JavascriptInterface
-        public void saveAsPDF() {
+        public void saveApplication(String jsonData, String pdfFileName) {
             runOnUiThread(() -> {
-                Log.d(TAG, "PDF save requested");
-                createPdfFromWebView();
+                try {
+                    JSONObject appData = new JSONObject(jsonData);
+
+                    FirebaseManager.getInstance(HtmlActivity.this)
+                            .saveApplication(appData, new FirebaseManager.SaveCallback() {
+                                @Override
+                                public void onSuccess(String appNo) {
+                                    showToast("Saved to Firebase: " + appNo);
+
+                                    // If there's a PDF, upload it
+                                    if (pdfFileName != null && !pdfFileName.isEmpty()) {
+                                        try {
+                                            InputStream pdfStream = getAssets().open(pdfFileName);
+                                            FirebaseManager.getInstance(HtmlActivity.this)
+                                                    .uploadPdf(appNo, pdfStream, pdfFileName,
+                                                            new FirebaseManager.UploadCallback() {
+                                                                @Override
+                                                                public void onSuccess(String downloadUrl) {
+                                                                    showToast("PDF uploaded: " + downloadUrl);
+                                                                }
+
+                                                                @Override
+                                                                public void onError(String error) {
+                                                                    showToast("PDF upload failed: " + error);
+                                                                }
+                                                            });
+                                        } catch (Exception e) {
+                                            showToast("PDF error: " + e.getMessage());
+                                        }
+                                    }
+                                }
+
+                                @Override
+                                public void onError(String error) {
+                                    showToast("Save failed: " + error);
+                                }
+                            });
+
+                } catch (Exception e) {
+                    showToast("Save failed: " + e.getMessage());
+                }
             });
         }
 
         @JavascriptInterface
-        public void closeApplication() {
-            finish();
+        public void loadApplications() {
+            FirebaseManager.getInstance(HtmlActivity.this)
+                    .loadApplications(new FirebaseManager.LoadCallback() {
+                        @Override
+                        public void onSuccess(JSONArray apps) {
+                            String js = "handleLoadedApplications(" + apps.toString() + ");";
+                            webView.post(() -> webView.evaluateJavascript(js, null));
+                        }
+
+                        @Override
+                        public void onError(String error) {
+                            showToast("Load failed: " + error);
+                        }
+                    });
         }
+
+        // ---------------- WORKFLOW UPDATE -------------------
+        @JavascriptInterface
+        public void addWorkflowStep(String appNo, String step, String user) {
+            // This method is now handled in JavaScript
+            showToast("Workflow step added: " + step);
+        }
+
+        // ---------------- EXCEL EXPORT -------------------
+        @JavascriptInterface
+        public void exportToExcel(String jsonApps) {
+            try {
+                JSONArray arr = new JSONArray(jsonApps);
+                String csv = generateExcel(arr);
+
+                boolean ok = saveExcel(csv);
+
+                if (ok) showToast("Excel saved in Downloads");
+                else showToast("Failed to save Excel");
+
+            } catch (Exception e) {
+                showToast("Excel error: " + e.getMessage());
+            }
+        }
+
+        @JavascriptInterface
+        public void openExcelView() {
+            runOnUiThread(() -> {
+                try {
+                    // Load the Excel view HTML
+                    webView.loadUrl("file:///android_asset/excel_view.html");
+                    showToast("এক্সেল ভিউ লোড হচ্ছে...");
+                } catch (Exception e) {
+                    showToast("এক্সেল ভিউ লোড করতে সমস্যা: " + e.getMessage());
+                }
+            });
+        }
+
+        // ---------------- PDF EXPORT -------------------
+        @JavascriptInterface
+        public void saveAsPDF() {
+            runOnUiThread(HtmlActivity.this::createPdfFromWebView);
+        }
+
+        // ---------------- UTIL -------------------
+        @JavascriptInterface
+        public void closeApplication() { finish(); }
 
         @JavascriptInterface
         public void showToast(String msg) {
@@ -87,41 +189,82 @@ public class HtmlActivity extends AppCompatActivity {
         }
     }
 
-    /* =============================
-       PDF GENERATION
-       ============================= */
+    /* ==================================================
+                     EXCEL GENERATION
+       ================================================== */
+    private String generateExcel(JSONArray apps) {
+
+        StringBuilder csv = new StringBuilder();
+        csv.append("Application No,Name,Father,Address,Mobile,Meter,Consumer,Status,Feeder,Created\n");
+
+        try {
+            for (int i = 0; i < apps.length(); i++) {
+                JSONObject a = apps.getJSONObject(i);
+
+                csv.append("\"").append(a.optString("application_no")).append("\",");
+                csv.append("\"").append(a.optString("customer_name")).append("\",");
+                csv.append("\"").append(a.optString("father_name")).append("\",");
+                csv.append("\"").append(a.optString("address")).append("\",");
+                csv.append("\"").append(a.optString("mobile_no")).append("\",");
+                csv.append("\"").append(a.optString("meter_no")).append("\",");
+                csv.append("\"").append(a.optString("consumer_no")).append("\",");
+                csv.append("\"").append(a.optString("status")).append("\",");
+                csv.append("\"").append(a.optString("feeder")).append("\",");
+                csv.append("\"").append(a.optString("createdAt")).append("\"\n");
+            }
+        } catch (Exception ignore) {}
+
+        return csv.toString();
+    }
+
+    private boolean saveExcel(String content) {
+        try {
+            File dir = android.os.Environment.getExternalStoragePublicDirectory(
+                    android.os.Environment.DIRECTORY_DOWNLOADS);
+
+            String name = "applications_" + System.currentTimeMillis() + ".csv";
+            File file = new File(dir, name);
+
+            FileWriter fw = new FileWriter(file);
+            fw.write(content);
+            fw.close();
+
+            return true;
+
+        } catch (Exception e) {
+            Log.e(TAG, "Excel save error: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /* ==================================================
+                        PDF GENERATION
+       ================================================== */
     private void createPdfFromWebView() {
         try {
-            PrintManager printManager = (PrintManager) getSystemService(Context.PRINT_SERVICE);
+            PrintManager pm = (PrintManager) getSystemService(Context.PRINT_SERVICE);
 
-            String jobName = "Application_Form_" + System.currentTimeMillis();
+            PrintDocumentAdapter adapter =
+                    webView.createPrintDocumentAdapter("AppForm_" + System.currentTimeMillis());
 
-            PrintDocumentAdapter adapter = webView.createPrintDocumentAdapter(jobName);
-
-            PrintAttributes attributes = new PrintAttributes.Builder()
+            PrintAttributes attr = new PrintAttributes.Builder()
                     .setMediaSize(PrintAttributes.MediaSize.ISO_A4)
                     .setMinMargins(PrintAttributes.Margins.NO_MARGINS)
                     .build();
 
-            printManager.print(jobName, adapter, attributes);
-
-            Toast.makeText(this, "PDF Saving... Check Downloads folder", Toast.LENGTH_LONG).show();
+            pm.print("AppForm", adapter, attr);
 
         } catch (Exception e) {
-            Log.e(TAG, "PDF Error: " + e.getMessage());
-            Toast.makeText(this, "PDF Save Failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "PDF Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
 
-    /* =============================
-       BACK BUTTON HANDLER
-       ============================= */
+    /* ==================================================
+                        BACK BUTTON
+       ================================================== */
     @Override
     public void onBackPressed() {
-        if (webView.canGoBack()) {
-            webView.goBack();
-        } else {
-            super.onBackPressed();
-        }
+        if (webView.canGoBack()) webView.goBack();
+        else super.onBackPressed();
     }
 }
