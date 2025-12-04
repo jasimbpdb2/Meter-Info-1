@@ -205,28 +205,50 @@
            onkeyup="filterTable()">
 
     <select id="statusFilter" class="filter-select" onchange="filterTable()">
-        <option value="">All Status</option>
+        <option value="">All Workflow</option>
         <option value="created">New Application</option>
-        <option value="assigned">Assigned</option>
-        <option value="verified">Verified</option>
-        <option value="approved">Approved</option>
+        <option value="assigned_to_ae">Assigned to AE</option>
+        <option value="assigned_to_sae">Assigned to SAE</option>
+        <option value="field_survey_completed">Field Survey Completed</option>
+        <option value="verified_by_ae">AE Verified</option>
+        <option value="approved_by_xen">XEN Approved</option>
         <option value="rejected">Rejected</option>
-        <option value="completed">Complete</option>
+        <option value="completed">Completed</option>
     </select>
 
     <select id="feederFilter" class="filter-select" onchange="filterTable()">
         <option value="">সকল ফিডার</option>
-        <option value="amb">AMBARI (amb)</option>
-        <option value="bor">BOROPARA (bor)</option>
+        <option value="amb">AMBARI - amb</option>
+        <option value="bor">BOROPARA - bor</option>
+        <option value="amb">Hasannogor - Han</option>
+        <option value="bor">Mollikpur - mlkpur</option>
+        <option value="amb">Derai - Der</option>
+        <option value="bor">Shologor - Shol</option>
+        <option value="amb">Betgonj - Bet</option>
+        <option value="bor">Thana - Tha</option>
+    </select>
+    <select id="dateFilter" class="filter-select" onchange="toggleDateRange()">
+        <option value="">সমস্ত তারিখ</option>
+        <option value="range">তারিখের রেঞ্জ</option>
     </select>
 
-    <select id="dateFilter" class="filter-select" onchange="filterTable()">
-        <option value="">সকল তারিখ</option>
-        <option value="today">আজ</option>
-        <option value="yesterday">গতকাল</option>
-        <option value="week">এই সপ্তাহ</option>
-        <option value="month">এই মাস</option>
-    </select>
+    <div id="dateRangeContainer" style="display: none; margin-top: 10px;">
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <div>
+                <label style="font-size: 12px; color: #666;">শুরু তারিখ</label>
+                <input type="date" id="startDate" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                <input type="hidden" id="startTime" value="00:01"> <!-- HIDDEN -->
+            </div>
+            <div>
+                <label style="font-size: 12px; color: #666;">শেষ তারিখ</label>
+                <input type="date" id="endDate" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                <input type="hidden" id="endTime"> <!-- HIDDEN -->
+            </div>
+            <button onclick="applyDateRange()" style="padding: 8px 15px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                Search
+            </button>
+        </div>
+    </div>
 
     <button class="action-btn export" onclick="exportToExcel()">
         📥 এক্সেলে এক্সপোর্ট
@@ -384,8 +406,8 @@
                     <td><span class="status-badge ${getStatusClass(app.status)}">
                         ${getStatusText(app.status)}
                     </span></td>
-                    <td>${formatDate(app.createdAt) || 'N/A'}</td>
-                    <td>${formatDate(app.updatedAt) || 'N/A'}</td>
+                    <td>${getCreatedDate(app)}</td>
+					<td>${getUpdatedDate(app)}</td>
                     <td class="desktop-only">
                         <button onclick="viewDetails('${app.application_no}')"
                                 style="padding: 5px 10px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer;">
@@ -464,75 +486,157 @@
             }
         }
 
-        // ==================== FILTERING ====================
-        function filterTable() {
-            const searchText = document.getElementById('searchInput').value.toLowerCase();
-            const statusFilter = document.getElementById('statusFilter').value;
-            const feederFilter = document.getElementById('feederFilter').value;
-            const dateFilter = document.getElementById('dateFilter').value;
+       function filterTable() {
+    const searchText = document.getElementById('searchInput').value.toLowerCase();
+    const statusFilter = document.getElementById('statusFilter').value;
+    const feederFilter = document.getElementById('feederFilter').value;
+    const dateFilter = document.getElementById('dateFilter').value;
 
-            filteredApplications = allApplications.filter(app => {
-                // Search filter
-                if (searchText) {
-                    const searchable = [
-                        app.application_no,
-                        app.customer_name,
-                        app.address,
-                        app.mobile_no,
-                        app.meter_no,
-                        app.consumer_no
-                    ].join(' ').toLowerCase();
+    filteredApplications = allApplications.filter(app => {
+        // Search filter
+        if (searchText) {
+            const searchable = [
+                app.application_no,
+                app.customer_name,
+                app.address,
+                app.mobile_no,
+                app.meter_no,
+                app.consumer_no
+            ].join(' ').toLowerCase();
 
-                    if (!searchable.includes(searchText)) {
-                        return false;
-                    }
-                }
-
-                // Status filter
-                if (statusFilter && app.status !== statusFilter) {
-                    return false;
-                }
-
-                // Feeder filter
-                if (feederFilter && app.feeder !== feederFilter) {
-                    return false;
-                }
-
-                // Date filter
-                if (dateFilter) {
-                    const appDate = new Date(app.createdAt);
-                    const today = new Date();
-
-                    switch(dateFilter) {
-                        case 'today':
-                            if (!isSameDay(appDate, today)) return false;
-                            break;
-                        case 'yesterday':
-                            const yesterday = new Date(today);
-                            yesterday.setDate(yesterday.getDate() - 1);
-                            if (!isSameDay(appDate, yesterday)) return false;
-                            break;
-                        case 'week':
-                            const weekAgo = new Date(today);
-                            weekAgo.setDate(weekAgo.getDate() - 7);
-                            if (appDate < weekAgo) return false;
-                            break;
-                        case 'month':
-                            const monthAgo = new Date(today);
-                            monthAgo.setMonth(monthAgo.getMonth() - 1);
-                            if (appDate < monthAgo) return false;
-                            break;
-                    }
-                }
-
-                return true;
-            });
-
-            document.getElementById('appCount').textContent =
-                filteredApplications.length + " আবেদন (ফিল্টারকৃত)";
-
-            showPage(1);
+            if (!searchable.includes(searchText)) {
+                return false;
+            }
         }
+
+        // Status filter
+        if (statusFilter && app.status !== statusFilter) {
+            return false;
+        }
+
+        // Feeder filter
+        if (feederFilter && app.feeder !== feederFilter) {
+            return false;
+        }
+
+        // Date range filter - FIXED
+if (dateFilter === 'range') {
+    const startDateStr = document.getElementById('startDate').value;
+    const startTimeStr = document.getElementById('startTime').value || '00:01'; // Default 00:01
+    const endDateStr = document.getElementById('endDate').value;
+    const endTimeStr = document.getElementById('endTime').value; // Will have current time
+
+    if (!startDateStr || !endDateStr) return false;
+
+    // Create dates with actual times
+    const startDate = new Date(startDateStr + 'T' + startTimeStr + ':00');
+    const endDate = new Date(endDateStr + 'T' + endTimeStr + ':00');
+
+    // Get application date
+    const appDate = getApplicationDate(app);
+
+    // Compare dates
+    if (appDate < startDate || appDate > endDate) {
+        return false;
+    }
+}
+
+        return true;
+    });
+
+    document.getElementById('appCount').textContent =
+        filteredApplications.length + " আবেদন (ফিল্টারকৃত)";
+
+    showPage(1);
+}
+function toggleDateRange() {
+    const dateFilter = document.getElementById('dateFilter').value;
+    const container = document.getElementById('dateRangeContainer');
+    
+    if (dateFilter === 'range') {
+        container.style.display = 'block';
+
+        // Default to today if not set
+        const today = new Date();
+        const formatDate = (date) => date.toISOString().split('T')[0];
+
+        // Set default dates to today if empty
+        const startDateInput = document.getElementById('startDate');
+        const endDateInput = document.getElementById('endDate');
+
+        if (!startDateInput.value) {
+            startDateInput.value = formatDate(today);
+        }
+        if (!endDateInput.value) {
+            endDateInput.value = formatDate(today);
+        }
+
+        // Auto-set times
+        updateDateTimeFields();
+
+        // Auto-apply filter
+        setTimeout(() => filterTable(), 100);
+    } else {
+        container.style.display = 'none';
+        filterTable();
+    }
+}
+
+function updateDateTimeFields() {
+    const now = new Date();
+
+    // Always set start time to 00:01 (hidden field)
+    document.getElementById('startTime').value = '00:01';
+
+    // Always set end time to current time (hidden field)
+    document.getElementById('endTime').value =
+        String(now.getHours()).padStart(2, '0') + ':' +
+        String(now.getMinutes()).padStart(2, '0');
+}
+
+// Add event listeners to auto-update times when dates change
+document.addEventListener('DOMContentLoaded', function() {
+    // Listen for date changes
+    document.getElementById('startDate').addEventListener('change', updateDateTimeFields);
+    document.getElementById('endDate').addEventListener('change', updateDateTimeFields);
+
+    // Also call updateDateTimeFields when page loads if range is selected
+    setTimeout(() => {
+        if (document.getElementById('dateFilter').value === 'range') {
+            updateDateTimeFields();
+        }
+    }, 500);
+});
+
+// Update applyDateRange function
+function applyDateRange() {
+    // Ensure times are updated before filtering
+    updateDateTimeFields();
+
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+
+    if (!startDate || !endDate) {
+        showError("দয়া করে তারিখ নির্বাচন করুন");
+        return;
+    }
+
+    if (new Date(startDate) > new Date(endDate)) {
+        showError("শুরু তারিখ শেষ তারিখের আগে হতে হবে");
+        return;
+    }
+
+    filterTable();
+    showSuccess("তারিখ রেঞ্জ প্রয়োগ করা হয়েছে");
+}
+
+// Add this helper function to get application date
+function getApplicationDate(app) {
+    if (app.workflowHistory && app.workflowHistory.length > 0) {
+        return new Date(app.workflowHistory[0].date);
+    }
+    return new Date(app.createdAt || 0);
+}
 
         // ==================== PAGINATION ====================
         function updatePagination() {
@@ -630,8 +734,8 @@
                     `"${app.feeder || ''}"`,
                     `"${getStatusText(app.status)}"`,
                     `"${app.arrear || '0'}"`,
-                    `"${formatDate(app.createdAt) || ''}"`,
-                    `"${formatDate(app.updatedAt) || ''}"`
+                    `"${getCreatedDate(app) || ''}"`,
+                    `"${getUpdatedDate(app) || ''}"`
                 ];
                 csvRows.push(row.join(','));
             });
@@ -651,61 +755,87 @@
             window.print();
         }
 
-        // ==================== UTILITY FUNCTIONS ====================
-        function getStatusText(status) {
-            const statusMap = {
-                'created': 'নতুন আবেদন',
-                'assigned_to_ae': 'AE তে Assign',
-                'assigned_to_sae': 'SAE তে Assign',
-                'field_survey_completed': 'সার্ভে সম্পন্ন',
-                'verified_by_ae': 'AE Verify করেছেন',
-                'approved_by_xen': 'XEN অনুমোদন করেছেন',
-                'rejected': 'প্রত্যাখ্যান',
-                'action_taken': 'গৃহীত পদক্ষেপ',
-                'completed': 'সম্পন্ন'
-            };
-            return statusMap[status] || status;
-        }
+      // ==================== WORKFLOW STATUS CONSTANTS ====================
+const WORKFLOW_STATUS = {
+    CREATED: 'created',
+    ASSIGNED_TO_AE: 'assigned_to_ae',
+    ASSIGNED_TO_SAE: 'assigned_to_sae',
+    FIELD_SURVEY_COMPLETED: 'field_survey_completed',
+    VERIFIED_BY_AE: 'verified_by_ae',
+    APPROVED_BY_XEN: 'approved_by_xen',
+    REJECTED: 'rejected',
+    ACTION_TAKEN: 'action_taken',
+    COMPLETED: 'completed'
+};
 
-        function getStatusClass(status) {
-            const classMap = {
-                'created': 'status-created',
-                'assigned_to_ae': 'status-assigned',
-                'assigned_to_sae': 'status-assigned',
-                'field_survey_completed': 'status-verified',
-                'verified_by_ae': 'status-verified',
-                'approved_by_xen': 'status-approved',
-                'rejected': 'status-rejected',
-                'action_taken': 'status-completed',
-                'completed': 'status-completed'
-            };
-            return classMap[status] || 'status-created';
-        }
-
-        function formatDate(dateString) {
-    if (!dateString) return '';
-
-    // If it's already a readable date string, return as is
-    if (dateString.includes('/') || dateString.includes(':')) {
-        return dateString;
-    }
-
-    // If it's a Firebase timestamp object
-    if (typeof dateString === 'object' && dateString.seconds) {
-        const date = new Date(dateString.seconds * 1000);
-        return date.getDate() + '/' + (date.getMonth()+1) + '/' + date.getFullYear();
-    }
-
-    // Try to parse anyway
-    try {
-        const date = new Date(dateString);
-        if (!isNaN(date.getTime())) {
-            return date.getDate() + '/' + (date.getMonth()+1) + '/' + date.getFullYear();
-        }
-    } catch(e) {}
-
-    return dateString;
+// Update filter options to match
+const statusFilter = document.getElementById('statusFilter');
+if (statusFilter) {
+    statusFilter.innerHTML = `
+        <option value="">All Workflow</option>
+        <option value="${WORKFLOW_STATUS.CREATED}">New Application</option>
+        <option value="${WORKFLOW_STATUS.ASSIGNED_TO_AE}">Assigned to AE</option>
+        <option value="${WORKFLOW_STATUS.ASSIGNED_TO_SAE}">Assigned to SAE</option>
+        <option value="${WORKFLOW_STATUS.FIELD_SURVEY_COMPLETED}">Field Survey Completed</option>
+        <option value="${WORKFLOW_STATUS.VERIFIED_BY_AE}">AE Verified</option>
+        <option value="${WORKFLOW_STATUS.APPROVED_BY_XEN}">XEN Approved</option>
+        <option value="${WORKFLOW_STATUS.REJECTED}">Rejected</option>
+        <option value="${WORKFLOW_STATUS.ACTION_TAKEN}">Action Taken</option>
+        <option value="${WORKFLOW_STATUS.COMPLETED}">Completed</option>
+    `;
 }
+
+// Update getStatusText to use constants
+function getStatusText(status) {
+    switch(status) {
+        case WORKFLOW_STATUS.CREATED: return 'নতুন আবেদন';
+        case WORKFLOW_STATUS.ASSIGNED_TO_AE: return 'AE তে Assign';
+        case WORKFLOW_STATUS.ASSIGNED_TO_SAE: return 'SAE তে Assign';
+        case WORKFLOW_STATUS.FIELD_SURVEY_COMPLETED: return 'সার্ভে সম্পন্ন';
+        case WORKFLOW_STATUS.VERIFIED_BY_AE: return 'AE Verify করেছেন';
+        case WORKFLOW_STATUS.APPROVED_BY_XEN: return 'XEN অনুমোদন করেছেন';
+        case WORKFLOW_STATUS.REJECTED: return 'প্রত্যাখ্যান';
+        case WORKFLOW_STATUS.ACTION_TAKEN: return 'গৃহীত পদক্ষেপ';
+        case WORKFLOW_STATUS.COMPLETED: return 'সম্পন্ন';
+        default: return status || 'নতুন আবেদন';
+    }
+}
+
+// Update getStatusClass to use constants
+function getStatusClass(status) {
+    switch(status) {
+        case WORKFLOW_STATUS.CREATED: return 'status-created';
+        case WORKFLOW_STATUS.ASSIGNED_TO_AE:
+        case WORKFLOW_STATUS.ASSIGNED_TO_SAE:
+            return 'status-assigned';
+        case WORKFLOW_STATUS.FIELD_SURVEY_COMPLETED:
+        case WORKFLOW_STATUS.VERIFIED_BY_AE:
+            return 'status-verified';
+        case WORKFLOW_STATUS.APPROVED_BY_XEN:
+            return 'status-approved';
+        case WORKFLOW_STATUS.REJECTED:
+            return 'status-rejected';
+        case WORKFLOW_STATUS.ACTION_TAKEN:
+        case WORKFLOW_STATUS.COMPLETED:
+            return 'status-completed';
+        default: return 'status-created';
+    }
+}
+         function getCreatedDate(app) {
+    if (app.workflowHistory && app.workflowHistory.length > 0) {
+        return app.workflowHistory[0].date;
+    }
+    return 'N/A';
+}
+
+function getUpdatedDate(app) {
+    if (app.workflowHistory && app.workflowHistory.length > 0) {
+        let last = app.workflowHistory.length - 1;
+        return app.workflowHistory[last].date;
+    }
+    return 'N/A';
+}
+
 
         function isSameDay(date1, date2) {
             return date1.getDate() === date2.getDate() &&
@@ -732,12 +862,14 @@
         }
 
         function goBack() {
-            if (window.AndroidInterface && AndroidInterface.showToast) {
-                AndroidInterface.showToast("ড্যাশবোর্ডে ফিরে যাচ্ছি...");
-                // Navigate back to main dashboard
-                // This depends on your app navigation structure
-            }
-        }
+    // Simply load the main dashboard HTML file
+    window.location.href = "file:///android_asset/application_form.html";
+
+    // Optional: Show toast if available
+    if (window.AndroidInterface && AndroidInterface.showToast) {
+        AndroidInterface.showToast("ড্যাশবোর্ডে ফিরে যাচ্ছি...");
+    }
+}
 
         function showSuccess(message) {
             if (window.AndroidInterface && AndroidInterface.showToast) {
@@ -762,4 +894,6 @@
         }
     </script>
 </body>
+
 </html>
+
