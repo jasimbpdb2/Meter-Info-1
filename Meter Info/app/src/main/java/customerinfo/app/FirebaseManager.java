@@ -19,7 +19,7 @@ import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
-
+import com.google.firebase.firestore.Query;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -190,51 +190,64 @@ public class FirebaseManager {
         });
     }
 
-    // ==================== GET NEXT APPLICATION NUMBER ====================
     public void getNextApplicationNumber(String feeder, final NextNumberCallback callback) {
-        // Get current date
-        String today = new java.text.SimpleDateFormat("yyyyMMdd").format(new java.util.Date());
-        String prefix = feeder + "-" + today + "-";
+        Log.d(TAG, "Getting next number for feeder: " + feeder);
 
-        // Query for existing applications with this prefix
+        // Get ALL applications
         db.collection("applications")
-                .whereGreaterThanOrEqualTo("application_no", prefix)
-                .whereLessThan("application_no", prefix + "zzz")
                 .get()
                 .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
                     @Override
                     public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                        int maxNumber = 0;
+                        int highestNumber = 0;
 
-                        for (DocumentSnapshot doc : queryDocumentSnapshots) {
-                            String appNo = doc.getString("application_no");
-                            if (appNo != null && appNo.startsWith(prefix)) {
+                        Log.d(TAG, "Total documents: " + queryDocumentSnapshots.size());
+
+                        // Loop through ALL documents
+                        for (DocumentSnapshot document : queryDocumentSnapshots) {
+                            String appNo = document.getString("application_no");
+
+                            // Check if this belongs to our feeder
+                            if (appNo != null && appNo.startsWith(feeder + "-")) {
                                 try {
-                                    String numberPart = appNo.substring(prefix.length());
-                                    int num = Integer.parseInt(numberPart);
-                                    if (num > maxNumber) maxNumber = num;
-                                } catch (Exception ignored) {}
+                                    // Get number part (after "amb-" in "amb-001")
+                                    String numberPart = appNo.substring(feeder.length() + 1);
+                                    int currentNum = Integer.parseInt(numberPart);
+
+                                    Log.d(TAG, "Found: " + appNo + " -> " + currentNum);
+
+                                    if (currentNum > highestNumber) {
+                                        highestNumber = currentNum;
+                                    }
+                                } catch (Exception e) {
+                                    Log.e(TAG, "Parse error: " + e.getMessage());
+                                }
                             }
                         }
 
-                        String nextNumber = prefix + String.format("%03d", maxNumber + 1);
+                        int nextNumber = highestNumber + 1;
+                        String newAppNo = feeder + "-" + String.format("%03d", nextNumber);
+
+                        Log.d(TAG, "Result: highest = " + highestNumber +
+                                ", next = " + nextNumber +
+                                ", returning: " + newAppNo);
+
                         if (callback != null) {
-                            callback.onSuccess(nextNumber);
+                            callback.onSuccess(newAppNo);
                         }
                     }
                 })
                 .addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
-                        // If query fails, start from 001
-                        String nextNumber = prefix + "001";
+                        Log.e(TAG, "Error: " + e.getMessage());
+                        String newAppNo = feeder + "-001";
                         if (callback != null) {
-                            callback.onSuccess(nextNumber);
+                            callback.onSuccess(newAppNo);
                         }
                     }
                 });
     }
-
     // ==================== HELPER METHODS ====================
     private Map<String, Object> jsonToMap(JSONObject json) throws JSONException {
         Map<String, Object> map = new HashMap<>();
