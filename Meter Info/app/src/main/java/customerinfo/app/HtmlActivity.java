@@ -1,6 +1,7 @@
 package customerinfo.app;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.print.PrintAttributes;
 import android.print.PrintDocumentAdapter;
@@ -13,13 +14,16 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.InputStream;
-import java.util.HashMap;
 import java.util.Map;
 
 public class HtmlActivity extends AppCompatActivity {
@@ -37,7 +41,6 @@ public class HtmlActivity extends AppCompatActivity {
     }
 
     private void setupWebView() {
-
         webView.getSettings().setJavaScriptEnabled(true);
         webView.getSettings().setDomStorageEnabled(true);
 
@@ -55,6 +58,68 @@ public class HtmlActivity extends AppCompatActivity {
             ANDROID ↔ JAVASCRIPT INTERFACE
        ================================================== */
     public class WebAppInterface {
+
+        // ---------------- APPLICATION NUMBER GENERATION -------------------
+        @JavascriptInterface
+        public void getNextApplicationNumber(String feeder) {
+            FirebaseManager.getInstance(HtmlActivity.this)
+                    .getNextApplicationNumber(feeder, new FirebaseManager.NextNumberCallback() {
+                        @Override
+                        public void onSuccess(String nextNumber) {
+                            String js = "handleNextAppNumber('" + nextNumber + "');";
+                            webView.post(() -> webView.evaluateJavascript(js, null));
+                        }
+
+                        @Override
+                        public void onError(String error) {
+                            // On error, use local counter
+                            String nextNumber = getLocalNextNumber(feeder);
+                            String js = "handleNextAppNumber('" + nextNumber + "');";
+                            webView.post(() -> webView.evaluateJavascript(js, null));
+                        }
+                    });
+        }
+
+        @JavascriptInterface
+        public void loadLastApplicationNumber(String feeder) {
+            // Query for the last application number for this feeder
+            FirebaseFirestore db = FirebaseFirestore.getInstance();
+            db.collection("applications")
+                    .whereEqualTo("feeder", feeder)
+                    .orderBy("application_no", Query.Direction.DESCENDING)
+                    .limit(1)
+                    .get()
+                    .addOnSuccessListener(queryDocumentSnapshots -> {
+                        if (!queryDocumentSnapshots.isEmpty()) {
+                            DocumentSnapshot lastDoc = queryDocumentSnapshots.getDocuments().get(0);
+                            String lastAppNo = lastDoc.getString("application_no");
+                            String js = "handleLastAppNumber('" + lastAppNo + "');";
+                            webView.post(() -> webView.evaluateJavascript(js, null));
+                        } else {
+                            String js = "handleLastAppNumber('');";
+                            webView.post(() -> webView.evaluateJavascript(js, null));
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        String js = "handleLastAppNumber('');";
+                        webView.post(() -> webView.evaluateJavascript(js, null));
+                    });
+        }
+
+        private String getLocalNextNumber(String feeder) {
+            // Get from SharedPreferences as backup
+            SharedPreferences prefs = getSharedPreferences("AppCounters", MODE_PRIVATE);
+            String key = "counter_" + feeder;
+            int counter = prefs.getInt(key, 1);
+
+            // Save incremented value for next time
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.putInt(key, counter + 1);
+            editor.apply();
+
+            // Simple format: feeder-001
+            return feeder + "-" + String.format("%03d", counter);
+        }
 
         // ---------------- FETCH DATA -------------------
         @JavascriptInterface
@@ -119,6 +184,7 @@ public class HtmlActivity extends AppCompatActivity {
             });
         }
 
+        // ---------------- LOAD APPLICATIONS -------------------
         @JavascriptInterface
         public void loadApplications() {
             FirebaseManager.getInstance(HtmlActivity.this)
@@ -181,7 +247,9 @@ public class HtmlActivity extends AppCompatActivity {
 
         // ---------------- UTIL -------------------
         @JavascriptInterface
-        public void closeApplication() { finish(); }
+        public void closeApplication() {
+            finish();
+        }
 
         @JavascriptInterface
         public void showToast(String msg) {
@@ -193,7 +261,6 @@ public class HtmlActivity extends AppCompatActivity {
                      EXCEL GENERATION
        ================================================== */
     private String generateExcel(JSONArray apps) {
-
         StringBuilder csv = new StringBuilder();
         csv.append("Application No,Name,Father,Address,Mobile,Meter,Consumer,Status,Feeder,Created\n");
 
@@ -212,7 +279,8 @@ public class HtmlActivity extends AppCompatActivity {
                 csv.append("\"").append(a.optString("feeder")).append("\",");
                 csv.append("\"").append(a.optString("createdAt")).append("\"\n");
             }
-        } catch (Exception ignore) {}
+        } catch (Exception ignore) {
+        }
 
         return csv.toString();
     }
