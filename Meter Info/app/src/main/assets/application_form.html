@@ -4,25 +4,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
     <title>আবেদনপত্র</title>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;700&display=swap" rel="stylesheet">
+
     <style>
         /* ---------------------------------------------------
            MOBILE FIRST STYLING
         ----------------------------------------------------*/
-        * {
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-
         body {
-            font-family: 'Noto Sans Bengali', Arial, sans-serif;
+            font-family: "Shonar Bangla", serif;
             margin: 0;
-            padding: 10px;
-            font-size: 14px;
-            line-height: 1.4;
-            color: #333;
-            background: #f5f5f5;
-            -webkit-text-size-adjust: 100%;
+            padding: 15px 25px;
+            font-size: 16px;
+            line-height: 1.6;
         }
 
         /* ** FIX: Robust hiding of elements ** */
@@ -156,7 +148,7 @@
             margin-bottom: 5px;
         }
         .APPLICATION_NO {
-            text-align: center;
+            text-align: right;
             font-size: 13px;
             margin-bottom: 8px;
             padding: 5px;
@@ -173,55 +165,49 @@
         }
 
         /* --- Customer Information Section --- */
+        /* Applicant info */
         .info-line {
-            font-size: 13px;
-            margin-bottom: 8px;
-            display: block;
+            font-size: 17px;
+            margin-bottom: 3px;
+            display: flex;
+            align-items: center;
         }
         .info-label {
-            font-weight: 500;
-            display: block;
-            margin-bottom: 2px;
-            color: #555;
+            font-weight: normal;
+            min-width: 180px;
+        }
+        .info-value {
+            font-weight: bold;
+        }
+
+        /* Editable fields */
+        .editable-field {
+            border: 1px dashed #ccc;
+            background: #f9f9f9;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 16px;
+            width: 250px;
+            font-family: "Shonar Bangla", serif;
+            font-weight: bold;
+        }
+
+        .editable-field:focus {
+            border-color: #3498db;
+            background: #fff;
+            outline: none;
         }
 
         .static-value {
-            font-weight: 700;
-            border-bottom: 1px solid #000;
-            padding-bottom: 1px;
-            color: #111;
-            display: block;
-            min-height: 20px;
-            margin-bottom: 8px;
+            font-weight: bold;
         }
 
-        /* Editable Input Fields */
-        .editable-field {
-            border: 1px solid #999;
-            background: #fff;
-            padding: 8px;
-            border-radius: 4px;
-            font-size: 14px;
-            width: 100%;
-            font-weight: normal;
-            margin-bottom: 8px;
-        }
-
-        /* Mobile optimized inline info */
-        .inline-info-group {
-            display: block;
-            margin: 10px 0;
-        }
-        .inline-info {
+        /* Title */
+        .title {
+            text-align: center;
+            font-size: 22px;
             font-weight: bold;
-            display: block;
-            margin-bottom: 2px;
-        }
-        .inline-value {
-            font-weight: bold;
-            border-bottom: 1px solid #000;
-            padding-bottom: 1px;
-            display: block;
+            margin-bottom: 15px;
         }
 
         /* --- Complaint Section --- */
@@ -238,6 +224,12 @@
         .content-grid {
             display: block;
             margin-top: 8px;
+        }
+         /* Two-column area: complaints left, recharge table right */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 65% 35%;
+            grid-gap: 6px;
         }
         .complaints {
             line-height: 1.5;
@@ -273,28 +265,27 @@
             padding: 0 4px;
         }
 
-        /* --- Recharge Table Section --- */
+        /* Recharge section title */
         .recharge-title {
-            font-weight: bold;
             text-align: center;
-            margin-bottom: 5px;
-            font-size: 14px;
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 8px;
         }
+
+        /* Recharge Table */
         .recharge-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 11px;
+            font-size: 17px;
         }
         .recharge-table th, .recharge-table td {
             border: 1px solid #000;
-            padding: 4px;
+            padding: 5px 8px;
             text-align: center;
-            height: 20px;
+            height: 26px;
         }
-        .recharge-table th {
-            background-color: #eee;
-            font-weight: 600;
-        }
+
 
         /* --- Workflow Actions --- */
         .workflow-actions {
@@ -313,7 +304,7 @@
 
         /* --- Footer and Buttons --- */
         .signature {
-            text-align: center;
+            text-align: right;
             margin-top: 20px;
             padding-top: 6px;
             font-size: 14px;
@@ -485,43 +476,61 @@
             margin: 5px 0;
         }
 
-        /* Print Optimization */
-        @media print {
-            body {
-                padding: 5mm !important;
-                line-height: 1.2;
-                font-size: 10px !important;
-                margin: 0 !important;
-                background: white !important;
-            }
+       /* Print Optimization */
+@media print {
+    body {
+        padding: 5mm !important;
+        line-height: 1.2;
+        font-size: 10px !important;
+        margin: 0 !important;
+        background: white !important;
+    }
 
-            .login-section,
-            .dashboard-section,
-            .search-section,
-            .workflow-actions,
-            .data-collection-section,
-            .sae-section,
-            .final-approval-section,
-            .action-taken-section,
-            .assignment-section,
-            .no-print,
-            .edit-controls,
-            .editable-field,
-            .action-buttons {
-                display: none !important;
-            }
+    .login-section,
+    .dashboard-section,
+    .search-section,
+    .workflow-actions,
+    .data-collection-section,
+    .sae-section,
+    .final-approval-section,
+    .action-taken-section,
+    .assignment-section,
+    .no-print,
+    .edit-controls,
+    .editable-field,
+    .action-buttons {
+        display: none !important;
+    }
 
-            .workflow-history {
-                display: block !important;
-                background: white !important;
-                border: 1px solid #ddd !important;
-            }
+    .workflow-history {
+        display: block !important;
+        background: white !important;
+        border: 1px solid #ddd !important;
+    }
 
-            .content-grid {
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
-            }
-        }
+    .content-grid {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
+    /* +++ ADD THESE NEW LINES +++ */
+    .page-break {
+        page-break-after: always;
+        break-after: page;
+        display: block;
+    }
+
+    .workflow-page {
+        page-break-before: always;
+        margin-top: 0;
+        border-top: none;
+    }
+
+    .signature {
+        margin-bottom: 20mm;
+    }
+    /* +++ END NEW LINES +++ */
+}
 
         /* Dropdown styles for mobile */
         .assignee-select {
@@ -544,10 +553,97 @@
         }
 
         /* Radio button mobile optimization */
-        input[type="radio"] {
-            transform: scale(1.2);
-            margin-right: 8px;
-        }
+input[type="radio"] {
+    transform: scale(1.2);
+    margin-right: 8px;
+}
+
+/* ==================== PAGE BREAK STRUCTURE ==================== */
+/* Minimal styles for new page structure */
+.page-break {
+    height: 0;
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+/* SAE recommendations display */
+#billInfoSection {
+    background: #fff;
+    border: 2px solid #28a745;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 15px 0;
+}
+
+/* Workflow page styling */
+.workflow-page {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 2px dashed #ddd;
+}
+
+/* Scrollable workflow steps */
+#workflowSteps {
+
+    padding-right: 5px;
+}
+
+/* Mobile view adjustments */
+@media screen and (max-width: 768px) {
+    .workflow-page {
+        margin-top: 15px;
+        padding-top: 15px;
+    }
+}
+
+/* Print-specific adjustments */
+@media print {
+    .page-break {
+        page-break-after: always;
+        break-after: page;
+        display: block;
+    }
+
+    .workflow-page {
+        page-break-before: always;
+        margin-top: 0;
+        border-top: none;
+        padding-top: 0;
+    }
+
+    /* Keep workflow history visible in print */
+    .workflow-history {
+        display: block !important;
+        background: white !important;
+        border: 1px solid #ddd !important;
+        page-break-inside: avoid;
+    }
+
+    /* Hide workflow actions in print (already in your code) */
+    .workflow-actions {
+        display: none !important;
+    }
+
+    /* Hide action buttons in print (already in your code) */
+    .action-buttons {
+        display: none !important;
+    }
+
+    /* Add space before page break */
+    .signature {
+        margin-bottom: 20mm;
+    }
+}
+
+/* Mobile view adjustments */
+@media screen and (max-width: 768px) {
+    .workflow-page {
+        margin-top: 15px;
+        padding-top: 15px;
+    }
+}
+
     </style>
 <body>
 <!-- Login Section -->
@@ -645,9 +741,14 @@
                 <option value="">-- ফিডার নির্বাচন করুন --</option>
                 <option value="amb">AMBARI - amb</option>
                 <option value="bor">BOROPARA - bor</option>
+                <option value="han">Hasannogor - han</option>
+                <option value="mlkpur">Mollikpur - mlkpur</option>
+                <option value="der">Derai - der</option>
+                <option value="shol">Shologor - shol</option>
+                <option value="bet">Betgonj - bet</option>
+                <option value="tha">Thana - tha</option>
             </select>
         </div>
-
         <div class="info-line mobile-stack">
             <span class="info-label">এনআইডি নংঃ</span>
             <input type="text" class="editable-field mobile-full-width" id="nidInput" placeholder="এনআইডি নং লিখুন">
@@ -671,189 +772,204 @@
 
     <!-- Main Form Section -->
     <div class="form-section hidden" id="formSection">
-        <!-- Workflow History -->
-        <div class="workflow-history" id="workflowHistory">
-            <div class="workflow-history-title">ওয়ার্কফ্লো ইতিহাস</div>
-            <div id="workflowSteps">
-                <!-- Workflow steps will be populated here -->
-            </div>
-        </div>
-
-        <div class="workflow-actions" id="workflowActions">
-            <div class="workflow-title">ওয়ার্কফ্লো একশন</div>
-            <div id="workflowButtons">
-                <!-- Workflow buttons will be populated based on user role and application status -->
-            </div>
-        </div>
-
-        <div class="title">আবেদন পত্র</div>
-        <div class="APPLICATION_NO">
-            আবেদন নং: <span id="applicationNoDisplay">________</span>
-            <span class="status-badge" id="applicationStatusBadge"></span>
-        </div>
-
-        <div class="header">
-            নির্বাহী প্রকৌশলী<br>
-            বিক্রয় ও বিতরণ বিভাগ<br>
-            বিদ্যুৎ উন্নয়ন বোর্ড<br>
-            সুনামগঞ্জ
-        </div>
-
-        <div class="edit-controls no-print">
-            <button class="edit-btn" onclick="toggleEditMode()" id="editToggleBtn">✏️ তথ্য এডিট করুন</button>
-        </div>
-
-        <div class="info-line">
-            <span class="info-label">গ্রাহক/আবেদনকারীর নামঃ </span>
-            <span class="static-value" id="staticCustomerName"></span>
-            <input type="text" class="editable-field hidden" id="editableCustomerName" placeholder="গ্রাহকের নাম">
-        </div>
-
-        <div class="info-line">
-            <span class="info-label">পিতা/স্বামীর নামঃ </span>
-            <span class="static-value" id="staticFatherName"></span>
-            <input type="text" class="editable-field hidden" id="editableFatherName" placeholder="পিতা/স্বামীর নাম">
-        </div>
-
-        <div class="info-line">
-            <span class="info-label">ঠিকানাঃ </span>
-            <span class="static-value" id="staticAddress"></span>
-            <input type="text" class="editable-field hidden" id="editableAddress" placeholder="ঠিকানা">
-        </div>
-
-        <div class="info-line">
-            <span class="info-label">টেলিফোন নংঃ </span>
-            <span class="static-value" id="staticMobileNo"></span>
-            <input type="tel" class="editable-field hidden" id="editableMobileNo" placeholder="টেলিফোন নং">
-        </div>
-
-        <div class="info-line">
-            <span class="info-label">এনআইডি নংঃ </span>
-            <span class="static-value" id="staticNid"></span>
-        </div>
-
-        <div class="info-line">
-            <span class="info-label">মিটার নংঃ </span>
-            <span class="static-value" id="staticMeterNo"></span>
-            <input type="text" class="editable-field hidden" id="editableMeterNo" placeholder="মিটার নং">
-        </div>
-
-        <div class="info-line">
-            <span class="info-label">গ্রাহক নংঃ </span>
-            <span class="static-value" id="staticConsumerNo"></span>
-            <input type="text" class="editable-field hidden" id="editableConsumerNo" placeholder="গ্রাহক নং">
-            <div class="inline-info-group">
-                <span class="inline-info">বকেয়াঃ</span>
-                <span class="inline-value" id="arrear"></span>
-            </div>
-        </div>
-
-        <div class="complain-box">সম্ভাব্য অভিযোগ</div>
-
-        <div class="content-grid">
-            <div class="complaints">
-                <div class="complaint-item">
-                    <input type="checkbox" class="complaint-checkbox" id="complaint1">
-                    <label class="complaint-label" for="complaint1">১. লোড ছাড়াও মিটারে টাকা কাটে / টাকা কাটে না</label>
-                </div>
-                <div class="complaint-item">
-                    <input type="checkbox" class="complaint-checkbox" id="complaint2">
-                    <label class="complaint-label" for="complaint2">২. মিটার টুইস্ট সীল/লীড/প্যাডলক সীল ভাঙ্গা / চুরি</label>
-                </div>
-                <div class="complaint-item">
-                    <input type="checkbox" class="complaint-checkbox" id="complaint3">
-                    <label class="complaint-label" for="complaint3">৩. মিটার ভেঙ্গে / হারিয়ে / পুড়ে গেছে</label>
-                </div>
-                <div class="complaint-item">
-                    <input type="checkbox" class="complaint-checkbox" id="complaint4">
-                    <label class="complaint-label" for="complaint4">৪. মিটার স্থানান্তর / পরিবর্তন করতে আগ্রহী</label>
-                </div>
-                <div class="complaint-item">
-                    <input type="checkbox" class="complaint-checkbox" id="complaint5">
-                    <label class="complaint-label" for="complaint5">৫. মিটারের ডিসপ্লেতে ডিজিট এলোমেলো</label>
-                </div>
-                <div class="complaint-item">
-                    <input type="checkbox" class="complaint-checkbox" id="complaint6">
-                    <label class="complaint-label" for="complaint6">৬. মিটার কার্ড হারিয়েছে</label>
-                </div>
-                <div class="complaint-item">
-                    <input type="checkbox" class="complaint-checkbox" id="complaint7">
-                    <label class="complaint-label" for="complaint7">৭. মিটারের বাটন কাজ করে না</label>
-                </div>
-                <div class="complaint-item">
-                    <input type="checkbox" class="complaint-checkbox" id="complaint8">
-                    <label class="complaint-label" for="complaint8">৮. টার্মিনাল কভার খুলে গেছে</label>
-                </div>
-                <div class="complaint-item">
-                    <input type="checkbox" class="complaint-checkbox" id="complaint9">
-                    <label class="complaint-label" for="complaint9">৯. মিটারে আউটপুট নেই</label>
-                </div>
-                <div class="complaint-item">
-                    <input type="checkbox" class="complaint-checkbox" id="complaint10">
-                    <label class="complaint-label" for="complaint10">১০. মিটারে ডেট/টাইম সঠিক না</label>
-                </div>
-                <div class="complaint-item">
-                    <input type="checkbox" class="complaint-checkbox" id="complaint11">
-                    <label class="complaint-label" for="complaint11">১১. নাম পরিবর্তন প্রয়োজন</label>
-                </div>
-                <div class="complaint-item">
-                    <input type="checkbox" class="complaint-checkbox" id="complaint12">
-                    <label class="complaint-label" for="complaint12">১২. লোড বৃদ্ধি প্রয়োজন</label>
-                </div>
-                <div class="complaint-item">
-                    <input type="checkbox" class="complaint-checkbox" id="complaint13">
-                    <label class="complaint-label" for="complaint13">১৩. ব্যাটারি/লো-ভোল্টেজ সমস্যা</label>
-                </div>
-                <div class="complaint-item">
-                    <input type="checkbox" class="complaint-checkbox" id="complaint14">
-                    <label class="complaint-label" for="complaint14">১৪. মিটারে কোন পাওয়ার নেই</label>
-                </div>
-                <div class="complaint-item">
-                    <input type="checkbox" class="complaint-checkbox" id="complaint15">
-                    <label class="complaint-label" for="complaint15">১৫. অন্যান্য------------------------</label>
-                    <input type="text" id="otherComplaintInput" class="hidden" placeholder="অন্যান্য অভিযোগ">
-                </div>
+        <!-- PAGE 1: APPLICATION FORM ONLY -->
+        <div class="application-form-page">
+            <div class="title">আবেদন পত্র</div>
+            <div class="APPLICATION_NO">
+                আবেদন নং: <span id="applicationNoDisplay">________</span>
+                <span class="status-badge" id="applicationStatusBadge"></span>
             </div>
 
-            <div id="rechargeSection">
-                <div class="recharge-title">সর্বশেষ রিচার্জের তথ্য</div>
-                <table class="recharge-table" id="rechargeTable">
-                    <tr><th>তারিখ</th><th>টাকার পরিমাণ</th></tr>
-                    <tr><td id="rechargeDate1">&nbsp;</td><td id="rechargeAmount1">&nbsp;</td></tr>
-                    <tr><td id="rechargeDate2">&nbsp;</td><td id="rechargeAmount2">&nbsp;</td></tr>
-                    <tr><td id="rechargeDate3">&nbsp;</td><td id="rechargeAmount3">&nbsp;</td></tr>
-                </table>
+            <div class="header">
+                নির্বাহী প্রকৌশলী<br>
+                বিক্রয় ও বিতরণ বিভাগ<br>
+                বিদ্যুৎ উন্নয়ন বোর্ড<br>
+                সুনামগঞ্জ
             </div>
-        </div>
 
-        <!-- Action Taken Section in Form -->
-        <div id="actionTakenSectionInForm" class="hidden">
-            <div class="complain-box" style="margin-top: 15px;">গৃহীত পদক্ষেপ</div>
+            <div class="edit-controls no-print">
+                <button class="edit-btn" onclick="toggleEditMode()" id="editToggleBtn">✏️ তথ্য এডিট করুন</button>
+            </div>
+
             <div class="info-line">
-                <span class="info-label">কর্মচারীঃ</span>
-                <span class="static-value" id="staticActionTakenBy"></span>
+                <span class="info-label">গ্রাহক/আবেদনকারীর নামঃ </span>
+                <span class="static-value" id="staticCustomerName"></span>
+                <input type="text" class="editable-field hidden" id="editableCustomerName" placeholder="গ্রাহকের নাম">
             </div>
+
             <div class="info-line">
-                <span class="info-label">তারিখঃ</span>
-                <span class="static-value" id="staticActionTakenDate"></span>
+                <span class="info-label">পিতা/স্বামীর নামঃ </span>
+                <span class="static-value" id="staticFatherName"></span>
+                <input type="text" class="editable-field hidden" id="editableFatherName" placeholder="পিতা/স্বামীর নাম">
             </div>
+
             <div class="info-line">
-                <span class="info-label">বিবরণঃ</span>
-                <span class="static-value" id="staticActionTakenDetails"></span>
+                <span class="info-label">ঠিকানাঃ </span>
+                <span class="static-value" id="staticAddress"></span>
+                <input type="text" class="editable-field hidden" id="editableAddress" placeholder="ঠিকানা">
             </div>
+
+            <div class="info-line">
+                <span class="info-label">টেলিফোন নংঃ </span>
+                <span class="static-value" id="staticMobileNo"></span>
+                <input type="tel" class="editable-field hidden" id="editableMobileNo" placeholder="টেলিফোন নং">
+            </div>
+
+            <div class="info-line">
+                <span class="info-label">এনআইডি নংঃ </span>
+                <span class="static-value" id="staticNid"></span>
+            </div>
+
+            <div class="info-line">
+                <span class="info-label">মিটার নংঃ </span>
+                <span class="static-value" id="staticMeterNo"></span>
+                <input type="text" class="editable-field hidden" id="editableMeterNo" placeholder="মিটার নং">
+            </div>
+
+            <div class="info-line">
+                <span class="info-label">গ্রাহক নংঃ </span>
+                <span class="static-value" id="staticConsumerNo"></span>
+                <input type="text" class="editable-field hidden" id="editableConsumerNo" placeholder="গ্রাহক নং">
+                <div class="inline-info-group">
+                    <span class="inline-info">বকেয়াঃ</span>
+                    <span class="inline-value" id="arrear"></span>
+                </div>
+            </div>
+
+            <div class="complain-box">সম্ভাব্য অভিযোগ</div>
+
+            <div class="content-grid">
+                <div class="complaints">
+                    <div class="complaint-item">
+                        <input type="checkbox" class="complaint-checkbox" id="complaint1">
+                        <label class="complaint-label" for="complaint1">১. লোড ছাড়াও মিটারে টাকা কাটে / টাকা কাটে না</label>
+                    </div>
+                    <div class="complaint-item">
+                        <input type="checkbox" class="complaint-checkbox" id="complaint2">
+                        <label class="complaint-label" for="complaint2">২. মিটার টুইস্ট সীল/লীড/প্যাডলক সীল ভাঙ্গা / চুরি</label>
+                    </div>
+                    <div class="complaint-item">
+                        <input type="checkbox" class="complaint-checkbox" id="complaint3">
+                        <label class="complaint-label" for="complaint3">৩. মিটার ভেঙ্গে / হারিয়ে / পুড়ে গেছে</label>
+                    </div>
+                    <div class="complaint-item">
+                        <input type="checkbox" class="complaint-checkbox" id="complaint4">
+                        <label class="complaint-label" for="complaint4">৪. মিটার স্থানান্তর / পরিবর্তন করতে আগ্রহী</label>
+                    </div>
+                    <div class="complaint-item">
+                        <input type="checkbox" class="complaint-checkbox" id="complaint5">
+                        <label class="complaint-label" for="complaint5">৫. মিটারের ডিসপ্লেতে ডিজিট এলোমেলো</label>
+                    </div>
+                    <div class="complaint-item">
+                        <input type="checkbox" class="complaint-checkbox" id="complaint6">
+                        <label class="complaint-label" for="complaint6">৬. মিটার কার্ড হারিয়েছে</label>
+                    </div>
+                    <div class="complaint-item">
+                        <input type="checkbox" class="complaint-checkbox" id="complaint7">
+                        <label class="complaint-label" for="complaint7">৭. মিটারের বাটন কাজ করে না</label>
+                    </div>
+                    <div class="complaint-item">
+                        <input type="checkbox" class="complaint-checkbox" id="complaint8">
+                        <label class="complaint-label" for="complaint8">৮. টার্মিনাল কভার খুলে গেছে</label>
+                    </div>
+                    <div class="complaint-item">
+                        <input type="checkbox" class="complaint-checkbox" id="complaint9">
+                        <label class="complaint-label" for="complaint9">৯. মিটারে আউটপুট নেই</label>
+                    </div>
+                    <div class="complaint-item">
+                        <input type="checkbox" class="complaint-checkbox" id="complaint10">
+                        <label class="complaint-label" for="complaint10">১০. মিটারে ডেট/টাইম সঠিক না</label>
+                    </div>
+                    <div class="complaint-item">
+                        <input type="checkbox" class="complaint-checkbox" id="complaint11">
+                        <label class="complaint-label" for="complaint11">১১. নাম পরিবর্তন প্রয়োজন</label>
+                    </div>
+                    <div class="complaint-item">
+                        <input type="checkbox" class="complaint-checkbox" id="complaint12">
+                        <label class="complaint-label" for="complaint12">১২. লোড বৃদ্ধি প্রয়োজন</label>
+                    </div>
+                    <div class="complaint-item">
+                        <input type="checkbox" class="complaint-checkbox" id="complaint13">
+                        <label class="complaint-label" for="complaint13">১৩. ব্যাটারি/লো-ভোল্টেজ সমস্যা</label>
+                    </div>
+                    <div class="complaint-item">
+                        <input type="checkbox" class="complaint-checkbox" id="complaint14">
+                        <label class="complaint-label" for="complaint14">১৪. মিটারে কোন পাওয়ার নেই</label>
+                    </div>
+                    <div class="complaint-item">
+                        <input type="checkbox" class="complaint-checkbox" id="complaint15">
+                        <label class="complaint-label" for="complaint15">১৫. অন্যান্য------------------------</label>
+                        <input type="text" id="otherComplaintInput" class="hidden" placeholder="অন্যান্য অভিযোগ">
+                    </div>
+                </div>
+
+                <div id="rechargeSection">
+                    <div class="recharge-title">সর্বশেষ রিচার্জের তথ্য</div>
+                    <table class="recharge-table" id="rechargeTable">
+                        <tr><th>তারিখ</th><th>টাকার পরিমাণ</th></tr>
+                        <tr><td id="rechargeDate1">&nbsp;</td><td id="rechargeAmount1">&nbsp;</td></tr>
+                        <tr><td id="rechargeDate2">&nbsp;</td><td id="rechargeAmount2">&nbsp;</td></tr>
+                        <tr><td id="rechargeDate3">&nbsp;</td><td id="rechargeAmount3">&nbsp;</td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Action Taken Section in Form -->
+            <div id="actionTakenSectionInForm" class="hidden">
+                <div class="complain-box" style="margin-top: 15px;">গৃহীত পদক্ষেপ</div>
+                <div class="info-line">
+                    <span class="info-label">কর্মচারীঃ</span>
+                    <span class="static-value" id="staticActionTakenBy"></span>
+                </div>
+                <div class="info-line">
+                    <span class="info-label">তারিখঃ</span>
+                    <span class="static-value" id="staticActionTakenDate"></span>
+                </div>
+                <div class="info-line">
+                    <span class="info-label">বিবরণঃ</span>
+                    <span class="static-value" id="staticActionTakenDetails"></span>
+                </div>
+            </div>
+
+            <div class="signature">...........................<br>আবেদনকারীর সাক্ষর</div>
         </div>
 
-        <div class="signature">...........................<br>আবেদনকারীর সাক্ষর</div>
+        <!-- PAGE BREAK FOR PRINT -->
+        <div class="page-break"></div>
 
-        <div class="action-buttons no-print">
-            <!-- Firebase Save Button -->
-            <button class="btn mobile-full-width" style="background-color: #17a2b8; margin-bottom: 8px;"
-                    onclick="saveToFirebase()">
-                💾 Firebase-এ সেভ করুন
-            </button>
-            <button class="btn mobile-full-width" style="margin-bottom: 8px;" onclick="printApplication()">🖨️ প্রিন্ট</button>
-            <button class="btn mobile-full-width" style="margin-bottom: 8px;" onclick="saveAsPDF()">📄 PDF সেভ</button>
-            <button class="btn mobile-full-width" onclick="showDashboard()">← ড্যাশবোর্ড</button>
+        <!-- PAGE 2: WORKFLOW AND ACTIONS -->
+        <div class="workflow-page">
+            <!-- Workflow History -->
+            <div class="workflow-history" id="workflowHistory">
+                <div class="workflow-history-title">ওয়ার্কফ্লো ইতিহাস</div>
+                <div id="workflowSteps">
+                    <!-- Workflow steps will be populated here -->
+                </div>
+            </div>
+
+            <div class="workflow-actions" id="workflowActions">
+                <div class="workflow-title">ওয়ার্কফ্লো একশন</div>
+                <div id="workflowButtons">
+                    <!-- Workflow buttons will be populated based on user role and application status -->
+                </div>
+            </div>
+
+            <!-- SAE Recommendations Section -->
+            <div id="billInfoSection" class="sae-recommendations hidden">
+                <!-- Will be populated dynamically -->
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons no-print">
+                <!-- Firebase Save Button -->
+                <button class="btn mobile-full-width" style="background-color: #17a2b8; margin-bottom: 8px;"
+                        onclick="saveToFirebase()">
+                    💾 Firebase-এ সেভ করুন
+                </button>
+                <button class="btn mobile-full-width" style="margin-bottom: 8px;" onclick="printApplication()">🖨️ প্রিন্ট</button>
+                <button class="btn mobile-full-width" style="margin-bottom: 8px;" onclick="saveAsPDF()">📄 PDF সেভ</button>
+                <button class="btn mobile-full-width" onclick="showDashboard()">← ড্যাশবোর্ড</button>
+            </div>
         </div>
     </div>
 
@@ -881,7 +997,7 @@
         </div>
     </div>
 
-    <!-- SAE Section -->
+    <!-- SAE Section - Add this after the radio buttons but before the action buttons -->
     <div class="sae-section hidden" id="saeSection">
         <div class="title" style="font-size: 18px; color: #007bff;">সার্ভে ও মূল্যায়ন (SAE)</div>
 
@@ -893,6 +1009,24 @@
         <div style="margin-bottom: 12px;">
             <span class="info-label">সার্ভে রিপোর্টঃ</span>
             <textarea id="saeReport" placeholder="সার্ভে রিপোর্ট লিখুন..."></textarea>
+        </div>
+
+        <!-- Add this NEW SECTION for bill reason checkboxes -->
+        <div style="margin: 15px 0; padding: 10px; background: #f8f9fa; border-radius: 6px;">
+        <span class="info-label" style="font-weight: bold; display: block; margin-bottom: 8px;">
+            প্রয়োজনে বিল প্রস্তাব করুন:
+        </span>
+
+            <div id="billReasonCheckboxes" style="max-height: 200px; overflow-y: auto;">
+                <!-- Bill reasons will be populated here -->
+            </div>
+
+            <!-- Custom reason input -->
+            <div style="margin-top: 10px; display: none;" id="customBillReasonContainer">
+                <span class="info-label">অন্যান্য কারণ:</span>
+                <input type="text" class="editable-field mobile-full-width"
+                       id="customBillReason" placeholder="বিশেষ কারণ লিখুন...">
+            </div>
         </div>
 
         <div style="margin: 12px 0;">
@@ -909,6 +1043,29 @@
         <div id="saeRejectReason" class="hidden" style="margin-top: 12px;">
             <span class="info-label">প্রত্যাখ্যান কারণঃ</span>
             <input type="text" class="editable-field mobile-full-width" id="saeRejectText" placeholder="প্রত্যাখ্যানের কারণ লিখুন...">
+        </div>
+
+        <!-- Additional options -->
+        <div style="margin: 15px 0; padding: 10px; background: #e6ffe6; border-radius: 6px;">
+            <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: bold;">
+                <input type="checkbox" id="freeOfCost" style="transform: scale(1.2); margin-right: 8px;">
+                ফ্রি/বিনামূল্যে সেবা (নিচের যেকোনো একটি নির্বাচন করুন)
+            </label>
+
+            <div style="margin-left: 25px; margin-top: 5px;">
+                <label style="display: block; margin-bottom: 5px;">
+                    <input type="radio" name="freeReason" value="battery_change" style="transform: scale(1.1); margin-right: 6px;">
+                    ব্যাটারি পরিবর্তন
+                </label>
+                <label style="display: block; margin-bottom: 5px;">
+                    <input type="radio" name="freeReason" value="eeprom_error" style="transform: scale(1.1); margin-right: 6px;">
+                    EEPROM এরর/প্রযুক্তিগত ত্রুটি
+                </label>
+                <label style="display: block; margin-bottom: 5px;">
+                    <input type="radio" name="freeReason" value="technical_reason" style="transform: scale(1.1); margin-right: 6px;">
+                    অন্যান্য প্রযুক্তিগত কারণ
+                </label>
+            </div>
         </div>
 
         <div class="action-buttons">
@@ -1213,7 +1370,7 @@ function login() {
         currentUser = { ...user, id: userId };
         showDashboard();
         // Load applications when user logs in
-        setTimeout(() => loadAllApplicationsFromFirebase(), 500);
+        setTimeout(() => loadAllApplicationsFromFirebase(), 5000);
     } else {
         if (errorDiv) { errorDiv.textContent = 'ভুল ইউজার আইডি বা পাসওয়ার্ড'; errorDiv.style.display = 'block'; }
     }
@@ -1346,19 +1503,42 @@ function showSearchSection(){
     applicationData = {};
 }
 
-// Application Number Generation
-function getNextApplicationNumber(feeder) {
-    const today = new Date().toISOString().split('T')[0];
-    const key = `appCounter_${feeder}_${today}`;
-    let counter = localStorage.getItem(key);
-    counter = counter ? parseInt(counter) + 1 : 1;
-    localStorage.setItem(key, counter);
+// ==================== SIMPLE FIXED VERSION ====================
+async function getNextApplicationNumber(feeder) {
+    console.log("Getting next number for feeder:", feeder);
 
-    const dateStr = today.replace(/-/g, '');
-    return `${feeder}-${dateStr}-${counter.toString().padStart(3, '0')}`;
+    return new Promise((resolve, reject) => {
+        if (!window.AndroidInterface || !AndroidInterface.getNextApplicationNumber) {
+            reject(new Error("Android interface not available"));
+            return;
+        }
+
+        console.log("Calling Android/Firebase...");
+
+        AndroidInterface.getNextApplicationNumber(feeder);
+
+        window.handleNextAppNumber = function(nextNumber) {
+            console.log("Got response:", nextNumber);
+
+            // Validate it's correct format
+            if (nextNumber && nextNumber.startsWith(feeder + '-')) {
+                console.log("Valid number:", nextNumber);
+                resolve(nextNumber);
+            } else {
+                console.error("Invalid response:", nextNumber);
+                reject(new Error("Got wrong number: " + nextNumber));
+            }
+        };
+
+        // Timeout after 5 seconds
+        setTimeout(() => {
+            reject(new Error("Timeout from Firebase"));
+        }, 5000);
+    });
 }
 
-function generateApplication() {
+// ==================== SIMPLE GENERATE APPLICATION ====================
+async function generateApplication() {
     const feederEl = document.getElementById("feederSelect");
     const nidEl = document.getElementById("nidInput");
     const mobileEl = document.getElementById("mobileInput");
@@ -1376,37 +1556,50 @@ function generateApplication() {
         return;
     }
 
-    const appNo = getNextApplicationNumber(feeder);
-    const gen = document.getElementById("generatedAppNo");
-    if (gen) gen.textContent = appNo;
+    try {
+        // Show loading
+        const gen = document.getElementById("generatedAppNo");
+        if (gen) gen.textContent = "Firebase থেকে নম্বর চেক হচ্ছে...";
 
-    // Build complete application data
-    applicationData = {
-        ...applicationData,
-        mobile_no: mobileNo || applicationData.mobile_no,
-        feeder: feeder,
-        nid: nid,
-        application_no: appNo,
-        status: WORKFLOW_STATUS.CREATED,
-        createdBy: currentUser ? currentUser.name : 'Unknown',
-        createdAt: new Date().toISOString(),
-        complaints: getSelectedComplaints(),
-        workflowHistory: [{
-            step: 'নতুন আবেদন তৈরি করা হয়েছে',
-            by: currentUser ? currentUser.name : 'Unknown',
-            date: new Date().toLocaleString(),
-            status: 'created'
-        }]
-    };
+        // Get next application number
+        const appNo = await getNextApplicationNumber(feeder);
 
-    // Save to Firebase
-    saveApplicationToStorage();
-    showToast("✅ নতুন আবেদন Firebase-এ সেভ হয়েছে");
+        if (gen) gen.textContent = appNo;
 
-    fillFormWithData(applicationData);
-    showFormSection();
+        // Build application data
+        applicationData = {
+            ...applicationData,
+            mobile_no: mobileNo || applicationData.mobile_no,
+            feeder: feeder,
+            nid: nid,
+            application_no: appNo,
+            status: WORKFLOW_STATUS.CREATED,
+            createdBy: currentUser ? currentUser.name : 'Unknown',
+            createdAt: new Date().toISOString(),
+            complaints: getSelectedComplaints(),
+            workflowHistory: [{
+                step: 'নতুন আবেদন তৈরি করা হয়েছে',
+                by: currentUser ? currentUser.name : 'Unknown',
+                date: new Date().toLocaleString(),
+                status: 'created'
+            }]
+        };
+
+        // Save to Firebase
+        saveApplicationToStorage();
+        showToast("✅ নতুন আবেদন Firebase-এ সেভ হয়েছে");
+
+        fillFormWithData(applicationData);
+        showFormSection();
+
+    } catch (error) {
+        console.error("Error:", error);
+        alert("Firebase থেকে নম্বর পেতে সমস্যা: " + error.message);
+
+        const gen = document.getElementById("generatedAppNo");
+        if (gen) gen.textContent = "ফিডার নির্বাচন করুন";
+    }
 }
-
 // ==================== WORKFLOW MANAGEMENT ====================
 function updateWorkflowActions() {
     const workflowButtons = document.getElementById('workflowButtons');
@@ -1592,6 +1785,7 @@ function verifyFieldSurvey() {
     }
 
     updateApplicationStatus('Verify করা হয়েছে', 'status-verified');
+    updateActionTakenInForm();
     alert('ফিল্ড সার্ভে Verify করা হয়েছে');
     backToApplication();
 }
@@ -1631,7 +1825,7 @@ function updateApplicationStatus(statusText, statusClass) {
     applicationData.statusClass = statusClass;
 }
 
-// ==================== WORKFLOW HISTORY ====================
+// ==================== ENHANCED WORKFLOW HISTORY DISPLAY ====================
 function updateWorkflowHistory() {
     const workflowSteps = document.getElementById('workflowSteps');
     if (!workflowSteps) return;
@@ -1648,14 +1842,66 @@ function updateWorkflowHistory() {
         stepDiv.className = `workflow-step ${step.status || ''}`;
 
         let stepHtml = `<strong>${step.step}</strong><br>`;
-        stepHtml += `কর্তৃক: ${step.by}<br>`;
-        stepHtml += `তারিখ: ${step.date}`;
+        stepHtml += `<small>কর্তৃক: ${step.by}</small><br>`;
+        stepHtml += `<small>তারিখ: ${step.date}</small>`;
 
-        if (step.to) {
-            stepHtml += `<br>প্রাপক: ${step.to}`;
-        }
+        // Show details if available
         if (step.details) {
-            stepHtml += `<br>বিবরণ: ${step.details}`;
+            stepHtml += `<div style="margin-top: 5px; padding: 5px; background: #f8f9fa; border-radius: 4px;">
+                        <strong>বিবরণ:</strong> ${step.details}
+                        </div>`;
+        }
+
+        // ===== ENHANCEMENT: Show BILL REASONS if available =====
+        if (step.billReasons && step.billReasons.length > 0) {
+            stepHtml += `<div style="margin-top: 5px; padding: 5px; background: #e6ffe6; border-radius: 4px; border-left: 3px solid #28a745;">
+                        <strong>💰 বিল প্রস্তাবিত:</strong><br>`;
+
+            // Get bill reason descriptions
+            step.billReasons.forEach(code => {
+                const reason = BILL_REASONS.find(r => r.code === code);
+                if (reason) {
+                    stepHtml += `<div style="margin: 3px 0; padding-left: 10px;">
+                                <span style="font-weight: bold;">${code}:</span> ${reason.desc}
+                                </div>`;
+                }
+            });
+
+            // Show custom reason if available
+            if (step.customBillReason) {
+                stepHtml += `<div style="margin: 3px 0; padding-left: 10px;">
+                            <span style="font-weight: bold;">অন্যান্য:</span> ${step.customBillReason}
+                            </div>`;
+            }
+
+            stepHtml += `</div>`;
+        }
+
+        // ===== ENHANCEMENT: Show FREE SERVICE info if available =====
+        if (step.freeService === true) {
+            let freeReasonText = '';
+            switch(step.freeReason) {
+                case 'battery_change':
+                    freeReasonText = 'ব্যাটারি পরিবর্তন';
+                    break;
+                case 'eeprom_error':
+                    freeReasonText = 'EEPROM এরর/প্রযুক্তিগত ত্রুটি';
+                    break;
+                case 'technical_reason':
+                    freeReasonText = 'অন্যান্য প্রযুক্তিগত কারণ';
+                    break;
+                default:
+                    freeReasonText = step.freeReason || 'বিনামূল্যে সেবা';
+            }
+
+            stepHtml += `<div style="margin-top: 5px; padding: 5px; background: #fff3cd; border-radius: 4px; border-left: 3px solid #ffc107;">
+                        <strong>🎁 বিনামূল্যে সেবা:</strong> ${freeReasonText}
+                        </div>`;
+        }
+
+        // Show other step info
+        if (step.to) {
+            stepHtml += `<br><small>প্রাপক: ${step.to}</small>`;
         }
 
         stepDiv.innerHTML = stepHtml;
@@ -1663,7 +1909,71 @@ function updateWorkflowHistory() {
     });
 }
 
-// ==================== SAE AND FINAL APPROVAL ====================
+// ==================== BILL REASONS DATA ====================
+const BILL_REASONS = [
+    { code: "23", desc: "Load Changes Application Fee (Per Meter)" },
+    { code: "38", desc: "New Connection Application Fee" },
+    { code: "13", desc: "Temporary Connection fee" },
+    { code: "40", desc: "Estimated Cost" },
+    { code: "34", desc: "Disconnection Charge (DC) For Due Bill" },
+    { code: "35", desc: "Reconnection Charge (RC) For Due Bill" },
+    { code: "36", desc: "Disconnection Charge (DC) For On Request" },
+    { code: "37", desc: "Reconnection Charge (RC) For On Request" },
+    { code: "16", desc: "Meter inspection charge for on request" },
+    { code: "17", desc: "Meter inspection charge at consumer yard" },
+    { code: "27", desc: "Meter / Metering Unit Installation / Change / Relocation Fee On Request" },
+    { code: "33", desc: "Service Drop Cable/ Repair/ Change/Transfer On Request" },
+    { code: "21", desc: "Fee For Amending The supply Agreement at The Customer's Request" },
+    { code: "24", desc: "PrePaid Meter Card Re Issue Fee" },
+    { code: "18", desc: "Transformer rental charge" },
+    { code: "39", desc: "Revenue loss bill" },
+    { code: "22", desc: "Meter Change Inspection On Request" },
+    { code: "09", desc: "Others" },
+    { code: "15", desc: "Disconnection charge (DC)  Reconnection charge (RC) for on request" },
+    { code: "14", desc: "Disconnection charge (DC)  Reconnection charge (RC) for due bill" }
+];
+
+// Function to populate bill reasons
+function populateBillReasons() {
+    const container = document.getElementById('billReasonCheckboxes');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    BILL_REASONS.forEach((reason, index) => {
+        const checkboxId = `billReason_${index}`;
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = checkboxId;
+        checkbox.className = 'complaint-checkbox';
+        checkbox.value = reason.code;
+
+        const label = document.createElement('label');
+        label.htmlFor = checkboxId;
+        label.className = 'complaint-label';
+        label.textContent = `${reason.code}: ${reason.desc}`;
+
+        const item = document.createElement('div');
+        item.className = 'complaint-item';
+        item.appendChild(checkbox);
+        item.appendChild(label);
+
+        // Show custom input for "Others"
+        if (reason.code === "09") {
+            checkbox.addEventListener('change', function() {
+                document.getElementById('customBillReasonContainer').style.display =
+                    this.checked ? 'block' : 'none';
+            });
+        }
+
+        container.appendChild(item);
+    });
+}
+
+// ==================== ENHANCED SAE SECTION ====================
+
+
+// ==================== ENHANCED SAE REPORT SAVING ====================
 function saveSaeReport() {
     const report = document.getElementById("saeReport").value.trim();
     const action = document.querySelector('input[name="saeAction"]:checked');
@@ -1678,6 +1988,44 @@ function saveSaeReport() {
         return;
     }
 
+    // Collect selected bill reasons
+    const selectedBillReasons = [];
+    const selectedBillDescriptions = [];
+
+    document.querySelectorAll('#billReasonCheckboxes input[type="checkbox"]:checked').forEach(cb => {
+        selectedBillReasons.push(cb.value);
+
+        // Get description for each code
+        const reason = BILL_REASONS.find(r => r.code === cb.value);
+        if (reason) {
+            selectedBillDescriptions.push(`${reason.code}: ${reason.desc}`);
+        }
+    });
+
+    const customBillReason = document.getElementById('customBillReason').value.trim();
+
+    // Free of cost options
+    const freeOfCost = document.getElementById('freeOfCost').checked;
+    let freeReason = document.querySelector('input[name="freeReason"]:checked')?.value || '';
+
+    // Convert free reason code to readable text
+    let freeReasonText = '';
+    if (freeOfCost) {
+        switch(freeReason) {
+            case 'battery_change':
+                freeReasonText = 'ব্যাটারি পরিবর্তন';
+                break;
+            case 'eeprom_error':
+                freeReasonText = 'EEPROM এরর/প্রযুক্তিগত ত্রুটি';
+                break;
+            case 'technical_reason':
+                freeReasonText = 'অন্যান্য প্রযুক্তিগত কারণ';
+                break;
+            default:
+                freeReasonText = 'বিনামূল্যে সেবা';
+        }
+    }
+
     if (action.value === 'reject') {
         const rejectReason = document.getElementById("saeRejectText").value.trim();
         if (!rejectReason) {
@@ -1686,35 +2034,53 @@ function saveSaeReport() {
         }
         applicationData.saeRejectReason = rejectReason;
         applicationData.status = WORKFLOW_STATUS.REJECTED;
-
-        if (!applicationData.workflowHistory) {
-            applicationData.workflowHistory = [];
-        }
-        applicationData.workflowHistory.push({
-            step: 'সার্ভে রিপোর্ট প্রত্যাখ্যান',
-            by: currentUser.name,
-            date: new Date().toLocaleString(),
-            details: rejectReason,
-            status: 'rejected'
-        });
     } else {
         applicationData.saeReport = report;
+        applicationData.selectedBillReasons = selectedBillReasons.length > 0 ? selectedBillReasons : null;
+        applicationData.selectedBillDescriptions = selectedBillDescriptions; // Store descriptions too
+        applicationData.customBillReason = customBillReason || null;
+        applicationData.freeOfCost = freeOfCost || false;
+        applicationData.freeReason = freeReason || null;
+        applicationData.freeReasonText = freeReasonText; // Store readable text
         applicationData.status = WORKFLOW_STATUS.FIELD_SURVEY_COMPLETED;
-
-        if (!applicationData.workflowHistory) {
-            applicationData.workflowHistory = [];
-        }
-        applicationData.workflowHistory.push({
-            step: 'সার্ভে রিপোর্ট জমা দেওয়া হয়েছে',
-            by: currentUser.name,
-            date: new Date().toLocaleString(),
-            details: report.substring(0, 100) + (report.length > 100 ? '...' : ''),
-            status: 'completed'
-        });
     }
 
+    // Add to workflow history
+    if (!applicationData.workflowHistory) {
+        applicationData.workflowHistory = [];
+    }
+
+    let workflowStep = action.value === 'verify' ? 'সার্ভে রিপোর্ট জমা দেওয়া হয়েছে' : 'সার্ভে রিপোর্ট প্রত্যাখ্যান';
+
+    // ENHANCED: Create detailed workflow entry
+    const workflowEntry = {
+        step: workflowStep,
+        by: currentUser.name,
+        date: new Date().toLocaleString(),
+        details: report.substring(0, 200) + (report.length > 200 ? '...' : ''),
+        status: action.value === 'verify' ? 'completed' : 'rejected'
+    };
+
+    // Add bill reasons info
+    if (selectedBillReasons.length > 0) {
+        workflowEntry.billReasons = selectedBillReasons;
+        workflowEntry.billDescriptions = selectedBillDescriptions;
+        workflowStep += ` (বিল প্রস্তাবিত: ${selectedBillReasons.length} টি)`;
+    }
+
+    // Add free service info
+    if (freeOfCost) {
+        workflowEntry.freeService = true;
+        workflowEntry.freeReason = freeReason;
+        workflowEntry.freeReasonText = freeReasonText;
+        workflowStep += ' | বিনামূল্যে সেবা';
+    }
+
+    workflowEntry.step = workflowStep;
+    applicationData.workflowHistory.push(workflowEntry);
+
     saveApplicationToStorage();
-    if (addWorkflowStepToFirebase(action.value === 'verify' ? 'সার্ভে রিপোর্ট জমা দেওয়া হয়েছে' : 'সার্ভে রিপোর্ট প্রত্যাখ্যান')) {
+    if (addWorkflowStepToFirebase(workflowStep)) {
         showToast("✅ SAE রিপোর্ট Firebase-এ সেভ হয়েছে");
     }
 
@@ -1723,10 +2089,108 @@ function saveSaeReport() {
         action.value === 'verify' ? 'status-verified' : 'status-rejected'
     );
 
+    // Also update the form display with bill info
+    updateFormWithBillInfo(selectedBillDescriptions, freeReasonText);
+
     alert('সার্ভে রিপোর্ট সফলভাবে সেভ করা হয়েছে');
+    // Add this line in saveSaeReport() function
+updateSaeRecommendationsDisplay();
     backToApplication();
 }
 
+// ==================== UPDATE FORM WITH BILL INFO ====================
+function updateFormWithBillInfo(billDescriptions, freeReasonText) {
+    // Create a section in the form to show bill recommendations
+    const formSection = document.getElementById('formSection');
+
+    // Remove existing bill info section if exists
+    const existingBillInfo = document.getElementById('billInfoSection');
+    if (existingBillInfo) {
+        existingBillInfo.remove();
+    }
+
+    // Only add if there are bill recommendations or free service
+    if ((billDescriptions && billDescriptions.length > 0) || freeReasonText) {
+        const billInfoSection = document.createElement('div');
+        billInfoSection.id = 'billInfoSection';
+        billInfoSection.style.margin = '15px 0';
+        billInfoSection.style.padding = '12px';
+        billInfoSection.style.background = '#f8f9fa';
+        billInfoSection.style.borderRadius = '6px';
+        billInfoSection.style.borderLeft = '4px solid #28a745';
+
+        let html = '<div style="font-weight: bold; margin-bottom: 8px; color: #28a745;">💰 SAE সুপারিশ:</div>';
+
+        // Add bill recommendations
+        if (billDescriptions && billDescriptions.length > 0) {
+            html += '<div style="margin-bottom: 10px;">';
+            html += '<div style="font-weight: bold; margin-bottom: 5px;">বিল প্রস্তাবিত:</div>';
+            billDescriptions.forEach(desc => {
+                html += `<div style="margin: 3px 0; padding-left: 10px; font-size: 13px;">• ${desc}</div>`;
+            });
+
+            // Add custom reason if exists
+            if (applicationData.customBillReason) {
+                html += `<div style="margin: 3px 0; padding-left: 10px; font-size: 13px; color: #666;">
+                        <strong>বিশেষ কারণ:</strong> ${applicationData.customBillReason}
+                        </div>`;
+            }
+            html += '</div>';
+        }
+
+        // Add free service info
+        if (freeReasonText) {
+            html += `<div style="margin-top: 8px; padding: 8px; background: #fff3cd; border-radius: 4px;">
+                    <div style="font-weight: bold; color: #856404;">🎁 বিনামূল্যে সেবা:</div>
+                    <div style="font-size: 13px;">${freeReasonText}</div>
+                    </div>`;
+        }
+
+        billInfoSection.innerHTML = html;
+
+        // Insert after the workflow actions section
+        const workflowActions = document.getElementById('workflowActions');
+        if (workflowActions) {
+            workflowActions.parentNode.insertBefore(billInfoSection, workflowActions.nextSibling);
+        }
+    }
+}
+function showFinalApprovalSection(){
+    hideAllSections();
+    document.getElementById("applicationContainer").classList.remove('hidden');
+    document.getElementById("finalApprovalSection").classList.remove('hidden');
+
+    const finalAppNo = document.getElementById("finalAppNo");
+    if (finalAppNo) finalAppNo.textContent = applicationData.application_no || '_________ (N/A)';
+
+    const finalCustomerName = document.getElementById("finalCustomerName");
+    if (finalCustomerName) finalCustomerName.textContent = applicationData.customer_name || '_________ (N/A)';
+
+    const finalReport = document.getElementById("finalReport");
+    if (finalReport) {
+        let reportText = applicationData.saeReport || document.getElementById("saeReport")?.value || 'No Report';
+
+        // ENHANCED: Add bill recommendations to the report display
+        if (applicationData.selectedBillDescriptions && applicationData.selectedBillDescriptions.length > 0) {
+            reportText += '\n\n💰 বিল প্রস্তাবিত:\n';
+            applicationData.selectedBillDescriptions.forEach(desc => {
+                reportText += `• ${desc}\n`;
+            });
+
+            if (applicationData.customBillReason) {
+                reportText += `\nবিশেষ কারণ: ${applicationData.customBillReason}\n`;
+            }
+        }
+
+        // Add free service info
+        if (applicationData.freeOfCost && applicationData.freeReasonText) {
+            reportText += `\n🎁 বিনামূল্যে সেবা: ${applicationData.freeReasonText}\n`;
+        }
+
+        finalReport.textContent = reportText;
+        finalReport.style.whiteSpace = 'pre-line'; // Preserve line breaks
+    }
+}
 function saveFinalApproval() {
     const action = document.querySelector('input[name="finalAction"]:checked');
 
@@ -1743,44 +2207,37 @@ function saveFinalApproval() {
         }
         applicationData.finalRejectReason = rejectReason;
         applicationData.status = WORKFLOW_STATUS.REJECTED;
-
-        if (!applicationData.workflowHistory) {
-            applicationData.workflowHistory = [];
-        }
-        applicationData.workflowHistory.push({
-            step: 'চূড়ান্ত অনুমোদন প্রত্যাখ্যান',
-            by: currentUser.name,
-            date: new Date().toLocaleString(),
-            details: rejectReason,
-            status: 'rejected'
-        });
+        applicationData.rejectedBy = currentUser.name;
+        applicationData.rejectedAt = new Date().toLocaleString();
     } else {
         applicationData.status = WORKFLOW_STATUS.APPROVED_BY_XEN;
         applicationData.approvedBy = currentUser.name;
         applicationData.approvedAt = new Date().toLocaleString();
-
-        if (!applicationData.workflowHistory) {
-            applicationData.workflowHistory = [];
-        }
-        applicationData.workflowHistory.push({
-            step: 'চূড়ান্ত অনুমোদন দেওয়া হয়েছে',
-            by: currentUser.name,
-            date: new Date().toLocaleString(),
-            status: 'approved'
-        });
     }
+
+    // Add to workflow history
+    if (!applicationData.workflowHistory) {
+        applicationData.workflowHistory = [];
+    }
+
+    const workflowStep = action.value === 'approve' ? 'XEN অনুমোদন করেছেন' : 'XEN প্রত্যাখ্যান করেছেন';
+    applicationData.workflowHistory.push({
+        step: workflowStep,
+        by: currentUser.name,
+        date: new Date().toLocaleString(),
+        details: action.value === 'reject' ? applicationData.finalRejectReason : 'অনুমোদিত হয়েছে',
+        status: action.value === 'approve' ? 'approved' : 'rejected'
+    });
 
     saveApplicationToStorage();
-    if (addWorkflowStepToFirebase(action.value === 'approve' ? 'চূড়ান্ত অনুমোদন দেওয়া হয়েছে' : 'চূড়ান্ত অনুমোদন প্রত্যাখ্যান')) {
-        showToast("✅ অনুমোদন Firebase-এ সেভ হয়েছে");
-    }
 
+    // Add this line to update the status badge immediately
     updateApplicationStatus(
         action.value === 'approve' ? 'XEN অনুমোদন করেছেন' : 'প্রত্যাখ্যান করা হয়েছে',
         action.value === 'approve' ? 'status-approved' : 'status-rejected'
     );
 
-    alert('চূড়ান্ত সিদ্ধান্ত সফলভাবে সেভ করা হয়েছে');
+    alert(action.value === 'approve' ? 'আবেদন অনুমোদন করা হয়েছে' : 'আবেদন প্রত্যাখ্যান করা হয়েছে');
     backToApplication();
 }
 
@@ -1880,6 +2337,51 @@ function showDataCollectionSection(){
     document.getElementById("applicationContainer").classList.remove('hidden');
     document.getElementById("dataCollectionSection").classList.remove('hidden');
 }
+// Function to update SAE recommendations display
+function updateSaeRecommendationsDisplay() {
+    const billInfoSection = document.getElementById('billInfoSection');
+    if (!billInfoSection) return;
+
+    // Clear existing content
+    billInfoSection.innerHTML = '';
+
+    // Only show if there are SAE recommendations
+    if (applicationData.selectedBillDescriptions && applicationData.selectedBillDescriptions.length > 0) {
+        let html = '<div style="font-weight: bold; margin-bottom: 10px; color: #28a745; font-size: 16px;">💰 SAE সুপারিশসমূহ</div>';
+
+        // Add bill recommendations
+        if (applicationData.selectedBillDescriptions.length > 0) {
+            html += '<div style="margin-bottom: 10px;">';
+            html += '<div style="font-weight: bold; margin-bottom: 8px; color: #2c3e50;">বিল প্রস্তাবিত:</div>';
+            applicationData.selectedBillDescriptions.forEach(desc => {
+                html += `<div style="margin: 5px 0; padding: 5px 10px; background: #f8fff8; border-radius: 4px; border-left: 3px solid #28a745;">
+                        ${desc}
+                        </div>`;
+            });
+
+            // Add custom reason if exists
+            if (applicationData.customBillReason) {
+                html += `<div style="margin: 8px 0; padding: 8px; background: #fff3cd; border-radius: 4px;">
+                        <strong>বিশেষ কারণ:</strong> ${applicationData.customBillReason}
+                        </div>`;
+            }
+            html += '</div>';
+        }
+
+        // Add free service info
+        if (applicationData.freeOfCost && applicationData.freeReasonText) {
+            html += `<div style="margin-top: 12px; padding: 10px; background: #e6ffe6; border-radius: 6px; border: 1px solid #28a745;">
+                    <div style="font-weight: bold; color: #155724;">🎁 বিনামূল্যে সেবা:</div>
+                    <div style="margin-top: 5px; font-size: 14px;">${applicationData.freeReasonText}</div>
+                    </div>`;
+        }
+
+        billInfoSection.innerHTML = html;
+        billInfoSection.style.display = 'block';
+    } else {
+        billInfoSection.style.display = 'none';
+    }
+}
 
 function showFormSection(){
     hideAllSections();
@@ -1899,8 +2401,10 @@ function showFormSection(){
 
     // Update action taken section if exists
     updateActionTakenInForm();
-}
 
+    // +++ ADD THIS LINE +++
+    updateSaeRecommendationsDisplay(); // Show SAE recommendations if any
+}
 function showSAESection(){
     hideAllSections();
     document.getElementById("applicationContainer").classList.remove('hidden');
@@ -1910,8 +2414,37 @@ function showSAESection(){
     if (saeAppNo) saeAppNo.textContent = applicationData.application_no || '_________ (N/A)';
     const saeCustomerName = document.getElementById("saeCustomerName");
     if (saeCustomerName) saeCustomerName.textContent = applicationData.customer_name || 'N/A';
-}
 
+    // ENHANCED: Populate bill reasons
+    populateBillReasons();
+
+    // Reset free of cost options
+    document.getElementById('freeOfCost').checked = false;
+    document.querySelectorAll('input[name="freeReason"]').forEach(radio => radio.checked = false);
+
+    // Load existing data if any
+    if (applicationData.saeReport) {
+        document.getElementById('saeReport').value = applicationData.saeReport;
+    }
+
+    if (applicationData.selectedBillReasons) {
+        applicationData.selectedBillReasons.forEach(reasonCode => {
+            const checkbox = document.querySelector(`input[value="${reasonCode}"]`);
+            if (checkbox) checkbox.checked = true;
+        });
+    }
+
+    if (applicationData.customBillReason) {
+        document.getElementById('customBillReason').value = applicationData.customBillReason;
+        document.getElementById('customBillReasonContainer').style.display = 'block';
+    }
+
+    if (applicationData.freeOfCost) {
+        document.getElementById('freeOfCost').checked = true;
+        const freeReason = applicationData.freeReason || 'battery_change';
+        document.querySelector(`input[name="freeReason"][value="${freeReason}"]`).checked = true;
+    }
+}
 function showFinalApprovalSection(){
     hideAllSections();
     document.getElementById("applicationContainer").classList.remove('hidden');
@@ -1927,6 +2460,7 @@ function showFinalApprovalSection(){
 
 function backToApplication(){
     showFormSection();
+    updateWorkflowActions(); // Add this line to refresh buttons
 }
 
 function backToSae(){
