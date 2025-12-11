@@ -997,7 +997,7 @@ input[type="radio"] {
         </div>
     </div>
 
-    <!-- SAE Section - Add this after the radio buttons but before the action buttons -->
+    <!-- SAE Section -->
     <div class="sae-section hidden" id="saeSection">
         <div class="title" style="font-size: 18px; color: #007bff;">সার্ভে ও মূল্যায়ন (SAE)</div>
 
@@ -1011,24 +1011,46 @@ input[type="radio"] {
             <textarea id="saeReport" placeholder="সার্ভে রিপোর্ট লিখুন..."></textarea>
         </div>
 
-        <!-- Add this NEW SECTION for bill reason checkboxes -->
-        <div style="margin: 15px 0; padding: 10px; background: #f8f9fa; border-radius: 6px;">
-        <span class="info-label" style="font-weight: bold; display: block; margin-bottom: 8px;">
-            প্রয়োজনে বিল প্রস্তাব করুন:
-        </span>
-
-            <div id="billReasonCheckboxes" style="max-height: 200px; overflow-y: auto;">
-                <!-- Bill reasons will be populated here -->
+        <!-- ADDED: Phase Selection Section -->
+        <div style="margin: 15px 0; padding: 12px; background: #fff3cd; border-radius: 6px;">
+            <div style="font-weight: bold; margin-bottom: 10px; color: #856404;">
+                মিটার টাইপ নির্বাচন করুন (বিলের জন্য)
             </div>
-
-            <!-- Custom reason input -->
-            <div style="margin-top: 10px; display: none;" id="customBillReasonContainer">
-                <span class="info-label">অন্যান্য কারণ:</span>
-                <input type="text" class="editable-field mobile-full-width"
-                       id="customBillReason" placeholder="বিশেষ কারণ লিখুন...">
+            <div style="display: flex; gap: 15px;">
+                <label style="display: flex; align-items: center;">
+                    <input type="radio" name="meterPhase" id="phase1P" value="1P" checked
+                           style="transform: scale(1.2); margin-right: 8px;">
+                    <span>১ ফেজ (1P)</span>
+                </label>
+                <label style="display: flex; align-items: center;">
+                    <input type="radio" name="meterPhase" id="phase3P" value="3P"
+                           style="transform: scale(1.2); margin-right: 8px;">
+                    <span>৩ ফেজ (3P)</span>
+                </label>
+            </div>
+            <div style="margin-top: 8px; font-size: 13px; color: #666;">
+                নির্বাচিত টাইপ অনুযায়ী বিলের মূল্য দেখানো হবে
             </div>
         </div>
+        <!-- END Phase Selection -->
 
+        <!-- Bill selection section -->
+        <span class="info-label" style="font-weight: bold; display: block; margin-bottom: 8px;">
+        বিল সমূহ নির্বাচন করুন:
+    </span>
+
+        <div id="billReasonCheckboxes" style="max-height: 200px; overflow-y: auto;">
+            <!-- Bill reasons will be populated here -->
+        </div>
+
+        <!-- Custom reason input -->
+        <div style="margin-top: 10px; display: none;" id="customBillReasonContainer">
+            <span class="info-label">অন্যান্য কারণ:</span>
+            <input type="text" class="editable-field mobile-full-width"
+                   id="customBillReason" placeholder="বিশেষ কারণ লিখুন...">
+        </div>
+
+        <!-- Verify/Reject radio buttons -->
         <div style="margin: 12px 0;">
             <label style="display: block; margin-bottom: 8px; font-size: 14px;">
                 <input type="radio" name="saeAction" value="verify" onclick="toggleSaeRejectReason(false)">
@@ -1045,7 +1067,7 @@ input[type="radio"] {
             <input type="text" class="editable-field mobile-full-width" id="saeRejectText" placeholder="প্রত্যাখ্যানের কারণ লিখুন...">
         </div>
 
-        <!-- Additional options -->
+        <!-- Free service options -->
         <div style="margin: 15px 0; padding: 10px; background: #e6ffe6; border-radius: 6px;">
             <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: bold;">
                 <input type="checkbox" id="freeOfCost" style="transform: scale(1.2); margin-right: 8px;">
@@ -1068,12 +1090,12 @@ input[type="radio"] {
             </div>
         </div>
 
+        <!-- Action buttons -->
         <div class="action-buttons">
             <button class="btn mobile-full-width" style="background-color: #28a745; margin-bottom: 8px;" onclick="saveSaeReport()">💾 রিপোর্ট সেভ করুন</button>
             <button class="btn mobile-full-width" style="background-color: #6c757d;" onclick="backToApplication()">← আবেদনে ফিরুন</button>
         </div>
-    </div>
-
+    </div> <!-- This closes the sae-section -->
     <!-- Final Approval Section -->
     <div class="final-approval-section hidden" id="finalApprovalSection">
         <div class="title" style="font-size: 18px; color: #28a745;">চূড়ান্ত অনুমোদন</div>
@@ -1852,20 +1874,44 @@ function updateWorkflowHistory() {
                         </div>`;
         }
 
-        // ===== ENHANCEMENT: Show BILL REASONS if available =====
+               // ===== ENHANCEMENT: Show BILL REASONS if available =====
         if (step.billReasons && step.billReasons.length > 0) {
             stepHtml += `<div style="margin-top: 5px; padding: 5px; background: #e6ffe6; border-radius: 4px; border-left: 3px solid #28a745;">
-                        <strong>💰 বিল প্রস্তাবিত:</strong><br>`;
+                        <strong>💰 বিল : with 15% vat</strong><br>`;
 
-            // Get bill reason descriptions
-            step.billReasons.forEach(code => {
-                const reason = BILL_REASONS.find(r => r.code === code);
-                if (reason) {
+            // Show phase info if available
+            if (step.customerPhase) {
+                const phaseText = step.customerPhase === '3P' ? '৩ ফেজ (3P)' : '১ ফেজ (1P)';
+                stepHtml += `<small style="color: #666;">মিটার টাইপ: ${phaseText}</small><br>`;
+            }
+
+            // Show each bill with amount if available
+            if (step.selectedBills && step.selectedBills.length > 0) {
+                step.selectedBills.forEach(bill => {
                     stepHtml += `<div style="margin: 3px 0; padding-left: 10px;">
-                                <span style="font-weight: bold;">${code}:</span> ${reason.desc}
+                                <span>${bill.desc || bill.code}</span>
+                                <span style="float: right; font-weight: bold;">৳${bill.amount}</span>
+                                </div>`;
+                });
+
+                // Show total
+                if (step.billTotal && step.billTotal > 0) {
+                    stepHtml += `<div style="margin-top: 5px; border-top: 1px solid #ddd; padding-top: 5px;">
+                                <span>মোট</span>
+                                <span style="float: right; font-weight: bold;">৳${step.billTotal}</span>
                                 </div>`;
                 }
-            });
+            } else {
+                // Fallback to just codes
+                step.billReasons.forEach(code => {
+                    const reason = BILL_REASONS.find(r => r.code === code);
+                    if (reason) {
+                        stepHtml += `<div style="margin: 3px 0; padding-left: 10px;">
+                                    <span style="font-weight: bold;">${code}:</span> ${reason.desc}
+                                    </div>`;
+                    }
+                });
+            }
 
             // Show custom reason if available
             if (step.customBillReason) {
@@ -1879,19 +1925,21 @@ function updateWorkflowHistory() {
 
         // ===== ENHANCEMENT: Show FREE SERVICE info if available =====
         if (step.freeService === true) {
-            let freeReasonText = '';
-            switch(step.freeReason) {
-                case 'battery_change':
-                    freeReasonText = 'ব্যাটারি পরিবর্তন';
-                    break;
-                case 'eeprom_error':
-                    freeReasonText = 'EEPROM এরর/প্রযুক্তিগত ত্রুটি';
-                    break;
-                case 'technical_reason':
-                    freeReasonText = 'অন্যান্য প্রযুক্তিগত কারণ';
-                    break;
-                default:
-                    freeReasonText = step.freeReason || 'বিনামূল্যে সেবা';
+            let freeReasonText = step.freeReasonText || '';
+            if (!freeReasonText && step.freeReason) {
+                switch(step.freeReason) {
+                    case 'battery_change':
+                        freeReasonText = 'ব্যাটারি পরিবর্তন';
+                        break;
+                    case 'eeprom_error':
+                        freeReasonText = 'EEPROM এরর/প্রযুক্তিগত ত্রুটি';
+                        break;
+                    case 'technical_reason':
+                        freeReasonText = 'অন্যান্য প্রযুক্তিগত কারণ';
+                        break;
+                    default:
+                        freeReasonText = step.freeReason || 'বিনামূল্যে সেবা';
+                }
             }
 
             stepHtml += `<div style="margin-top: 5px; padding: 5px; background: #fff3cd; border-radius: 4px; border-left: 3px solid #ffc107;">
@@ -1911,50 +1959,191 @@ function updateWorkflowHistory() {
 
 // ==================== BILL REASONS DATA ====================
 const BILL_REASONS = [
-    { code: "23", desc: "Load Changes Application Fee (Per Meter)" },
-    { code: "38", desc: "New Connection Application Fee" },
-    { code: "13", desc: "Temporary Connection fee" },
-    { code: "40", desc: "Estimated Cost" },
-    { code: "34", desc: "Disconnection Charge (DC) For Due Bill" },
-    { code: "35", desc: "Reconnection Charge (RC) For Due Bill" },
-    { code: "36", desc: "Disconnection Charge (DC) For On Request" },
-    { code: "37", desc: "Reconnection Charge (RC) For On Request" },
-    { code: "16", desc: "Meter inspection charge for on request" },
-    { code: "17", desc: "Meter inspection charge at consumer yard" },
-    { code: "27", desc: "Meter / Metering Unit Installation / Change / Relocation Fee On Request" },
-    { code: "33", desc: "Service Drop Cable/ Repair/ Change/Transfer On Request" },
-    { code: "21", desc: "Fee For Amending The supply Agreement at The Customer's Request" },
-    { code: "24", desc: "PrePaid Meter Card Re Issue Fee" },
-    { code: "18", desc: "Transformer rental charge" },
-    { code: "39", desc: "Revenue loss bill" },
-    { code: "22", desc: "Meter Change Inspection On Request" },
-    { code: "09", desc: "Others" },
-    { code: "15", desc: "Disconnection charge (DC)  Reconnection charge (RC) for on request" },
-    { code: "14", desc: "Disconnection charge (DC)  Reconnection charge (RC) for due bill" }
+    {
+        code: "23",
+        desc: "Load Changes Application Fee (Per Meter)",
+        prices: { "1P": { principle: 120, vat: 18, total: 138 }, "3P": { principle: 360, vat: 54, total: 414 } }
+    },
+    {
+        code: "38",
+        desc: "New Connection Application Fee",
+        prices: { "1P": { principle: 120, vat: 18, total: 138 }, "3P": { principle: 360, vat: 54, total: 414 } }
+    },
+    {
+        code: "13",
+        desc: "Temporary Connection fee",
+        prices: { "1P": { principle: 300, vat: 45, total: 345 }, "3P": { principle: 600, vat: 90, total: 690 } }
+    },
+    {
+        code: "40",
+        desc: "Estimated Cost",
+        prices: { "1P": { principle: 0, vat: 0, total: 0 }, "3P": { principle: 0, vat: 0, total: 0 } }
+    },
+    {
+        code: "34",
+        desc: "Disconnection Charge (DC) For Due Bill",
+        prices: { "1P": { principle: 360, vat: 54, total: 414 }, "3P": { principle: 960, vat: 144, total: 1104 } }
+    },
+    {
+        code: "35",
+        desc: "Reconnection Charge (RC) For Due Bill",
+        prices: { "1P": { principle: 360, vat: 54, total: 414 }, "3P": { principle: 960, vat: 144, total: 1104 } }
+    },
+    {
+        code: "36",
+        desc: "Disconnection Charge (DC) For On Request",
+        prices: { "1P": { principle: 240, vat: 36, total: 276 }, "3P": { principle: 480, vat: 72, total: 552 } }
+    },
+    {
+        code: "37",
+        desc: "Reconnection Charge (RC) For On Request",
+        prices: { "1P": { principle: 240, vat: 36, total: 276 }, "3P": { principle: 480, vat: 72, total: 552 } }
+    },
+    {
+        code: "16",
+        desc: "Meter inspection charge for on request",
+        prices: { "1P": { principle: 240, vat: 36, total: 276 }, "3P": { principle: 480, vat: 72, total: 552 } }
+    },
+    {
+        code: "17",
+        desc: "Meter inspection charge at consumer yard",
+        prices: { "1P": { principle: 180, vat: 27, total: 207 }, "3P": { principle: 360, vat: 54, total: 414 } }
+    },
+    {
+        code: "27",
+        desc: "Meter / Metering Unit Installation / Change / Relocation Fee On Request",
+        prices: { "1P": { principle: 360, vat: 54, total: 414 }, "3P": { principle: 840, vat: 126, total: 966 } }
+    },
+    {
+        code: "33",
+        desc: "Service Drop Cable/ Repair/ Change/Transfer On Request",
+        prices: { "1P": { principle: 240, vat: 36, total: 276 }, "3P": { principle: 600, vat: 90, total: 690 } }
+    },
+    {
+        code: "21",
+        desc: "Fee For Amending The supply Agreement at The Customer's Request",
+        prices: { "1P": { principle: 120, vat: 18, total: 138 }, "3P": { principle: 360, vat: 54, total: 414 } }
+    },
+    {
+        code: "24",
+        desc: "PrePaid Meter Card Re Issue Fee",
+        prices: { "1P": { principle: 240, vat: 36, total: 276 }, "3P": { principle: 240, vat: 36, total: 276 } }
+    },
+    {
+        code: "18",
+        desc: "Transformer rental charge",
+        prices: { "1P": { principle: 0, vat: 0, total: 0 }, "3P": { principle: 0, vat: 0, total: 0 } }
+    },
+    {
+        code: "39",
+        desc: "Revenue loss bill",
+        prices: { "1P": { principle: 3000, vat: 450, total: 3450 }, "3P": { principle: 3000, vat: 450, total: 3450 } }
+    },
+    {
+        code: "22",
+        desc: "Meter Change Inspection On Request",
+        prices: { "1P": { principle: 360, vat: 54, total: 414 }, "3P": { principle: 840, vat: 126, total: 966 } }
+    },
+    {
+        code: "09",
+        desc: "Others",
+        prices: { "1P": { principle: 0, vat: 0, total: 0 }, "3P": { principle: 0, vat: 0, total: 0 } }
+    },
+    {
+        code: "15",
+        desc: "Disconnection charge (DC) Reconnection charge (RC) for on request",
+        prices: { "1P": { principle: 480, vat: 72, total: 552 }, "3P": { principle: 960, vat: 144, total: 1104 } }
+    },
+    {
+        code: "14",
+        desc: "Disconnection charge (DC) Reconnection charge (RC) for due bill",
+        prices: { "1P": { principle: 720, vat: 108, total: 828 }, "3P": { principle: 1920, vat: 288, total: 2208 } }
+    }
 ];
 
-// Function to populate bill reasons
+// Function to populate bill reasons - SIMPLIFIED VERSION (SAE selects phase)
 function populateBillReasons() {
     const container = document.getElementById('billReasonCheckboxes');
     if (!container) return;
 
     container.innerHTML = '';
 
+    // Get SELECTED phase from radio buttons (default to 1P)
+    const phase1P = document.getElementById('phase1P');
+    const phase3P = document.getElementById('phase3P');
+    const customerPhase = phase3P && phase3P.checked ? '3P' : '1P';
+
+    // Store the selected phase in applicationData
+    applicationData.selectedPhase = customerPhase;
+
+    // Display selected phase info
+    const phaseInfo = document.createElement('div');
+    phaseInfo.style.padding = '10px';
+    phaseInfo.style.marginBottom = '10px';
+    phaseInfo.style.background = '#e6f7ff';
+    phaseInfo.style.borderRadius = '4px';
+    phaseInfo.style.borderLeft = '4px solid #007bff';
+    phaseInfo.innerHTML = `
+        <div style="font-weight: bold; color: #007bff;">
+            📊 নির্বাচিত মিটার টাইপ: ${customerPhase === '3P' ? '৩ ফেজ (3P)' : '১ ফেজ (1P)'}
+        </div>
+        <div style="font-size: 12px; color: #666; margin-top: 3px;">
+            বিলের মূল্য ${customerPhase === '3P' ? '৩ ফেজ' : '১ ফেজ'} এর জন্য গণনা হচ্ছে
+        </div>
+    `;
+    container.appendChild(phaseInfo);
+
+    // Add event listeners to radio buttons to refresh bills when phase changes
+    if (phase1P) {
+        phase1P.addEventListener('change', function() {
+            if (this.checked) {
+                populateBillReasons();
+            }
+        });
+    }
+    if (phase3P) {
+        phase3P.addEventListener('change', function() {
+            if (this.checked) {
+                populateBillReasons();
+            }
+        });
+    }
+
+    // Add bill checkboxes with prices for the SELECTED phase
     BILL_REASONS.forEach((reason, index) => {
         const checkboxId = `billReason_${index}`;
+
+        // Get price for the SELECTED phase
+        const phasePrice = reason.prices[customerPhase];
+        const price = phasePrice ? phasePrice.total : 0;
+
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.id = checkboxId;
-        checkbox.className = 'complaint-checkbox';
+        checkbox.className = 'complaint-checkbox bill-reason-checkbox';
         checkbox.value = reason.code;
+        checkbox.dataset.price = price;
+        checkbox.dataset.desc = reason.desc;
+        checkbox.dataset.phase = customerPhase;
+
+        // Add change event for total calculation
+        checkbox.addEventListener('change', updateBillTotal);
 
         const label = document.createElement('label');
         label.htmlFor = checkboxId;
         label.className = 'complaint-label';
-        label.textContent = `${reason.code}: ${reason.desc}`;
+        label.style.display = 'flex';
+        label.style.justifyContent = 'space-between';
+        label.style.alignItems = 'center';
+        label.innerHTML = `
+            <span>${reason.desc}</span>
+            <span style="color: #28a745; font-weight: bold;">৳${price}</span>
+        `;
 
         const item = document.createElement('div');
         item.className = 'complaint-item';
+        item.style.padding = '8px 0';
+        item.style.borderBottom = '1px solid #eee';
         item.appendChild(checkbox);
         item.appendChild(label);
 
@@ -1968,17 +2157,86 @@ function populateBillReasons() {
 
         container.appendChild(item);
     });
+
+    // Add total display at the end
+    const totalDiv = document.createElement('div');
+    totalDiv.id = 'billTotalDisplay';
+    totalDiv.style.marginTop = '15px';
+    totalDiv.style.padding = '12px';
+    totalDiv.style.background = '#f0f8ff';
+    totalDiv.style.borderRadius = '6px';
+    totalDiv.style.border = '1px dashed #007bff';
+    totalDiv.style.fontWeight = 'bold';
+    totalDiv.style.display = 'none';
+    totalDiv.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <div style="font-weight: bold; color: #007bff;">মোট বিল:</div>
+                <div style="font-size: 12px; color: #666; margin-top: 3px;">
+                    মিটার টাইপ: <strong>${customerPhase}</strong>
+                </div>
+            </div>
+            <div style="font-size: 18px; color: #28a745;">
+                ৳<span id="billTotalAmount">0</span>
+            </div>
+        </div>
+    `;
+
+    container.appendChild(totalDiv);
 }
 
-// ==================== ENHANCED SAE SECTION ====================
+// Function to update bill total with proper formatting
+function updateBillTotal() {
+    const checkboxes = document.querySelectorAll('.bill-reason-checkbox:checked');
+    let total = 0;
+    const selectedBills = [];
 
+    // Get SELECTED phase from radio buttons
+    const phase1P = document.getElementById('phase1P');
+    const phase3P = document.getElementById('phase3P');
+    const customerPhase = phase3P && phase3P.checked ? '3P' : '1P';
 
-// ==================== ENHANCED SAE REPORT SAVING ====================
+    checkboxes.forEach(cb => {
+        const code = cb.value;
+        const reason = BILL_REASONS.find(r => r.code === code);
+
+        if (reason) {
+            // Use price for the SELECTED phase
+            const phasePrice = reason.prices[customerPhase];
+            const price = phasePrice ? phasePrice.total : 0;
+
+            total += price;
+            selectedBills.push({
+                code: code,
+                desc: reason.desc,
+                amount: price,
+                phase: customerPhase
+            });
+        }
+    });
+
+    // Update display
+    const totalAmountSpan = document.getElementById('billTotalAmount');
+    if (totalAmountSpan) {
+        totalAmountSpan.textContent = total.toLocaleString('bn-BD');
+    }
+
+    const totalDiv = document.getElementById('billTotalDisplay');
+    if (totalDiv) {
+        totalDiv.style.display = total > 0 ? 'block' : 'none';
+    }
+
+    // Store for later use
+    applicationData.selectedBills = selectedBills;
+    applicationData.billTotal = total;
+    applicationData.customerPhase = customerPhase;
+    applicationData.selectedPhase = customerPhase; // Store selected phase
+}
 function saveSaeReport() {
     const report = document.getElementById("saeReport").value.trim();
     const action = document.querySelector('input[name="saeAction"]:checked');
 
-    if (!report) {
+    if (!report && action.value !== 'reject') {
         alert('দয়া করে সার্ভে রিপোর্ট লিখুন');
         return;
     }
@@ -1988,18 +2246,31 @@ function saveSaeReport() {
         return;
     }
 
-    // Collect selected bill reasons
-    const selectedBillReasons = [];
-    const selectedBillDescriptions = [];
+       // Get SELECTED phase from radio buttons
+    const phase1P = document.getElementById('phase1P');
+    const phase3P = document.getElementById('phase3P');
+    const customerPhase = phase3P && phase3P.checked ? '3P' : '1P';
+
+    // Store selected phase
+    applicationData.selectedPhase = customerPhase;
+    applicationData.customerPhase = customerPhase;
+
+    // Collect selected bill details
+    const selectedBills = [];
+    let billTotal = 0;
 
     document.querySelectorAll('#billReasonCheckboxes input[type="checkbox"]:checked').forEach(cb => {
-        selectedBillReasons.push(cb.value);
+        const code = cb.value;
+        const price = parseInt(cb.dataset.price) || 0;
+        const desc = cb.dataset.desc || '';
 
-        // Get description for each code
-        const reason = BILL_REASONS.find(r => r.code === cb.value);
-        if (reason) {
-            selectedBillDescriptions.push(`${reason.code}: ${reason.desc}`);
-        }
+        selectedBills.push({
+            code: code,
+            desc: desc,
+            amount: price,
+            phase: customerPhase
+        });
+        billTotal += price;
     });
 
     const customBillReason = document.getElementById('customBillReason').value.trim();
@@ -2036,12 +2307,13 @@ function saveSaeReport() {
         applicationData.status = WORKFLOW_STATUS.REJECTED;
     } else {
         applicationData.saeReport = report;
-        applicationData.selectedBillReasons = selectedBillReasons.length > 0 ? selectedBillReasons : null;
-        applicationData.selectedBillDescriptions = selectedBillDescriptions; // Store descriptions too
+        applicationData.selectedBills = selectedBills.length > 0 ? selectedBills : null;
+        applicationData.billTotal = billTotal;
+        applicationData.customerPhase = customerPhase;
         applicationData.customBillReason = customBillReason || null;
         applicationData.freeOfCost = freeOfCost || false;
         applicationData.freeReason = freeReason || null;
-        applicationData.freeReasonText = freeReasonText; // Store readable text
+        applicationData.freeReasonText = freeReasonText;
         applicationData.status = WORKFLOW_STATUS.FIELD_SURVEY_COMPLETED;
     }
 
@@ -2052,29 +2324,24 @@ function saveSaeReport() {
 
     let workflowStep = action.value === 'verify' ? 'সার্ভে রিপোর্ট জমা দেওয়া হয়েছে' : 'সার্ভে রিপোর্ট প্রত্যাখ্যান';
 
-    // ENHANCED: Create detailed workflow entry
-    const workflowEntry = {
+        const workflowEntry = {
         step: workflowStep,
         by: currentUser.name,
         date: new Date().toLocaleString(),
-        details: report.substring(0, 200) + (report.length > 200 ? '...' : ''),
+        details: report.substring(0, 100) + (report.length > 100 ? '...' : ''),
         status: action.value === 'verify' ? 'completed' : 'rejected'
     };
 
-    // Add bill reasons info
-    if (selectedBillReasons.length > 0) {
-        workflowEntry.billReasons = selectedBillReasons;
-        workflowEntry.billDescriptions = selectedBillDescriptions;
-        workflowStep += ` (বিল প্রস্তাবিত: ${selectedBillReasons.length} টি)`;
+    // Don't add bill codes to workflow history
+    if (selectedBills.length > 0) {
+        workflowStep += ` (বিল প্রস্তাবিত: ${selectedBills.length} টি)`;
     }
 
-    // Add free service info
     if (freeOfCost) {
-        workflowEntry.freeService = true;
-        workflowEntry.freeReason = freeReason;
-        workflowEntry.freeReasonText = freeReasonText;
         workflowStep += ' | বিনামূল্যে সেবা';
     }
+
+
 
     workflowEntry.step = workflowStep;
     applicationData.workflowHistory.push(workflowEntry);
@@ -2089,17 +2356,78 @@ function saveSaeReport() {
         action.value === 'verify' ? 'status-verified' : 'status-rejected'
     );
 
-    // Also update the form display with bill info
-    updateFormWithBillInfo(selectedBillDescriptions, freeReasonText);
 
     alert('সার্ভে রিপোর্ট সফলভাবে সেভ করা হয়েছে');
-    // Add this line in saveSaeReport() function
-updateSaeRecommendationsDisplay();
     backToApplication();
 }
+// Function to display bills in your desired format
+function updateBillDisplayInForm() {
+    // Remove existing bill info section if exists
+    const existingBillInfo = document.getElementById('billInfoSection');
+    if (existingBillInfo) {
+        existingBillInfo.remove();
+    }
 
-// ==================== UPDATE FORM WITH BILL INFO ====================
-function updateFormWithBillInfo(billDescriptions, freeReasonText) {
+    // Only show if there are bills
+    if (applicationData.selectedBills && applicationData.selectedBills.length > 0) {
+        const billInfoSection = document.createElement('div');
+        billInfoSection.id = 'billInfoSection';
+        billInfoSection.style.margin = '15px 0';
+        billInfoSection.style.padding = '12px';
+        billInfoSection.style.background = '#f8f9fa';
+        billInfoSection.style.borderRadius = '6px';
+        billInfoSection.style.borderLeft = '4px solid #28a745';
+
+        // Get SELECTED phase
+        const customerPhase = applicationData.selectedPhase || applicationData.customerPhase || '1P';
+        const phaseText = customerPhase === '3P' ? '৩ ফেজ (3P)' : '১ ফেজ (1P)';
+
+        // Build bill display
+        let html = `<div style="font-weight: bold; margin-bottom: 8px; color: #28a745;">💰 বিল : with 15% vat</div>
+                   <div style="font-size: 12px; color: #666; margin-bottom: 10px; padding: 4px; background: #e6f7ff; border-radius: 4px;">
+                   নির্বাচিত মিটার টাইপ: <strong>${phaseText}</strong>
+                   </div>`;
+
+        // Add each bill item
+        applicationData.selectedBills.forEach(bill => {
+            html += `<div style="margin: 5px 0;">
+                    <span>${bill.desc}</span>
+                    <span style="float: right; font-weight: bold;">${bill.amount}</span>
+                    </div>`;
+        });
+
+        // Add total line with proper spacing
+        html += `<div style="margin-top: 10px; border-top: 1px solid #ddd; padding-top: 5px;">
+                <span>মোট</span>
+                <span style="float: right; font-weight: bold;">${applicationData.billTotal || 0}</span>
+                </div>`;
+
+        // Add custom reason if exists
+        if (applicationData.customBillReason) {
+            html += `<div style="margin-top: 8px; padding: 8px; background: #fff3cd; border-radius: 4px;">
+                    <strong>বিশেষ কারণ:</strong> ${applicationData.customBillReason}
+                    </div>`;
+        }
+
+        // Add free service info if exists
+        if (applicationData.freeOfCost && applicationData.freeReasonText) {
+            html += `<div style="margin-top: 8px; padding: 8px; background: #e6ffe6; border-radius: 4px;">
+                    <div style="font-weight: bold; color: #155724;">🎁 বিনামূল্যে সেবা:</div>
+                    <div style="font-size: 13px;">${applicationData.freeReasonText}</div>
+                    </div>`;
+        }
+
+        billInfoSection.innerHTML = html;
+
+        // Insert after the workflow actions section
+        const workflowActions = document.getElementById('workflowActions');
+        if (workflowActions) {
+            workflowActions.parentNode.insertBefore(billInfoSection, workflowActions);
+        }
+    }
+}
+
+function updateFormWithBillInfo(billDescriptions, freeReasonText, billTotal = 0) {
     // Create a section in the form to show bill recommendations
     const formSection = document.getElementById('formSection');
 
@@ -2107,6 +2435,11 @@ function updateFormWithBillInfo(billDescriptions, freeReasonText) {
     const existingBillInfo = document.getElementById('billInfoSection');
     if (existingBillInfo) {
         existingBillInfo.remove();
+    }
+
+    // Calculate total if not provided
+    if (billTotal === 0 && applicationData.billTotal) {
+        billTotal = applicationData.billTotal;
     }
 
     // Only add if there are bill recommendations or free service
@@ -2119,22 +2452,39 @@ function updateFormWithBillInfo(billDescriptions, freeReasonText) {
         billInfoSection.style.borderRadius = '6px';
         billInfoSection.style.borderLeft = '4px solid #28a745';
 
-        let html = '<div style="font-weight: bold; margin-bottom: 8px; color: #28a745;">💰 SAE সুপারিশ:</div>';
+        // CHANGE TITLE FROM "SAE সুপারিশ" TO "বিল সমূহ"
+        let html = '<div style="font-weight: bold; margin-bottom: 8px; color: #28a745;">💰 বিল সমূহ:</div>';
 
-        // Add bill recommendations
+        // Add bill recommendations WITH AMOUNTS
         if (billDescriptions && billDescriptions.length > 0) {
             html += '<div style="margin-bottom: 10px;">';
             html += '<div style="font-weight: bold; margin-bottom: 5px;">বিল প্রস্তাবিত:</div>';
+
+            // Show phase info
+            const customerPhase = applicationData.customerPhase || applicationData.meterType || '1P';
+            html += `<div style="margin-bottom: 8px; padding: 5px; background: #e6f7ff; border-radius: 4px;">
+                    <small>মিটার টাইপ: <strong>${customerPhase}</strong></small>
+                    </div>`;
+
+            // Show each bill with amount
             billDescriptions.forEach(desc => {
                 html += `<div style="margin: 3px 0; padding-left: 10px; font-size: 13px;">• ${desc}</div>`;
             });
 
             // Add custom reason if exists
             if (applicationData.customBillReason) {
-                html += `<div style="margin: 3px 0; padding-left: 10px; font-size: 13px; color: #666;">
+                html += `<div style="margin: 8px 0; padding: 8px; background: #fff3cd; border-radius: 4px;">
                         <strong>বিশেষ কারণ:</strong> ${applicationData.customBillReason}
                         </div>`;
             }
+
+            // ADD TOTAL AMOUNT
+            if (billTotal > 0) {
+                html += `<div style="margin-top: 8px; padding: 8px; background: #d4edda; border-radius: 4px; font-weight: bold;">
+                        মোট বিল: ৳${billTotal}
+                        </div>`;
+            }
+
             html += '</div>';
         }
 
@@ -2347,11 +2697,19 @@ function updateSaeRecommendationsDisplay() {
 
     // Only show if there are SAE recommendations
     if (applicationData.selectedBillDescriptions && applicationData.selectedBillDescriptions.length > 0) {
-        let html = '<div style="font-weight: bold; margin-bottom: 10px; color: #28a745; font-size: 16px;">💰 SAE সুপারিশসমূহ</div>';
+        // CHANGE TITLE FROM "SAE সুপারিশসমূহ" TO "বিল সমূহ"
+        let html = '<div style="font-weight: bold; margin-bottom: 10px; color: #28a745; font-size: 16px;">💰 বিল সমূহ</div>';
 
         // Add bill recommendations
         if (applicationData.selectedBillDescriptions.length > 0) {
             html += '<div style="margin-bottom: 10px;">';
+
+            // Show phase info
+            const customerPhase = applicationData.customerPhase || applicationData.meterType || '1P';
+            html += `<div style="margin-bottom: 8px; padding: 5px; background: #e6f7ff; border-radius: 4px;">
+                    <small>মিটার টাইপ: <strong>${customerPhase}</strong></small>
+                    </div>`;
+
             html += '<div style="font-weight: bold; margin-bottom: 8px; color: #2c3e50;">বিল প্রস্তাবিত:</div>';
             applicationData.selectedBillDescriptions.forEach(desc => {
                 html += `<div style="margin: 5px 0; padding: 5px 10px; background: #f8fff8; border-radius: 4px; border-left: 3px solid #28a745;">
@@ -2365,6 +2723,14 @@ function updateSaeRecommendationsDisplay() {
                         <strong>বিশেষ কারণ:</strong> ${applicationData.customBillReason}
                         </div>`;
             }
+
+            // ADD TOTAL AMOUNT
+            if (applicationData.billTotal && applicationData.billTotal > 0) {
+                html += `<div style="margin-top: 12px; padding: 10px; background: #d4edda; border-radius: 6px; border: 1px solid #28a745;">
+                        <div style="font-weight: bold; color: #155724;">মোট বিল: ৳${applicationData.billTotal}</div>
+                        </div>`;
+            }
+
             html += '</div>';
         }
 
@@ -2382,7 +2748,6 @@ function updateSaeRecommendationsDisplay() {
         billInfoSection.style.display = 'none';
     }
 }
-
 function showFormSection(){
     hideAllSections();
     document.getElementById("applicationContainer").classList.remove('hidden');
@@ -2402,8 +2767,6 @@ function showFormSection(){
     // Update action taken section if exists
     updateActionTakenInForm();
 
-    // +++ ADD THIS LINE +++
-    updateSaeRecommendationsDisplay(); // Show SAE recommendations if any
 }
 function showSAESection(){
     hideAllSections();
@@ -2415,7 +2778,11 @@ function showSAESection(){
     const saeCustomerName = document.getElementById("saeCustomerName");
     if (saeCustomerName) saeCustomerName.textContent = applicationData.customer_name || 'N/A';
 
-    // ENHANCED: Populate bill reasons
+    // Set default phase to 1P
+    document.getElementById('phase1P').checked = true;
+    document.getElementById('phase3P').checked = false;
+
+    // Populate bill reasons
     populateBillReasons();
 
     // Reset free of cost options
@@ -2425,6 +2792,19 @@ function showSAESection(){
     // Load existing data if any
     if (applicationData.saeReport) {
         document.getElementById('saeReport').value = applicationData.saeReport;
+    }
+
+    if (applicationData.selectedPhase) {
+        // Restore previously selected phase
+        if (applicationData.selectedPhase === '3P') {
+            document.getElementById('phase3P').checked = true;
+            document.getElementById('phase1P').checked = false;
+        } else {
+            document.getElementById('phase1P').checked = true;
+            document.getElementById('phase3P').checked = false;
+        }
+        // Refresh bills with stored phase
+        setTimeout(() => populateBillReasons(), 100);
     }
 
     if (applicationData.selectedBillReasons) {
